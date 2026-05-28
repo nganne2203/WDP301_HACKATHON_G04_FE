@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router';
+import { useEffect } from 'react';
 import { Toaster } from './components/ui/sonner';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { GoogleCallback } from './pages/GoogleCallback';
 import { CoordinatorDashboard } from './pages/coordinator/Dashboard';
 import { Events } from './pages/coordinator/Events';
 import { Participants } from './pages/coordinator/Participants';
@@ -18,12 +20,54 @@ import { MentorTeams } from './pages/mentor/Teams';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 import { useStore } from '../store/useStore';
+import type { AppRole } from '../store/useStore';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 
-function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useStore();
+// Create a React Query client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+    },
+  },
+});
+
+/** Full-screen loading spinner shown during initial auth check */
+function AuthLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <p className="text-sm text-gray-500">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+/** Protected layout: requires auth + optional role gating */
+function AppLayout({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: AppRole[] }) {
+  const { user, appRole, isAuthLoading } = useStore();
+  const location = useLocation();
+
+  if (isAuthLoading) return <AuthLoading />;
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (allowedRoles && appRole && !allowedRoles.includes(appRole)) {
+    // Redirect to the user's home page if they don't have access
+    const routes: Record<AppRole, string> = {
+      admin: '/admin',
+      coordinator: '/coordinator',
+      judge: '/judge',
+      mentor: '/mentor',
+      speaker: '/mentor',
+      participant: '/participant',
+    };
+    return <Navigate to={routes[appRole] || '/participant'} replace />;
   }
 
   return (
@@ -37,153 +81,172 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Initialises auth state on mount */
+function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const { fetchCurrentUser, isAuthLoading } = useStore();
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, [fetchCurrentUser]);
+
+  if (isAuthLoading) return <AuthLoading />;
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthInitializer>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/auth/google/callback" element={<GoogleCallback />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Coordinator Routes */}
-        <Route
-          path="/coordinator"
-          element={
-            <AppLayout>
-              <CoordinatorDashboard />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/coordinator/events"
-          element={
-            <AppLayout>
-              <Events />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/coordinator/participants"
-          element={
-            <AppLayout>
-              <Participants />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/coordinator/teams"
-          element={
-            <AppLayout>
-              <Teams />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/coordinator/checkin"
-          element={
-            <AppLayout>
-              <Checkin />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/coordinator/repos"
-          element={
-            <AppLayout>
-              <Repositories />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/coordinator/judging"
-          element={
-            <AppLayout>
-              <Judging />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/coordinator/results"
-          element={
-            <AppLayout>
-              <Results />
-            </AppLayout>
-          }
-        />
+            {/* Coordinator Routes */}
+            <Route
+              path="/coordinator"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <CoordinatorDashboard />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/coordinator/events"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <Events />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/coordinator/participants"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <Participants />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/coordinator/teams"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <Teams />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/coordinator/checkin"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <Checkin />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/coordinator/repos"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <Repositories />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/coordinator/judging"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <Judging />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/coordinator/results"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <Results />
+                </AppLayout>
+              }
+            />
 
-        {/* Judge Routes */}
-        <Route
-          path="/judge"
-          element={
-            <AppLayout>
-              <JudgeScoring />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/judge/scoring"
-          element={
-            <AppLayout>
-              <JudgeScoring />
-            </AppLayout>
-          }
-        />
+            {/* Judge Routes */}
+            <Route
+              path="/judge"
+              element={
+                <AppLayout allowedRoles={['judge', 'admin']}>
+                  <JudgeScoring />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/judge/scoring"
+              element={
+                <AppLayout allowedRoles={['judge', 'admin']}>
+                  <JudgeScoring />
+                </AppLayout>
+              }
+            />
 
-        {/* Participant Routes */}
-        <Route
-          path="/participant"
-          element={
-            <AppLayout>
-              <ParticipantDashboard />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/participant/team"
-          element={
-            <AppLayout>
-              <ParticipantTeam />
-            </AppLayout>
-          }
-        />
+            {/* Participant Routes */}
+            <Route
+              path="/participant"
+              element={
+                <AppLayout allowedRoles={['participant', 'admin']}>
+                  <ParticipantDashboard />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/participant/team"
+              element={
+                <AppLayout allowedRoles={['participant', 'admin']}>
+                  <ParticipantTeam />
+                </AppLayout>
+              }
+            />
 
-        {/* Admin Routes — admin has full coordinator access */}
-        <Route
-          path="/admin"
-          element={
-            <AppLayout>
-              <CoordinatorDashboard />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/admin/settings"
-          element={
-            <AppLayout>
-              <AdminSettings />
-            </AppLayout>
-          }
-        />
+            {/* Admin Routes — admin has full coordinator access */}
+            <Route
+              path="/admin"
+              element={
+                <AppLayout allowedRoles={['admin']}>
+                  <CoordinatorDashboard />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <AppLayout allowedRoles={['admin']}>
+                  <AdminSettings />
+                </AppLayout>
+              }
+            />
 
-        {/* Mentor Routes */}
-        <Route
-          path="/mentor"
-          element={
-            <AppLayout>
-              <ParticipantDashboard />
-            </AppLayout>
-          }
-        />
-        <Route
-          path="/mentor/teams"
-          element={
-            <AppLayout>
-              <MentorTeams />
-            </AppLayout>
-          }
-        />
-      </Routes>
-      <Toaster />
-    </BrowserRouter>
+            {/* Mentor Routes */}
+            <Route
+              path="/mentor"
+              element={
+                <AppLayout allowedRoles={['mentor', 'admin']}>
+                  <ParticipantDashboard />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/mentor/teams"
+              element={
+                <AppLayout allowedRoles={['mentor', 'admin']}>
+                  <MentorTeams />
+                </AppLayout>
+              }
+            />
+          </Routes>
+        </AuthInitializer>
+        <Toaster />
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
