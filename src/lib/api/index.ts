@@ -2,4 +2,8 @@ export { api, apiRequest, getAccessToken, getRefreshToken, setTokens, clearToken
 export { authApi } from './auth';
 export { eventsApi } from './events';
 export { usersApi } from './users';
+export { tracksApi } from './tracks';
+export { workshopsApi } from './workshops';
 export type * from './types';
+
+

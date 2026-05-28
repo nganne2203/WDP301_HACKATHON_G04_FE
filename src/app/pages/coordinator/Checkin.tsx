@@ -1,6 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { QrCode, Download, CheckCircle, Clock } from 'lucide-react';
+import { QrCode, Download, CheckCircle, Clock, Loader2, AlertCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -11,6 +12,8 @@ import {
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
 import { Progress } from '../../components/ui/progress';
+import { workshopsApi } from '../../../lib/api';
+import type { Workshop } from '../../../lib/api/types';
 
 const mockCheckIns = [
   {
@@ -40,6 +43,14 @@ export function Checkin() {
   const checkedInCount = mockCheckIns.filter((p) => p.checkedIn).length;
   const totalCount = mockCheckIns.length;
   const checkinRate = Math.round((checkedInCount / totalCount) * 100);
+
+  // Fetch real workshops from backend
+  const { data: workshopsResponse, isLoading: workshopsLoading, error: workshopsError } = useQuery({
+    queryKey: ['workshops'],
+    queryFn: () => workshopsApi.list({ page: 1, limit: 10 }),
+  });
+
+  const workshops = workshopsResponse?.data || [];
 
   return (
     <div className="p-6 space-y-6">
@@ -90,27 +101,45 @@ export function Checkin() {
             <CardTitle className="text-base">Workshop Attendance</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Git Workshop</span>
-                <Badge variant="default">45/87</Badge>
+            {workshopsLoading && (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600 mr-2" />
+                <span className="text-sm text-muted-foreground">Loading workshops...</span>
               </div>
-              <Progress value={52} />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">API Design Seminar</span>
-                <Badge variant="default">38/87</Badge>
+            )}
+
+            {workshopsError && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-xs">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>Failed to load workshops</span>
               </div>
-              <Progress value={44} />
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Pitching Workshop</span>
-                <Badge variant="secondary">Upcoming</Badge>
+            )}
+
+            {!workshopsLoading && !workshopsError && workshops.length === 0 && (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                No workshops scheduled.
               </div>
-              <Progress value={0} />
-            </div>
+            )}
+
+            {!workshopsLoading && !workshopsError && workshops.map((workshop: Workshop) => {
+              const totalAttendees = 87; // fallback mock total
+              const attendanceCount = workshop.status === 'COMPLETED' ? 45 : workshop.status === 'LIVE' ? 38 : 0;
+              const rate = Math.round((attendanceCount / totalAttendees) * 100);
+
+              return (
+                <div key={workshop.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium truncate max-w-[160px]" title={workshop.title}>
+                      {workshop.title}
+                    </span>
+                    <Badge variant={workshop.status === 'COMPLETED' ? 'default' : workshop.status === 'LIVE' ? 'secondary' : 'outline'}>
+                      {workshop.status === 'COMPLETED' ? `${attendanceCount}/${totalAttendees}` : workshop.status === 'LIVE' ? 'Live' : 'Upcoming'}
+                    </Badge>
+                  </div>
+                  <Progress value={rate} />
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>
