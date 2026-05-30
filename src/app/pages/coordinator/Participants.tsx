@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Download, Mail, Search, Filter, Loader2, AlertCircle, CheckCircle, XCircle, Ban } from 'lucide-react';
+import { Download, Search, Filter, Loader2, AlertCircle, CheckCircle, XCircle, Ban } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -56,11 +56,29 @@ export function Participants() {
   const allUsers = usersResponse?.data || [];
   const pagination = usersResponse?.pagination;
 
+  const showStatusToast = (user: User, successMessage: string) => {
+    const notification = user.emailNotification;
+
+    if (!notification) {
+      toast.success(successMessage);
+      return;
+    }
+
+    if (notification.sent) {
+      toast.success(`${successMessage} and email sent`);
+      return;
+    }
+
+    toast.warning(`${successMessage}, but email was not sent`, {
+      description: notification.reason || 'Check email configuration.',
+    });
+  };
+
   // Approve mutation
   const approveMutation = useMutation({
     mutationFn: (id: string) => usersApi.approve(id),
-    onSuccess: (_, id) => {
-      toast.success('User approved');
+    onSuccess: (response) => {
+      showStatusToast(response.data, 'User approved');
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error: unknown) => {
@@ -73,8 +91,8 @@ export function Participants() {
   // Reject mutation
   const rejectMutation = useMutation({
     mutationFn: (id: string) => usersApi.reject(id),
-    onSuccess: () => {
-      toast.success('User rejected');
+    onSuccess: (response) => {
+      showStatusToast(response.data, 'User rejected');
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error: unknown) => {
@@ -119,19 +137,6 @@ export function Participants() {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
-  };
-
-  const handleSendInvites = () => {
-    if (selectedIds.length === 0) {
-      toast.error('No users selected', {
-        description: 'Please select at least one user to send invites.',
-      });
-      return;
-    }
-    toast.success('Invites Sent', {
-      description: `Sent invites to ${selectedIds.length} user(s).`,
-    });
-    setSelectedIds([]);
   };
 
   const handleExport = () => {
@@ -179,10 +184,6 @@ export function Participants() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleSendInvites}>
-            <Mail className="w-4 h-4 mr-2" />
-            Send Invites
-          </Button>
           <Button variant="outline" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             Export

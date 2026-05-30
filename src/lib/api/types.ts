@@ -74,11 +74,24 @@ export interface User {
   studentType?: 'FPT' | 'EXTERNAL' | null;
   studentId?: string | null;
   schoolName?: string | null;
+  emailNotification?: UserEmailNotification;
   createdAt: string;
   updatedAt: string;
 }
 
 export type UserStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+
+export interface EmailDeliveryResult {
+  sent: boolean;
+  status: 'SENT' | 'SKIPPED' | 'FAILED';
+  skipped?: boolean;
+  accepted?: string[];
+  rejected?: string[];
+  invalid?: string[];
+  reason?: string;
+}
+
+export type UserEmailNotification = EmailDeliveryResult;
 
 export type UserRoleName =
   | 'ADMIN'
@@ -193,6 +206,19 @@ export interface ListEventsQuery {
   season?: string;
   year?: number;
   search?: string;
+}
+
+export interface SendEventInvitationsRequest {
+  emails: string[];
+  message?: string;
+}
+
+export interface SendEventInvitationsResult {
+  total: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  results: Array<EmailDeliveryResult & { email: string }>;
 }
 
 // ============================================================

@@ -32,8 +32,9 @@ export function Results() {
 
   function handlePublish() {
     setShowConfirm(false);
-    setPublished(true);
-    toast.success('Results published successfully — participants have been notified');
+    toast.error('Result publishing is not connected yet', {
+      description: 'The backend result-publishing notification API is not implemented in this build.',
+    });
   }
 
   return (
@@ -169,8 +170,8 @@ export function Results() {
           <AlertDialogHeader>
             <AlertDialogTitle>Publish Results</AlertDialogTitle>
             <AlertDialogDescription>
-              This will publish the final rankings and notify all participants via email. The results
-              will be visible to everyone on the platform. This action cannot be undone.
+              Result publishing and participant email notifications require the backend result module.
+              The current page is displaying preview data only.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="my-3 space-y-2 text-sm">
@@ -206,7 +207,7 @@ export function Results() {
               Results Published
             </DialogTitle>
             <DialogDescription>
-              Final rankings are now live. All participants have been notified.
+              Final rankings are now live.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 mt-2 text-sm">

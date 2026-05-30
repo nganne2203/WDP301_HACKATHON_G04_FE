@@ -26,7 +26,6 @@ export function Login() {
   const { setAuth, user } = useStore();
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotSent, setForgotSent] = useState(false);
 
   // If already authenticated, redirect to the right dashboard
   if (user) {
@@ -45,14 +44,14 @@ export function Login() {
       toast.error('Please enter your email address.');
       return;
     }
-    setForgotSent(true);
-    toast.success('Reset link sent — check your inbox.');
+    toast.error('Password reset is not available yet', {
+      description: 'The backend does not expose a reset-password email flow in this build.',
+    });
   }
 
   function handleForgotClose() {
     setForgotOpen(false);
     setForgotEmail('');
-    setForgotSent(false);
   }
 
   function handleGoogleLogin() {
@@ -253,39 +252,30 @@ export function Login() {
           <DialogHeader>
             <DialogTitle>Reset Password</DialogTitle>
             <DialogDescription>
-              Enter your email address and we'll send you a link to reset your password.
+              Password reset email is not connected to a backend endpoint in this build.
             </DialogDescription>
           </DialogHeader>
-          {forgotSent ? (
-            <div className="space-y-4 mt-1">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-                A password reset link has been sent to <strong>{forgotEmail}</strong>. Please check your inbox.
-              </div>
-              <Button className="w-full" onClick={handleForgotClose}>Done</Button>
-            </div>
-          ) : (
-            <div className="space-y-4 mt-1">
-              <div>
-                <Label htmlFor="forgot-email">Email address</Label>
-                <div className="relative mt-1">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="forgot-email"
-                    type="email"
-                    placeholder="you@university.edu"
-                    className="pl-9"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleForgotSubmit()}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={handleForgotClose}>Cancel</Button>
-                <Button className="flex-1" onClick={handleForgotSubmit}>Send Reset Link</Button>
+          <div className="space-y-4 mt-1">
+            <div>
+              <Label htmlFor="forgot-email">Email address</Label>
+              <div className="relative mt-1">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="you@university.edu"
+                  className="pl-9"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleForgotSubmit()}
+                />
               </div>
             </div>
-          )}
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleForgotClose}>Cancel</Button>
+              <Button className="flex-1" onClick={handleForgotSubmit}>Send Reset Link</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
