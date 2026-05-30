@@ -29,6 +29,11 @@ export function Login() {
 
   // If already authenticated, redirect to the right dashboard
   if (user) {
+    if (user.mustChangePassword) {
+      navigate('/change-password', { replace: true });
+      return null;
+    }
+
     const roleNames = user.roles.map((r) => r.name?.toUpperCase()).filter(Boolean);
     let redirectTo = '/participant';
     if (roleNames.includes('ADMIN')) redirectTo = '/admin';
@@ -81,6 +86,11 @@ export function Login() {
       toast.success('Login successful!', {
         description: `Welcome back, ${authUser.fullName}`,
       });
+
+      if (authUser.mustChangePassword) {
+        navigate('/change-password', { replace: true });
+        return;
+      }
 
       // Navigate based on role
       const roleNames = authUser.roles.map((r) => r.name?.toUpperCase()).filter(Boolean);
