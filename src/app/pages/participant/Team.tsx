@@ -28,7 +28,7 @@ function createMemberRow(): MemberInviteRow {
   };
 }
 
-function normalizeMemberRows(rows: MemberInviteRow[]) {
+function normalizeMemberRows(rows: MemberInviteRow[], leaderEmail?: string) {
   const members = rows
     .map((row) => ({
       fullName: row.fullName.trim(),
@@ -39,6 +39,11 @@ function normalizeMemberRows(rows: MemberInviteRow[]) {
   const invalidRow = members.find((member) => !member.fullName || !member.email);
   if (invalidRow) {
     throw new Error('Each invited member must include both name and email.');
+  }
+
+  const normalizedLeaderEmail = leaderEmail?.trim().toLowerCase();
+  if (normalizedLeaderEmail && members.some((member) => member.email === normalizedLeaderEmail)) {
+    throw new Error('You cannot invite your own email as a team member.');
   }
 
   const seenEmails = new Set<string>();
@@ -68,6 +73,7 @@ function getInitials(nameOrEmail?: string) {
 }
 
 function getApiErrorMessage(error: unknown) {
+  if (error instanceof Error && !(error instanceof ApiError)) return error.message;
   return error instanceof ApiError ? error.firstError : 'Could not connect to server.';
 }
 
@@ -234,7 +240,7 @@ export function ParticipantTeam() {
   const createTeamMutation = useMutation({
     mutationFn: async () => {
       if (!activeEventId) throw new Error('Please select an event first.');
-      const members = normalizeMemberRows(invitedMembers);
+      const members = normalizeMemberRows(invitedMembers, user?.email);
       const response = await teamsApi.create({
         eventId: activeEventId,
         name: teamName.trim(),
@@ -255,7 +261,7 @@ export function ParticipantTeam() {
 
   const inviteMutation = useMutation({
     mutationFn: async (teamId: string) => {
-      const members = normalizeMemberRows(newInvitedMembers);
+      const members = normalizeMemberRows(newInvitedMembers, user?.email);
       if (members.length === 0) throw new Error('Enter at least one invited member.');
       const response = await teamsApi.inviteMembers(teamId, { members });
       return response.data;
