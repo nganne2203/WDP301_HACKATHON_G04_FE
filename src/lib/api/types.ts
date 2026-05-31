@@ -371,6 +371,89 @@ export interface ListTeamsQuery {
 }
 
 // ============================================================
+// GitHub Integration Types
+// ============================================================
+
+export interface GitHubConfig {
+  eventId: string;
+  organizationName: string;
+  ownerUsername: string;
+  enabled: boolean;
+  hasToken: boolean;
+}
+
+export interface SaveGitHubConfigRequest {
+  eventId: string;
+  organizationName: string;
+  ownerUsername: string;
+  githubToken?: string;
+  enabled: boolean;
+}
+
+export interface TestGitHubConnectionResult {
+  eventId: string;
+  organizationName: string;
+  ownerUsername: string;
+  enabled: boolean;
+  accessible: boolean;
+  htmlUrl?: string;
+  id?: number;
+}
+
+export interface CreateGitHubRepositoryRequest {
+  eventId: string;
+  repoName: string;
+  description?: string;
+  private: boolean;
+}
+
+export interface CreateGitHubRepositoryResult {
+  repoName: string;
+  htmlUrl?: string;
+  cloneUrl?: string;
+  visibility?: string;
+}
+
+export interface AssignGitHubCollaboratorRequest {
+  eventId: string;
+  permission: 'pull' | 'triage' | 'push' | 'maintain' | 'admin';
+}
+
+export interface AssignGitHubCollaboratorResult {
+  repoName: string;
+  username: string;
+  permission: string;
+  status: string;
+}
+
+export interface InviteGitHubOrganizationMemberRequest {
+  eventId: string;
+  email: string;
+  role: 'direct_member';
+}
+
+export interface InviteGitHubOrganizationMemberResult {
+  id?: number;
+  email: string;
+  role: string;
+  invitationUrl?: string;
+}
+
+export interface RevokeGitHubMembersRequest {
+  eventId: string;
+  confirmationText: 'REVOKE MEMBERS';
+}
+
+export interface RevokeGitHubMembersResult {
+  removed: string[];
+  skipped: string[];
+  failed: Array<{
+    username: string;
+    reason: string;
+  }>;
+}
+
+// ============================================================
 // User Management Types
 // ============================================================
 
