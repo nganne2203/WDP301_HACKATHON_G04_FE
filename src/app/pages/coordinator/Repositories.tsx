@@ -1,177 +1,533 @@
-import { Card } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Github, Settings, ShieldCheck, ShieldX } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, CheckCircle2, Github, Loader2, Plus, ShieldCheck, ShieldX, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
+
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../../components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Checkbox } from '../../components/ui/checkbox';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Switch } from '../../components/ui/switch';
+import { ApiError } from '../../../lib/api/client';
+import { eventsApi } from '../../../lib/api/events';
+import { githubApi } from '../../../lib/api/github';
+import type { RevokeGitHubMembersResult } from '../../../lib/api/types';
 
-const mockRepos = [
-  {
-    team: 'Code Wizards',
-    repoUrl: 'seal-2026/code-wizards',
-    contributors: 3,
-    lastSync: '2 hours ago',
-    status: 'granted' as const,
-    lastCommit: '2 hours ago',
-  },
-  {
-    team: 'Data Ninjas',
-    repoUrl: 'seal-2026/data-ninjas',
-    contributors: 3,
-    lastSync: '30 mins ago',
-    status: 'granted' as const,
-    lastCommit: '1 hour ago',
-  },
-  {
-    team: 'Cloud Architects',
-    repoUrl: 'seal-2026/cloud-architects',
-    contributors: 3,
-    lastSync: '5 hours ago',
-    status: 'granted' as const,
-    lastCommit: '3 hours ago',
-  },
-];
+const PERMISSIONS = ['pull', 'triage', 'push', 'maintain', 'admin'] as const;
+
+function getApiErrorMessage(error: unknown) {
+  if (error instanceof ApiError) return error.firstError;
+  if (error instanceof Error) return error.message;
+  return 'Could not connect to server.';
+}
 
 export function Repositories() {
+  const queryClient = useQueryClient();
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
+  const [ownerUsername, setOwnerUsername] = useState('');
+  const [githubToken, setGithubToken] = useState('');
+  const [enabled, setEnabled] = useState(false);
+
+  const [repoName, setRepoName] = useState('');
+  const [repoDescription, setRepoDescription] = useState('');
+  const [repoPrivate, setRepoPrivate] = useState(true);
+
+  const [collabRepoName, setCollabRepoName] = useState('');
+  const [collabUsername, setCollabUsername] = useState('');
+  const [collabPermission, setCollabPermission] = useState<typeof PERMISSIONS[number]>('push');
+
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [confirmationText, setConfirmationText] = useState('');
+  const [revokeResult, setRevokeResult] = useState<RevokeGitHubMembersResult | null>(null);
+
+  const eventsQuery = useQuery({
+    queryKey: ['github-config-events'],
+    queryFn: async () => {
+      const response = await eventsApi.list({ page: 1, limit: 100 });
+      return response.data;
+    },
+  });
+  const events = eventsQuery.data || [];
+  const activeEvent = useMemo(() => {
+    if (!events.length) return null;
+    return events.find((event) => event.id === selectedEventId) || events[0];
+  }, [events, selectedEventId]);
+  const activeEventId = activeEvent?.id || '';
+
+  const configQuery = useQuery({
+    queryKey: ['github-config', activeEventId],
+    enabled: Boolean(activeEventId),
+    queryFn: async () => {
+      const response = await githubApi.getConfig(activeEventId);
+      return response.data;
+    },
+  });
+
+  useEffect(() => {
+    setOrganizationName('');
+    setOwnerUsername('');
+    setGithubToken('');
+    setEnabled(false);
+    setRevokeResult(null);
+  }, [activeEventId]);
+
+  useEffect(() => {
+    if (!configQuery.data) return;
+    setOrganizationName(configQuery.data.organizationName || '');
+    setOwnerUsername(configQuery.data.ownerUsername || '');
+    setEnabled(Boolean(configQuery.data.enabled));
+  }, [configQuery.data]);
+
+  const saveConfigMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      const response = await githubApi.saveConfig({
+        eventId: activeEventId,
+        organizationName,
+        ownerUsername,
+        githubToken,
+        enabled,
+      });
+      return response.data;
+    },
+    onSuccess: async () => {
+      setGithubToken('');
+      toast.success('GitHub configuration saved');
+      await queryClient.invalidateQueries({ queryKey: ['github-config', activeEventId] });
+    },
+    onError: (error) => toast.error('Could not save GitHub configuration', { description: getApiErrorMessage(error) }),
+  });
+
+  const testConnectionMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      const response = await githubApi.testConnection(activeEventId);
+      return response.data;
+    },
+    onSuccess: (result) => {
+      toast.success('GitHub connection works', {
+        description: `${result.organizationName} is accessible.`,
+      });
+    },
+    onError: (error) => toast.error('GitHub connection failed', { description: getApiErrorMessage(error) }),
+  });
+
+  const createRepositoryMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      const response = await githubApi.createRepository({
+        eventId: activeEventId,
+        repoName,
+        description: repoDescription,
+        private: repoPrivate,
+      });
+      return response.data;
+    },
+    onSuccess: (result) => {
+      toast.success('Repository created', {
+        description: result.htmlUrl || result.repoName,
+      });
+      setRepoName('');
+      setRepoDescription('');
+      setRepoPrivate(true);
+    },
+    onError: (error) => toast.error('Could not create repository', { description: getApiErrorMessage(error) }),
+  });
+
+  const assignCollaboratorMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      const response = await githubApi.assignCollaborator(collabRepoName, collabUsername, {
+        eventId: activeEventId,
+        permission: collabPermission,
+      });
+      return response.data;
+    },
+    onSuccess: (result) => {
+      toast.success('Collaborator assigned', {
+        description: `${result.username} has ${result.permission} access to ${result.repoName}.`,
+      });
+      setCollabUsername('');
+    },
+    onError: (error) => toast.error('Could not assign collaborator', { description: getApiErrorMessage(error) }),
+  });
+
+  const inviteMemberMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      const response = await githubApi.inviteOrganizationMember({
+        eventId: activeEventId,
+        email: inviteEmail,
+        role: 'direct_member',
+      });
+      return response.data;
+    },
+    onSuccess: (result) => {
+      toast.success('Organization invitation sent', {
+        description: result.email,
+      });
+      setInviteEmail('');
+    },
+    onError: (error) => toast.error('Could not invite organization member', { description: getApiErrorMessage(error) }),
+  });
+
+  const revokeMembersMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      const response = await githubApi.revokeMembers({
+        eventId: activeEventId,
+        confirmationText: 'REVOKE MEMBERS',
+      });
+      return response.data;
+    },
+    onSuccess: (result) => {
+      setRevokeResult(result);
+      setConfirmationText('');
+      toast.success('Organization member revoke completed', {
+        description: `${result.removed.length} removed, ${result.failed.length} failed.`,
+      });
+    },
+    onError: (error) => toast.error('Could not revoke organization members', { description: getApiErrorMessage(error) }),
+  });
+
+  const config = configQuery.data;
+
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold mb-1">Repository Management</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage GitHub repositories and team access
-        </p>
+        <p className="text-sm text-muted-foreground">Each event has its own GitHub organization configuration.</p>
       </div>
 
-      <Alert className="bg-blue-50 border-blue-200">
-        <Github className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-sm">
-          GitHub organization connected: <strong>seal-hackathon-2026</strong>. Repositories will
-          be automatically created for teams and access will be granted to team members.
-        </AlertDescription>
-      </Alert>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium mb-4 flex items-center gap-2">
-                <Settings className="w-4 h-4" />
-                GitHub Configuration
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="org" className="text-sm">
-                  Organization Name
-                </Label>
-                <Input id="org" defaultValue="seal-hackathon-2026" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="token" className="text-sm">
-                  Access Token
-                </Label>
-                <Input id="token" type="password" defaultValue="ghp_****************" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="template" className="text-sm">
-                  Repository Template
-                </Label>
-                <Input id="template" placeholder="seal-template" />
-              </div>
-
-              <Button className="w-full" variant="outline">
-                Update Configuration
-              </Button>
-            </div>
-
-            <div className="pt-4 border-t space-y-2">
-              <Button className="w-full" variant="default">
-                <Github className="w-4 h-4 mr-2" />
-                Create All Repositories
-              </Button>
-              <Button className="w-full" variant="outline">
-                <ShieldCheck className="w-4 h-4 mr-2" />
-                Grant Access to All
-              </Button>
-              <Button className="w-full" variant="destructive">
-                <ShieldX className="w-4 h-4 mr-2" />
-                Revoke All Access
-              </Button>
-            </div>
+      <Card>
+        <CardContent className="p-4">
+          <div className="w-full md:w-96 space-y-2">
+            <Label>Event</Label>
+            <Select value={activeEventId} onValueChange={setSelectedEventId} disabled={eventsQuery.isLoading}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select event" />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map((event) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    {event.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+        </CardContent>
+      </Card>
+
+      {configQuery.isLoading || eventsQuery.isLoading ? (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertTitle>Loading GitHub configuration</AlertTitle>
+          <AlertDescription>Reading event-specific integration settings from the database.</AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className={config?.enabled ? 'bg-green-50 border-green-200' : undefined}>
+          {config?.enabled ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Github className="h-4 w-4" />}
+          <AlertTitle>{config?.enabled ? 'GitHub integration enabled' : 'GitHub integration disabled'}</AlertTitle>
+          <AlertDescription>
+            Organization: <strong>{config?.organizationName || 'Not configured'}</strong>
+            {' '}· Token: <strong>{config?.hasToken ? 'Configured' : 'Missing'}</strong>
+            {' '}· Event: <strong>{activeEvent?.title || 'No event selected'}</strong>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Github className="w-5 h-5" />
+              GitHub Config
+            </CardTitle>
+            <CardDescription>One encrypted `SystemConfiguration` record is stored for this event; saved tokens are never displayed.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="github-org">Organization name</Label>
+                <Input
+                  id="github-org"
+                  value={organizationName}
+                  onChange={(event) => setOrganizationName(event.target.value)}
+                  placeholder="your-org-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="github-owner">Owner username</Label>
+                <Input
+                  id="github-owner"
+                  value={ownerUsername}
+                  onChange={(event) => setOwnerUsername(event.target.value)}
+                  placeholder="owner-github-username"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="github-token">GitHub token</Label>
+              <Input
+                id="github-token"
+                type="password"
+                value={githubToken}
+                onChange={(event) => setGithubToken(event.target.value)}
+                placeholder={config?.hasToken ? 'Leave blank to keep existing token' : 'github_pat_xxx'}
+              />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant={config?.hasToken ? 'default' : 'secondary'}>
+                  {config?.hasToken ? 'Token exists' : 'No token saved'}
+                </Badge>
+                <span>Token value is never returned by the API.</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <p className="text-sm font-medium">Enabled</p>
+                <p className="text-xs text-muted-foreground">Allow backend GitHub API operations.</p>
+              </div>
+              <Switch checked={enabled} onCheckedChange={setEnabled} />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() => saveConfigMutation.mutate()}
+                disabled={saveConfigMutation.isPending || !activeEventId}
+              >
+                {saveConfigMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => testConnectionMutation.mutate()}
+                disabled={testConnectionMutation.isPending || !config?.hasToken || !activeEventId}
+              >
+                {testConnectionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Test connection
+              </Button>
+            </div>
+          </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 p-6">
-          <h3 className="font-medium mb-4">Team Repositories</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Team</TableHead>
-                <TableHead>Repository</TableHead>
-                <TableHead>Contributors</TableHead>
-                <TableHead>Last Commit</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockRepos.map((repo, i) => (
-                <TableRow key={i}>
-                  <TableCell className="font-medium">{repo.team}</TableCell>
-                  <TableCell>
-                    <a
-                      href="#"
-                      className="text-blue-600 hover:underline flex items-center gap-1"
-                      onClick={(e) => e.preventDefault()}
-                    >
-                      <Github className="w-4 h-4" />
-                      {repo.repoUrl}
-                    </a>
-                  </TableCell>
-                  <TableCell>{repo.contributors}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {repo.lastCommit}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        repo.status === 'granted'
-                          ? 'default'
-                          : repo.status === 'not_granted'
-                          ? 'secondary'
-                          : 'destructive'
-                      }
-                    >
-                      {repo.status === 'granted'
-                        ? 'Access Granted'
-                        : repo.status === 'not_granted'
-                        ? 'Not Granted'
-                        : 'Revoked'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">
-                      Manage
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Repository Management
+            </CardTitle>
+            <CardDescription>Create a repository inside the configured organization.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="repo-name">Repo name</Label>
+              <Input
+                id="repo-name"
+                value={repoName}
+                onChange={(event) => setRepoName(event.target.value)}
+                placeholder="team-alpha-project"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="repo-description">Description</Label>
+              <Input
+                id="repo-description"
+                value={repoDescription}
+                onChange={(event) => setRepoDescription(event.target.value)}
+                placeholder="Repository for Team Alpha"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={repoPrivate} onCheckedChange={(checked) => setRepoPrivate(checked === true)} id="repo-private" />
+              <Label htmlFor="repo-private">Private repository</Label>
+            </div>
+            <Button
+              onClick={() => createRepositoryMutation.mutate()}
+              disabled={createRepositoryMutation.isPending || !activeEventId}
+            >
+              {createRepositoryMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Create repository
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5" />
+              Collaborator Management
+            </CardTitle>
+            <CardDescription>Assign a GitHub user to a repository with a selected permission.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="collab-repo">Repo name</Label>
+                <Input
+                  id="collab-repo"
+                  value={collabRepoName}
+                  onChange={(event) => setCollabRepoName(event.target.value)}
+                  placeholder="team-alpha-project"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="collab-user">GitHub username</Label>
+                <Input
+                  id="collab-user"
+                  value={collabUsername}
+                  onChange={(event) => setCollabUsername(event.target.value)}
+                  placeholder="octocat"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Permission</Label>
+              <Select value={collabPermission} onValueChange={(value) => setCollabPermission(value as typeof PERMISSIONS[number])}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PERMISSIONS.map((permission) => (
+                    <SelectItem key={permission} value={permission}>{permission}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={() => assignCollaboratorMutation.mutate()}
+              disabled={assignCollaboratorMutation.isPending || !activeEventId}
+            >
+              {assignCollaboratorMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Assign member
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              Organization Invitation
+            </CardTitle>
+            <CardDescription>Invite a member to the GitHub organization by email.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">Email</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                value={inviteEmail}
+                onChange={(event) => setInviteEmail(event.target.value)}
+                placeholder="member@gmail.com"
+              />
+            </div>
+            <Button
+              onClick={() => inviteMemberMutation.mutate()}
+              disabled={inviteMemberMutation.isPending || !activeEventId}
+            >
+              {inviteMemberMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Invite member
+            </Button>
+          </CardContent>
         </Card>
       </div>
+
+      <Card className="border-destructive/40">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <ShieldX className="w-5 h-5" />
+            Organization Danger Zone
+          </CardTitle>
+          <CardDescription>Revoke every organization member except the configured owner username.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Destructive action</AlertTitle>
+            <AlertDescription>
+              This calls GitHub and removes organization members. It skips only the configured owner: {ownerUsername || 'not configured'}.
+            </AlertDescription>
+          </Alert>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <ShieldX className="w-4 h-4 mr-2" />
+                Revoke all members except owner
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Revoke organization members?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Type <strong>REVOKE MEMBERS</strong> to confirm. This operation continues even if one removal fails.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <Input
+                value={confirmationText}
+                onChange={(event) => setConfirmationText(event.target.value)}
+                placeholder="REVOKE MEMBERS"
+              />
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setConfirmationText('')}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={confirmationText !== 'REVOKE MEMBERS' || revokeMembersMutation.isPending}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    revokeMembersMutation.mutate();
+                  }}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                >
+                  {revokeMembersMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Confirm revoke
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {revokeResult && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="rounded-md border p-3">
+                <p className="text-sm font-medium">Removed</p>
+                <p className="text-2xl font-semibold">{revokeResult.removed.length}</p>
+                <p className="text-xs text-muted-foreground break-words">{revokeResult.removed.join(', ') || 'None'}</p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-sm font-medium">Skipped</p>
+                <p className="text-2xl font-semibold">{revokeResult.skipped.length}</p>
+                <p className="text-xs text-muted-foreground break-words">{revokeResult.skipped.join(', ') || 'None'}</p>
+              </div>
+              <div className="rounded-md border p-3">
+                <p className="text-sm font-medium">Failed</p>
+                <p className="text-2xl font-semibold">{revokeResult.failed.length}</p>
+                <p className="text-xs text-muted-foreground break-words">
+                  {revokeResult.failed.map((item) => `${item.username}: ${item.reason}`).join(', ') || 'None'}
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

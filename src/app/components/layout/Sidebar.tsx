@@ -12,7 +12,6 @@ import {
   Settings,
   Award,
   UserCircle,
-  Briefcase,
 } from 'lucide-react';
 import { useStore } from '../../../store/useStore';
 
@@ -45,15 +44,18 @@ const mentorNav = [
 
 export function Sidebar() {
   const location = useLocation();
-  const { user, sidebarCollapsed } = useStore();
+  const { user, appRole, sidebarCollapsed } = useStore();
 
-  const navItems = user?.role === 'coordinator' || user?.role === 'admin'
+  const navItems = appRole === 'coordinator' || appRole === 'admin'
     ? coordinatorNav
-    : user?.role === 'judge'
+    : appRole === 'judge'
     ? judgeNav
-    : user?.role === 'mentor'
+    : appRole === 'mentor'
     ? mentorNav
     : participantNav;
+
+  const displayName = user?.fullName || 'User';
+  const primaryRole = appRole || 'participant';
 
   return (
     <div
@@ -107,8 +109,8 @@ export function Sidebar() {
           <UserCircle className="w-5 h-5 flex-shrink-0 text-gray-700" />
           {!sidebarCollapsed && user && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+              <p className="text-sm font-medium truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground capitalize">{primaryRole}</p>
             </div>
           )}
         </div>

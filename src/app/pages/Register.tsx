@@ -8,60 +8,65 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { useStore } from '../../store/useStore';
-import { mockEvent } from '../../lib/data';
+import { authApi } from '../../lib/api/auth';
+import { ApiError } from '../../lib/api/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
 const registerSchema = z.object({
-  name: z.string().min(2, 'Họ và tên phải có ít nhất 2 ký tự'),
+  fullName: z.string().min(2, 'Họ và tên phải có ít nhất 2 ký tự').max(120),
   email: z.string().email('Vui lòng nhập email hợp lệ'),
   password: z.string()
     .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-    .regex(/[A-Z]/, 'Mật khẩu phải chứa ít nhất một chữ hoa')
-    .regex(/[0-9]/, 'Mật khẩu phải chứa ít nhất một số'),
+    .max(128),
   confirmPassword: z.string(),
-  studentType: z.enum(['fpt', 'external'], {
+  studentType: z.enum(['FPT', 'EXTERNAL'], {
     errorMap: () => ({ message: 'Vui lòng chọn loại sinh viên' }),
   }),
-  studentId: z.string().min(1, 'Vui lòng nhập mã số sinh viên'),
-  universityName: z.string().optional(),
+  studentId: z.string().min(2, 'Vui lòng nhập mã số sinh viên').max(50),
+  schoolName: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Mật khẩu không khớp",
   path: ['confirmPassword'],
 }).refine((data) => {
-  if (data.studentType === 'external' && !data.universityName) {
+  if (data.studentType === 'EXTERNAL' && !data.schoolName) {
     return false;
   }
   return true;
 }, {
   message: "Vui lòng nhập tên trường",
-  path: ['universityName'],
+  path: ['schoolName'],
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export function Register() {
   const navigate = useNavigate();
-  const { setUser, setSelectedEvent } = useStore();
-  const [studentType, setStudentType] = useState<'fpt' | 'external'>('fpt');
+  const [studentType, setStudentType] = useState<'FPT' | 'EXTERNAL'>('FPT');
 
   const {
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
+    setError,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      studentType: 'fpt',
+      studentType: 'FPT',
     },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await authApi.register({
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        studentType: data.studentType,
+        studentId: data.studentId,
+        schoolName: data.studentType === 'EXTERNAL' ? data.schoolName : undefined,
+      });
 
       toast.success('Đăng ký thành công!', {
         description: 'Tài khoản của bạn đang chờ Ban tổ chức phê duyệt. Bạn sẽ nhận được email thông báo khi được duyệt.',
@@ -69,9 +74,22 @@ export function Register() {
 
       navigate('/login');
     } catch (error) {
-      toast.error('Đăng ký thất bại', {
-        description: 'Vui lòng thử lại hoặc liên hệ Ban tổ chức.',
-      });
+      if (error instanceof ApiError) {
+        if (error.code === 'CONFLICT') {
+          setError('email', { message: 'Email đã được sử dụng' });
+        } else if (error.code === 'VALIDATION_ERROR') {
+          const errorDetails = error.errors;
+          errorDetails.forEach((err) => {
+            toast.error('Lỗi xác thực', { description: err });
+          });
+        } else {
+          toast.error('Đăng ký thất bại', { description: error.firstError });
+        }
+      } else {
+        toast.error('Đăng ký thất bại', {
+          description: 'Không thể kết nối đến server. Vui lòng thử lại.',
+        });
+      }
     }
   };
 
@@ -98,19 +116,19 @@ export function Register() {
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Họ và tên</Label>
+                <Label htmlFor="fullName">Họ và tên</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="name"
+                    id="fullName"
                     type="text"
                     placeholder="Nguyễn Văn A"
                     className="pl-9"
-                    {...register('name')}
+                    {...register('fullName')}
                   />
                 </div>
-                {errors.name && (
-                  <p className="text-sm text-red-600">{errors.name.message}</p>
+                {errors.fullName && (
+                  <p className="text-sm text-red-600">{errors.fullName.message}</p>
                 )}
               </div>
 
@@ -134,20 +152,20 @@ export function Register() {
               <div className="space-y-3">
                 <Label>Loại sinh viên</Label>
                 <RadioGroup
-                  defaultValue="fpt"
+                  defaultValue="FPT"
                   onValueChange={(value) => {
-                    setStudentType(value as 'fpt' | 'external');
-                    setValue('studentType', value as 'fpt' | 'external');
+                    setStudentType(value as 'FPT' | 'EXTERNAL');
+                    setValue('studentType', value as 'FPT' | 'EXTERNAL');
                   }}
                 >
                   <div className="flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
-                    <RadioGroupItem value="fpt" id="fpt" />
+                    <RadioGroupItem value="FPT" id="fpt" />
                     <Label htmlFor="fpt" className="cursor-pointer flex-1">
                       Sinh viên FPT
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 p-3 border rounded-md hover:bg-gray-50 cursor-pointer">
-                    <RadioGroupItem value="external" id="external" />
+                    <RadioGroupItem value="EXTERNAL" id="external" />
                     <Label htmlFor="external" className="cursor-pointer flex-1">
                       Sinh viên ngoài trường
                     </Label>
@@ -160,14 +178,14 @@ export function Register() {
 
               <div className="space-y-2">
                 <Label htmlFor="studentId">
-                  {studentType === 'fpt' ? 'Mã số sinh viên FPT' : 'Mã số sinh viên'}
+                  {studentType === 'FPT' ? 'Mã số sinh viên FPT' : 'Mã số sinh viên'}
                 </Label>
                 <div className="relative">
                   <IdCard className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="studentId"
                     type="text"
-                    placeholder={studentType === 'fpt' ? 'SE123456' : 'Nhập mã số sinh viên'}
+                    placeholder={studentType === 'FPT' ? 'SE123456' : 'Nhập mã số sinh viên'}
                     className="pl-9"
                     {...register('studentId')}
                   />
@@ -177,21 +195,21 @@ export function Register() {
                 )}
               </div>
 
-              {studentType === 'external' && (
+              {studentType === 'EXTERNAL' && (
                 <div className="space-y-2">
-                  <Label htmlFor="universityName">Tên trường</Label>
+                  <Label htmlFor="schoolName">Tên trường</Label>
                   <div className="relative">
                     <GraduationCap className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      id="universityName"
+                      id="schoolName"
                       type="text"
                       placeholder="Đại học Bách Khoa, UIT, ..."
                       className="pl-9"
-                      {...register('universityName')}
+                      {...register('schoolName')}
                     />
                   </div>
-                  {errors.universityName && (
-                    <p className="text-sm text-red-600">{errors.universityName.message}</p>
+                  {errors.schoolName && (
+                    <p className="text-sm text-red-600">{errors.schoolName.message}</p>
                   )}
                 </div>
               )}

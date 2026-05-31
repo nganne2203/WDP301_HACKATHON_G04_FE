@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Plus, Calendar, MoreVertical } from 'lucide-react';
+import { Plus, Calendar, MoreVertical, Loader2, AlertCircle, Mail } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -33,76 +34,248 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { toast } from 'sonner';
+import { eventsApi } from '../../../lib/api/events';
+import { ApiError } from '../../../lib/api/client';
+import type { Event, EventStatus, CreateEventRequest } from '../../../lib/api/types';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
-const mockEvents = [
-  {
-    id: '1',
-    title: 'SEAL Hackathon 2026',
-    semester: '2026A',
-    status: 'ongoing' as const,
-    startDate: '2026-05-01',
-    endDate: '2026-05-31',
-    participants: 87,
-    teams: 28,
-  },
-  {
-    id: '2',
-    title: 'SEAL Hackathon 2025',
-    semester: '2025B',
-    status: 'completed' as const,
-    startDate: '2025-11-01',
-    endDate: '2025-11-30',
-    participants: 75,
-    teams: 25,
-  },
-  {
-    id: '3',
-    title: 'Summer Innovation Challenge',
-    semester: '2025A',
-    status: 'archived' as const,
-    startDate: '2025-06-01',
-    endDate: '2025-06-30',
-    participants: 62,
-    teams: 20,
-  },
+const STATUS_OPTIONS: { value: EventStatus; label: string }[] = [
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'OPEN_REGISTRATION', label: 'Open Registration' },
+  { value: 'ONGOING', label: 'Ongoing' },
+  { value: 'SCORING', label: 'Scoring' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'ARCHIVED', label: 'Archived' },
 ];
 
+const createEventSchema = z.object({
+  title: z.string().min(2, 'Title is required').max(200),
+  description: z.string().max(2000).optional(),
+  semester: z.string().max(50).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  status: z.string().optional(),
+});
+
+type CreateEventForm = z.infer<typeof createEventSchema>;
+
+const editEventSchema = z.object({
+  title: z.string().min(2, 'Title is required').max(200),
+  description: z.string().max(2000).optional(),
+  semester: z.string().max(50).optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  status: z.string().optional(),
+});
+
+type EditEventForm = z.infer<typeof editEventSchema>;
+
 export function Events() {
-  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const [createOpen, setCreateOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<typeof mockEvents[0] | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [inviteMessage, setInviteMessage] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  const handleViewDetails = (event: typeof mockEvents[0]) => {
+  // Fetch events
+  const { data: eventsResponse, isLoading, error: fetchError } = useQuery({
+    queryKey: ['events'],
+    queryFn: () => eventsApi.list({ page: 1, limit: 100 }),
+  });
+
+  const events = eventsResponse?.data || [];
+
+  // Create event mutation
+  const createMutation = useMutation({
+    mutationFn: (data: CreateEventRequest) => eventsApi.create(data),
+    onSuccess: (response) => {
+      toast.success('Event Created', { description: `${response.data.title} has been created.` });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setCreateOpen(false);
+      createForm.reset();
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiError) {
+        toast.error('Failed to create event', { description: error.firstError });
+      } else {
+        toast.error('Failed to create event');
+      }
+    },
+  });
+
+  // Update event mutation
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreateEventRequest> }) =>
+      eventsApi.update(id, data),
+    onSuccess: (response) => {
+      toast.success('Event Updated', { description: `${response.data.title} has been updated.` });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setEditOpen(false);
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiError) {
+        toast.error('Failed to update event', { description: error.firstError });
+      } else {
+        toast.error('Failed to update event');
+      }
+    },
+  });
+
+  // Delete event mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => eventsApi.delete(id),
+    onSuccess: () => {
+      toast.success('Event Deleted', { description: 'The event has been deleted.' });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setDeleteOpen(false);
+      setSelectedEvent(null);
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiError) {
+        toast.error('Failed to delete event', { description: error.firstError });
+      } else {
+        toast.error('Failed to delete event');
+      }
+    },
+  });
+
+  // Send event invitation emails
+  const inviteMutation = useMutation({
+    mutationFn: ({ id, emails, message }: { id: string; emails: string[]; message?: string }) =>
+      eventsApi.sendInvitations(id, { emails, message }),
+    onSuccess: (response) => {
+      const { total, sent, skipped, failed } = response.data;
+      if (failed > 0 || skipped > 0) {
+        toast.warning('Invitations processed with delivery issues', {
+          description: `${sent}/${total} sent, ${skipped} skipped, ${failed} failed.`,
+        });
+      } else {
+        toast.success('Invitations sent', {
+          description: `${sent}/${total} invitation email(s) sent.`,
+        });
+      }
+      setInviteOpen(false);
+      setInviteEmails('');
+      setInviteMessage('');
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiError) {
+        toast.error('Failed to send invitations', { description: error.firstError });
+      } else {
+        toast.error('Failed to send invitations');
+      }
+    },
+  });
+
+  // Create form
+  const createForm = useForm<CreateEventForm>({
+    resolver: zodResolver(createEventSchema),
+    defaultValues: { status: 'DRAFT' },
+  });
+
+  // Edit form
+  const editForm = useForm<EditEventForm>({
+    resolver: zodResolver(editEventSchema),
+  });
+
+  const handleCreate = (data: CreateEventForm) => {
+    createMutation.mutate({
+      title: data.title,
+      description: data.description || undefined,
+      semester: data.semester || undefined,
+      startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+      endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
+      status: (data.status as EventStatus) || 'DRAFT',
+    });
+  };
+
+  const handleEdit = (data: EditEventForm) => {
+    if (!selectedEvent) return;
+    updateMutation.mutate({
+      id: selectedEvent.id,
+      data: {
+        title: data.title,
+        description: data.description || undefined,
+        semester: data.semester || undefined,
+        startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+        endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
+        status: (data.status as EventStatus) || undefined,
+      },
+    });
+  };
+
+  const handleViewDetails = (event: Event) => {
     setSelectedEvent(event);
     setDetailsOpen(true);
   };
 
-  const handleEditEvent = (event: typeof mockEvents[0]) => {
+  const handleEditEvent = (event: Event) => {
     setSelectedEvent(event);
+    editForm.reset({
+      title: event.title,
+      description: event.description || '',
+      semester: event.semester || '',
+      startDate: event.startDate ? event.startDate.split('T')[0] : '',
+      endDate: event.endDate ? event.endDate.split('T')[0] : '',
+      status: event.status,
+    });
     setEditOpen(true);
   };
 
-  const handleViewTimeline = (event: typeof mockEvents[0]) => {
-    toast.info('Timeline View', {
-      description: `Viewing timeline for ${event.title}`,
+  const handleDeleteEvent = (event: Event) => {
+    setSelectedEvent(event);
+    setDeleteOpen(true);
+  };
+
+  const handleInviteEvent = (event: Event) => {
+    setSelectedEvent(event);
+    setInviteEmails('');
+    setInviteMessage('');
+    setInviteOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedEvent) {
+      deleteMutation.mutate(selectedEvent.id);
+    }
+  };
+
+  const parseInviteEmails = (value: string) =>
+    value
+      .split(/[\s,;]+/)
+      .map((email) => email.trim())
+      .filter(Boolean);
+
+  const handleSendInvitations = () => {
+    if (!selectedEvent) return;
+
+    const emails = parseInviteEmails(inviteEmails);
+    if (emails.length === 0) {
+      toast.error('No email addresses entered');
+      return;
+    }
+
+    inviteMutation.mutate({
+      id: selectedEvent.id,
+      emails,
+      message: inviteMessage || undefined,
     });
   };
 
-  const handleArchiveEvent = (event: typeof mockEvents[0]) => {
-    setSelectedEvent(event);
-    setArchiveOpen(true);
+  const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString();
   };
 
-  const confirmArchive = () => {
-    if (selectedEvent) {
-      toast.success('Event Archived', {
-        description: `${selectedEvent.title} has been archived successfully.`,
-      });
-      setArchiveOpen(false);
-      setSelectedEvent(null);
-    }
+  /** Map backend status to StatusBadge's expected lowercase format */
+  const mapStatus = (status: EventStatus): string => {
+    return status.toLowerCase();
   };
 
   return (
@@ -112,7 +285,7 @@ export function Events() {
           <h1 className="text-2xl font-semibold mb-1">Event Management</h1>
           <p className="text-sm text-muted-foreground">Create and manage hackathon events</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -126,134 +299,165 @@ export function Events() {
                 Fill in the details below to create a new hackathon event.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <form onSubmit={createForm.handleSubmit(handleCreate)} className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Event Title</Label>
-                  <Input id="title" placeholder="SEAL Hackathon 2026" />
+                  <Label htmlFor="create-title">Event Title</Label>
+                  <Input id="create-title" placeholder="SEAL Hackathon 2026" {...createForm.register('title')} />
+                  {createForm.formState.errors.title && (
+                    <p className="text-sm text-red-600">{createForm.formState.errors.title.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="semester">Semester</Label>
-                  <Input id="semester" placeholder="2026A" />
+                  <Label htmlFor="create-semester">Semester</Label>
+                  <Input id="create-semester" placeholder="2026A" {...createForm.register('semester')} />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="create-description">Description</Label>
                 <Textarea
-                  id="description"
+                  id="create-description"
                   placeholder="Enter event description..."
                   rows={3}
+                  {...createForm.register('description')}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input id="startDate" type="date" />
+                  <Label htmlFor="create-startDate">Start Date</Label>
+                  <Input id="create-startDate" type="date" {...createForm.register('startDate')} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input id="endDate" type="date" />
+                  <Label htmlFor="create-endDate">End Date</Label>
+                  <Input id="create-endDate" type="date" {...createForm.register('endDate')} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="maxTeams">Maximum Teams</Label>
-                  <Input id="maxTeams" type="number" defaultValue="30" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select defaultValue="draft">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="open_registration">Open Registration</SelectItem>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-status">Status</Label>
+                <Select
+                  defaultValue="DRAFT"
+                  onValueChange={(v) => createForm.setValue('status', v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setOpen(false)}>Create Event</Button>
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</>
+                  ) : (
+                    'Create Event'
+                  )}
+                </Button>
               </div>
-            </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Event</TableHead>
-              <TableHead>Semester</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Participants</TableHead>
-              <TableHead>Teams</TableHead>
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockEvents.map((event) => (
-              <TableRow key={event.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <span className="font-medium">{event.title}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{event.semester}</TableCell>
-                <TableCell>
-                  <StatusBadge status={event.status} />
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {new Date(event.startDate).toLocaleDateString()} -{' '}
-                  {new Date(event.endDate).toLocaleDateString()}
-                </TableCell>
-                <TableCell>{event.participants}</TableCell>
-                <TableCell>{event.teams}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(event)}>
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEditEvent(event)}>
-                        Edit Event
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleViewTimeline(event)}>
-                        View Timeline
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => handleArchiveEvent(event)}
-                      >
-                        Archive Event
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600 mr-2" />
+          <span className="text-muted-foreground">Loading events...</span>
+        </div>
+      )}
+
+      {/* Error state */}
+      {fetchError && (
+        <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-500" />
+          <p className="text-sm text-red-700">
+            {fetchError instanceof ApiError ? fetchError.firstError : 'Failed to load events'}
+          </p>
+        </div>
+      )}
+
+      {/* Events table */}
+      {!isLoading && !fetchError && (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Event</TableHead>
+                <TableHead>Semester</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead className="w-12"></TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+            </TableHeader>
+            <TableBody>
+              {events.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No events found. Create your first event to get started.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                events.map((event) => (
+                  <TableRow key={event.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
+                          <Calendar className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <span className="font-medium">{event.title}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{event.semester || '—'}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={mapStatus(event.status) as any} />
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDate(event.startDate)} - {formatDate(event.endDate)}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewDetails(event)}>
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditEvent(event)}>
+                            Edit Event
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleInviteEvent(event)}>
+                            Send Invitations
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleDeleteEvent(event)}
+                          >
+                            Delete Event
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
 
       {/* View Details Dialog */}
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
@@ -273,37 +477,41 @@ export function Events() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Semester</Label>
-                  <p className="font-medium mt-1">{selectedEvent.semester}</p>
+                  <p className="font-medium mt-1">{selectedEvent.semester || '—'}</p>
                 </div>
               </div>
+              {selectedEvent.description && (
+                <div>
+                  <Label className="text-muted-foreground">Description</Label>
+                  <p className="mt-1 text-sm">{selectedEvent.description}</p>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Start Date</Label>
-                  <p className="font-medium mt-1">
-                    {new Date(selectedEvent.startDate).toLocaleDateString()}
-                  </p>
+                  <p className="font-medium mt-1">{formatDate(selectedEvent.startDate)}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">End Date</Label>
-                  <p className="font-medium mt-1">
-                    {new Date(selectedEvent.endDate).toLocaleDateString()}
-                  </p>
+                  <p className="font-medium mt-1">{formatDate(selectedEvent.endDate)}</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="text-muted-foreground">Status</Label>
                   <div className="mt-1">
-                    <StatusBadge status={selectedEvent.status} />
+                    <StatusBadge status={mapStatus(selectedEvent.status) as any} />
                   </div>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Participants</Label>
-                  <p className="font-medium mt-1">{selectedEvent.participants}</p>
+                  <Label className="text-muted-foreground">Created By</Label>
+                  <p className="font-medium mt-1">{selectedEvent.createdBy?.fullName || '—'}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Teams</Label>
-                  <p className="font-medium mt-1">{selectedEvent.teams}</p>
+                  <Label className="text-muted-foreground">Team Size</Label>
+                  <p className="font-medium mt-1">
+                    {selectedEvent.minTeamMembers || '?'} - {selectedEvent.maxTeamMembers || '?'} members
+                  </p>
                 </div>
               </div>
             </div>
@@ -321,77 +529,137 @@ export function Events() {
             </DialogDescription>
           </DialogHeader>
           {selectedEvent && (
-            <div className="space-y-4 py-4">
+            <form onSubmit={editForm.handleSubmit(handleEdit)} className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-title">Event Title</Label>
-                  <Input id="edit-title" defaultValue={selectedEvent.title} />
+                  <Input id="edit-title" {...editForm.register('title')} />
+                  {editForm.formState.errors.title && (
+                    <p className="text-sm text-red-600">{editForm.formState.errors.title.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-semester">Semester</Label>
-                  <Input id="edit-semester" defaultValue={selectedEvent.semester} />
+                  <Input id="edit-semester" {...editForm.register('semester')} />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea id="edit-description" rows={3} {...editForm.register('description')} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-startDate">Start Date</Label>
-                  <Input id="edit-startDate" type="date" defaultValue={selectedEvent.startDate} />
+                  <Input id="edit-startDate" type="date" {...editForm.register('startDate')} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-endDate">End Date</Label>
-                  <Input id="edit-endDate" type="date" defaultValue={selectedEvent.endDate} />
+                  <Input id="edit-endDate" type="date" {...editForm.register('endDate')} />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="edit-status">Status</Label>
-                <Select defaultValue={selectedEvent.status}>
+                <Select
+                  defaultValue={selectedEvent.status}
+                  onValueChange={(v) => editForm.setValue('status', v)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="open_registration">Open Registration</SelectItem>
-                    <SelectItem value="ongoing">Ongoing</SelectItem>
-                    <SelectItem value="scoring">Scoring</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    {STATUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setEditOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => {
-                  toast.success('Event Updated', {
-                    description: 'Event has been updated successfully.',
-                  });
-                  setEditOpen(false);
-                }}>
-                  Save Changes
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
               </div>
-            </div>
+            </form>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Archive Confirmation Dialog */}
-      <AlertDialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+      {/* Send Invitations Dialog */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Send Event Invitations
+            </DialogTitle>
+            <DialogDescription>
+              Send registration invitation emails for {selectedEvent?.title || 'this event'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-emails">Recipient emails</Label>
+              <Textarea
+                id="invite-emails"
+                rows={5}
+                placeholder="participant1@example.com, participant2@example.com"
+                value={inviteEmails}
+                onChange={(event) => setInviteEmails(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite-message">Message</Label>
+              <Textarea
+                id="invite-message"
+                rows={3}
+                placeholder="Optional invitation message"
+                value={inviteMessage}
+                onChange={(event) => setInviteMessage(event.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setInviteOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSendInvitations} disabled={inviteMutation.isPending}>
+                {inviteMutation.isPending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+                ) : (
+                  'Send Invitations'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive Event</AlertDialogTitle>
+            <AlertDialogTitle>Delete Event</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to archive "{selectedEvent?.title}"? This action can be undone later.
+              Are you sure you want to delete "{selectedEvent?.title}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmArchive} className="bg-destructive hover:bg-destructive/90">
-              Archive
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
