@@ -5,6 +5,8 @@ import type {
   UpdateEventRequest,
   UpdateEventStatusRequest,
   ListEventsQuery,
+  SendEventInvitationsRequest,
+  SendEventInvitationsResult,
 } from './types';
 
 export const eventsApi = {
@@ -22,6 +24,9 @@ export const eventsApi = {
 
   updateStatus: (id: string, data: UpdateEventStatusRequest) =>
     api.patch<Event>(`/events/${id}/status`, data),
+
+  sendInvitations: (id: string, data: SendEventInvitationsRequest) =>
+    api.post<SendEventInvitationsResult>(`/events/${id}/invitations`, data),
 
   delete: (id: string) =>
     api.delete<null>(`/events/${id}`),

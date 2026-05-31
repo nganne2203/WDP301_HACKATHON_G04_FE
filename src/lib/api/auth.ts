@@ -1,6 +1,7 @@
 import { api } from './client';
 import type {
   AuthData,
+  ChangePasswordRequest,
   LoginRequest,
   RegisterRequest,
   User,
@@ -18,6 +19,9 @@ export const authApi = {
 
   getMe: () =>
     api.get<User>('/auth/me'),
+
+  changePassword: (data: ChangePasswordRequest) =>
+    api.post<User>('/auth/change-password', data),
 
   logout: () =>
     api.post<null>('/auth/logout'),

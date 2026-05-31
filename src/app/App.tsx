@@ -4,6 +4,8 @@ import { Toaster } from './components/ui/sonner';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { GoogleCallback } from './pages/GoogleCallback';
+import { ChangePassword } from './pages/ChangePassword';
+import { TeamInvitationConfirmation } from './pages/TeamInvitationConfirmation';
 import { CoordinatorDashboard } from './pages/coordinator/Dashboard';
 import { Events } from './pages/coordinator/Events';
 import { Participants } from './pages/coordinator/Participants';
@@ -57,6 +59,10 @@ function AppLayout({ children, allowedRoles }: { children: React.ReactNode; allo
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (user.mustChangePassword && location.pathname !== '/change-password') {
+    return <Navigate to="/change-password" replace />;
+  }
+
   if (allowedRoles && appRole && !allowedRoles.includes(appRole)) {
     // Redirect to the user's home page if they don't have access
     const routes: Record<AppRole, string> = {
@@ -104,7 +110,17 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/auth/google/callback" element={<GoogleCallback />} />
+            <Route path="/team-invitations/confirm" element={<TeamInvitationConfirmation />} />
             <Route path="/" element={<Navigate to="/login" replace />} />
+
+            <Route
+              path="/change-password"
+              element={
+                <AppLayout>
+                  <ChangePassword />
+                </AppLayout>
+              }
+            />
 
             {/* Coordinator Routes */}
             <Route

@@ -64,6 +64,7 @@ export interface User {
   authProvider: 'LOCAL' | 'GOOGLE';
   fullName: string;
   status: UserStatus;
+  mustChangePassword: boolean;
   roles: Role[];
   permissions: string[];
   googleAuth?: GoogleAuth;
@@ -74,11 +75,24 @@ export interface User {
   studentType?: 'FPT' | 'EXTERNAL' | null;
   studentId?: string | null;
   schoolName?: string | null;
+  emailNotification?: UserEmailNotification;
   createdAt: string;
   updatedAt: string;
 }
 
 export type UserStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+
+export interface EmailDeliveryResult {
+  sent: boolean;
+  status: 'SENT' | 'SKIPPED' | 'FAILED';
+  skipped?: boolean;
+  accepted?: string[];
+  rejected?: string[];
+  invalid?: string[];
+  reason?: string;
+}
+
+export type UserEmailNotification = EmailDeliveryResult;
 
 export type UserRoleName =
   | 'ADMIN'
@@ -119,6 +133,11 @@ export interface RefreshTokenRequest {
   refreshToken: string;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
 // ============================================================
 // Event Types
 // ============================================================
@@ -150,6 +169,7 @@ export interface Event {
   registrationEnd?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  maxTeams?: number;
   minTeamMembers?: number;
   maxTeamMembers?: number;
   finalistSlotsPerTrack?: number;
@@ -172,6 +192,7 @@ export interface CreateEventRequest {
   registrationEnd?: string;
   startDate?: string;
   endDate?: string;
+  maxTeams?: number;
   minTeamMembers?: number;
   maxTeamMembers?: number;
   finalistSlotsPerTrack?: number;
@@ -193,6 +214,243 @@ export interface ListEventsQuery {
   season?: string;
   year?: number;
   search?: string;
+}
+
+export interface SendEventInvitationsRequest {
+  emails: string[];
+  message?: string;
+}
+
+export interface SendEventInvitationsResult {
+  total: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  results: Array<EmailDeliveryResult & { email: string }>;
+}
+
+// ============================================================
+// Team Types
+// ============================================================
+
+export type TeamStatus =
+  | 'PENDING'
+  | 'WAITING_FOR_MEMBERS'
+  | 'CONFIRMED'
+  | 'REJECTED'
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'DISQUALIFIED';
+
+export type TeamInvitationStatus =
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'DECLINED'
+  | 'EXPIRED'
+  | 'CANCELLED';
+
+export interface TeamUserSummary {
+  id: string;
+  email: string;
+  fullName?: string;
+  status?: UserStatus;
+  mustChangePassword?: boolean;
+}
+
+export interface TeamEventSummary {
+  id: string;
+  title: string;
+  status: EventStatus;
+  registrationStart?: string | null;
+  registrationEnd?: string | null;
+  minTeamMembers?: number;
+  maxTeamMembers?: number;
+  maxTeams?: number;
+}
+
+export interface TeamTrackSummary {
+  id: string;
+  code?: string;
+  name?: string;
+  type?: string;
+}
+
+export interface TeamParticipant {
+  id: string;
+  eventId: string;
+  teamId: string;
+  user: TeamUserSummary | null;
+  teamRole: 'LEADER' | 'MEMBER';
+  status: string;
+  joinedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TeamInvitation {
+  id: string;
+  eventId: string;
+  teamId: string;
+  leaderId: string;
+  invitedEmail: string;
+  invitedUserId?: string;
+  invitedUser?: TeamUserSummary | null;
+  status: TeamInvitationStatus;
+  expiresAt: string;
+  acceptedAt?: string | null;
+  declinedAt?: string | null;
+  cancelledAt?: string | null;
+  replacedByInvitationId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Team {
+  id: string;
+  event: TeamEventSummary | null;
+  eventId: string;
+  track?: TeamTrackSummary | null;
+  trackId?: string | null;
+  leader: TeamUserSummary | null;
+  leaderId: string;
+  members: TeamUserSummary[];
+  name: string;
+  chapterName?: string | null;
+  projectName?: string | null;
+  status: TeamStatus;
+  qualificationStatus?: string;
+  confirmedAt?: string | null;
+  rejectedAt?: string | null;
+  rejectionReason?: string | null;
+  participants: TeamParticipant[];
+  invitations: TeamInvitation[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTeamRequest {
+  eventId: string;
+  name: string;
+  trackId?: string | null;
+  chapterName?: string;
+  projectName?: string;
+  invitedEmails?: string[];
+  invitedMembers?: TeamInviteMember[];
+}
+
+export interface TeamInviteMember {
+  fullName: string;
+  email: string;
+}
+
+export interface InviteMembersRequest {
+  emails?: string[];
+  members?: TeamInviteMember[];
+}
+
+export interface InviteMembersResult {
+  total: number;
+  invitations: TeamInvitation[];
+}
+
+export interface ReplaceInvitationRequest {
+  email: string;
+}
+
+export interface InvitationDecisionResult {
+  status: TeamInvitationStatus | TeamStatus;
+  team: Team | null;
+  invitation: TeamInvitation;
+}
+
+export interface ListTeamsQuery {
+  eventId?: string;
+  status?: TeamStatus;
+  page?: number;
+  limit?: number;
+}
+
+// ============================================================
+// GitHub Integration Types
+// ============================================================
+
+export interface GitHubConfig {
+  eventId: string;
+  organizationName: string;
+  ownerUsername: string;
+  enabled: boolean;
+  hasToken: boolean;
+}
+
+export interface SaveGitHubConfigRequest {
+  eventId: string;
+  organizationName: string;
+  ownerUsername: string;
+  githubToken?: string;
+  enabled: boolean;
+}
+
+export interface TestGitHubConnectionResult {
+  eventId: string;
+  organizationName: string;
+  ownerUsername: string;
+  enabled: boolean;
+  accessible: boolean;
+  htmlUrl?: string;
+  id?: number;
+}
+
+export interface CreateGitHubRepositoryRequest {
+  eventId: string;
+  repoName: string;
+  description?: string;
+  private: boolean;
+}
+
+export interface CreateGitHubRepositoryResult {
+  repoName: string;
+  htmlUrl?: string;
+  cloneUrl?: string;
+  visibility?: string;
+}
+
+export interface AssignGitHubCollaboratorRequest {
+  eventId: string;
+  permission: 'pull' | 'triage' | 'push' | 'maintain' | 'admin';
+}
+
+export interface AssignGitHubCollaboratorResult {
+  repoName: string;
+  username: string;
+  permission: string;
+  status: string;
+}
+
+export interface InviteGitHubOrganizationMemberRequest {
+  eventId: string;
+  email: string;
+  role: 'direct_member';
+}
+
+export interface InviteGitHubOrganizationMemberResult {
+  id?: number;
+  email: string;
+  role: string;
+  invitationUrl?: string;
+}
+
+export interface RevokeGitHubMembersRequest {
+  eventId: string;
+  confirmationText: 'REVOKE MEMBERS';
+}
+
+export interface RevokeGitHubMembersResult {
+  removed: string[];
+  skipped: string[];
+  failed: Array<{
+    username: string;
+    reason: string;
+  }>;
 }
 
 // ============================================================

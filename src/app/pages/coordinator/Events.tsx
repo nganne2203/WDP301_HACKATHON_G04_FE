@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Plus, Calendar, MoreVertical, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Calendar, MoreVertical, Loader2, AlertCircle, Mail } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -78,6 +78,9 @@ export function Events() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmails, setInviteEmails] = useState('');
+  const [inviteMessage, setInviteMessage] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   // Fetch events
@@ -142,6 +145,34 @@ export function Events() {
     },
   });
 
+  // Send event invitation emails
+  const inviteMutation = useMutation({
+    mutationFn: ({ id, emails, message }: { id: string; emails: string[]; message?: string }) =>
+      eventsApi.sendInvitations(id, { emails, message }),
+    onSuccess: (response) => {
+      const { total, sent, skipped, failed } = response.data;
+      if (failed > 0 || skipped > 0) {
+        toast.warning('Invitations processed with delivery issues', {
+          description: `${sent}/${total} sent, ${skipped} skipped, ${failed} failed.`,
+        });
+      } else {
+        toast.success('Invitations sent', {
+          description: `${sent}/${total} invitation email(s) sent.`,
+        });
+      }
+      setInviteOpen(false);
+      setInviteEmails('');
+      setInviteMessage('');
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiError) {
+        toast.error('Failed to send invitations', { description: error.firstError });
+      } else {
+        toast.error('Failed to send invitations');
+      }
+    },
+  });
+
   // Create form
   const createForm = useForm<CreateEventForm>({
     resolver: zodResolver(createEventSchema),
@@ -202,10 +233,39 @@ export function Events() {
     setDeleteOpen(true);
   };
 
+  const handleInviteEvent = (event: Event) => {
+    setSelectedEvent(event);
+    setInviteEmails('');
+    setInviteMessage('');
+    setInviteOpen(true);
+  };
+
   const confirmDelete = () => {
     if (selectedEvent) {
       deleteMutation.mutate(selectedEvent.id);
     }
+  };
+
+  const parseInviteEmails = (value: string) =>
+    value
+      .split(/[\s,;]+/)
+      .map((email) => email.trim())
+      .filter(Boolean);
+
+  const handleSendInvitations = () => {
+    if (!selectedEvent) return;
+
+    const emails = parseInviteEmails(inviteEmails);
+    if (emails.length === 0) {
+      toast.error('No email addresses entered');
+      return;
+    }
+
+    inviteMutation.mutate({
+      id: selectedEvent.id,
+      emails,
+      message: inviteMessage || undefined,
+    });
   };
 
   const formatDate = (dateStr?: string | null) => {
@@ -379,6 +439,9 @@ export function Events() {
                           <DropdownMenuItem onClick={() => handleEditEvent(event)}>
                             Edit Event
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleInviteEvent(event)}>
+                            Send Invitations
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => handleDeleteEvent(event)}
@@ -528,6 +591,55 @@ export function Events() {
               </div>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Invitations Dialog */}
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Send Event Invitations
+            </DialogTitle>
+            <DialogDescription>
+              Send registration invitation emails for {selectedEvent?.title || 'this event'}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-emails">Recipient emails</Label>
+              <Textarea
+                id="invite-emails"
+                rows={5}
+                placeholder="participant1@example.com, participant2@example.com"
+                value={inviteEmails}
+                onChange={(event) => setInviteEmails(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invite-message">Message</Label>
+              <Textarea
+                id="invite-message"
+                rows={3}
+                placeholder="Optional invitation message"
+                value={inviteMessage}
+                onChange={(event) => setInviteMessage(event.target.value)}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setInviteOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSendInvitations} disabled={inviteMutation.isPending}>
+                {inviteMutation.isPending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+                ) : (
+                  'Send Invitations'
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
