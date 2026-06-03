@@ -230,6 +230,127 @@ export interface SendEventInvitationsResult {
 }
 
 // ============================================================
+// Media Types
+// ============================================================
+
+export type MediaType = 'IMAGE' | 'VIDEO' | 'DOCUMENT';
+
+export type MediaStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface MediaUserSummary {
+  id: string;
+  email?: string;
+  fullName?: string;
+}
+
+export interface MediaEventSummary {
+  id: string;
+  title?: string;
+  status?: EventStatus;
+}
+
+export interface MediaTeamSummary {
+  id: string;
+  name?: string;
+  status?: TeamStatus;
+}
+
+export interface MediaItem {
+  id: string;
+  eventId: string;
+  event?: MediaEventSummary | null;
+  uploadedBy?: MediaUserSummary | null;
+  uploadedById?: string;
+  teamId?: string | null;
+  team?: MediaTeamSummary | null;
+  title?: string | null;
+  description?: string | null;
+  mediaType: MediaType;
+  storageProvider?: string;
+  bucketName?: string;
+  storagePath?: string;
+  fileUrl?: string;
+  originalFileName: string;
+  mimeType: string;
+  fileSize: number;
+  fileExtension: string;
+  tags: string[];
+  status: MediaStatus;
+  reviewedBy?: MediaUserSummary | null;
+  reviewedById?: string | null;
+  reviewedAt?: string | null;
+  rejectReason?: string | null;
+  uploadedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MediaHistoryFilter {
+  eventId?: string;
+  mediaType?: MediaType;
+  status?: MediaStatus;
+  fromDate?: string;
+  toDate?: string;
+  week?: number;
+  month?: number;
+  year?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface AdminMediaFilter extends MediaHistoryFilter {
+  uploadedBy?: string;
+  teamId?: string;
+}
+
+export interface EventGalleryFilter {
+  mediaType?: MediaType;
+  search?: string;
+  tags?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface EventGalleryResponse {
+  images: MediaItem[];
+  videos: MediaItem[];
+  documents: MediaItem[];
+  statistics: {
+    totalUploads: number;
+    totalImages: number;
+    totalVideos: number;
+    totalDocuments: number;
+  };
+}
+
+export interface SignedUrlResponse {
+  signedUrl: string;
+  expiresIn: number;
+}
+
+export interface MediaStatisticsFilter {
+  eventId?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface MediaStatistics {
+  totalUploads: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  uploadsByEvent: Array<{ eventId: string; count: number }>;
+  uploadsByTeam: Array<{ teamId: string; count: number }>;
+  uploadsByParticipant: Array<{ participantId: string; count: number }>;
+  uploadsByDay: Array<{ day: string; count: number }>;
+  uploadsByWeek: Array<{ week: string; count: number }>;
+  uploadsByMonth: Array<{ month: string; count: number }>;
+  uploadsByMediaType: Array<{ mediaType: MediaType; count: number }>;
+  mostActiveParticipants: Array<{ participantId: string; uploads: number }>;
+  mostViewedMedia: Array<{ mediaId: string; views: number }>;
+}
+
+// ============================================================
 // Team Types
 // ============================================================
 

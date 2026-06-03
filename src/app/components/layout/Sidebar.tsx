@@ -12,6 +12,7 @@ import {
   Settings,
   Award,
   UserCircle,
+  Images,
 } from 'lucide-react';
 import { useStore } from '../../../store/useStore';
 
@@ -24,6 +25,7 @@ const coordinatorNav = [
   { icon: Github, label: 'Repositories', href: '/coordinator/repos' },
   { icon: Scale, label: 'Judging', href: '/coordinator/judging' },
   { icon: Trophy, label: 'Results', href: '/coordinator/results' },
+  { icon: Images, label: 'Media', href: '/coordinator/media' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
@@ -35,6 +37,7 @@ const judgeNav = [
 const participantNav = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/participant' },
   { icon: UsersRound, label: 'My Team', href: '/participant/team' },
+  { icon: Images, label: 'Media', href: '/participant/media' },
 ];
 
 const mentorNav = [
