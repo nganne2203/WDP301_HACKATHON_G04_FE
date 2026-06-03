@@ -2,6 +2,7 @@ export { api, apiRequest, getAccessToken, getRefreshToken, setTokens, clearToken
 export { authApi } from './auth';
 export { eventsApi } from './events';
 export { githubApi } from './github';
+export { mediaApi } from './media';
 export { teamsApi } from './teams';
 export { usersApi } from './users';
 export { tracksApi } from './tracks';
