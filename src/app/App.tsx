@@ -6,6 +6,7 @@ import { Register } from './pages/Register';
 import { GoogleCallback } from './pages/GoogleCallback';
 import { ChangePassword } from './pages/ChangePassword';
 import { TeamInvitationConfirmation } from './pages/TeamInvitationConfirmation';
+import { EventGallery } from './pages/EventGallery';
 import { CoordinatorDashboard } from './pages/coordinator/Dashboard';
 import { Events } from './pages/coordinator/Events';
 import { Participants } from './pages/coordinator/Participants';
@@ -16,8 +17,10 @@ import { Judging } from './pages/coordinator/Judging';
 import { Results } from './pages/coordinator/Results';
 import { JudgeScoring } from './pages/judge/Scoring';
 import { Settings as AdminSettings } from './pages/admin/Settings';
+import { AdminMedia } from './pages/admin/Media';
 import { ParticipantDashboard } from './pages/participant/Dashboard';
 import { ParticipantTeam } from './pages/participant/Team';
+import { ParticipantMedia } from './pages/participant/Media';
 import { MentorTeams } from './pages/mentor/Teams';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
@@ -187,6 +190,14 @@ export default function App() {
                 </AppLayout>
               }
             />
+            <Route
+              path="/coordinator/media"
+              element={
+                <AppLayout allowedRoles={['coordinator', 'admin']}>
+                  <AdminMedia />
+                </AppLayout>
+              }
+            />
 
             {/* Judge Routes */}
             <Route
@@ -223,6 +234,22 @@ export default function App() {
                 </AppLayout>
               }
             />
+            <Route
+              path="/participant/media"
+              element={
+                <AppLayout allowedRoles={['participant', 'admin']}>
+                  <ParticipantMedia />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/events/:eventId/gallery"
+              element={
+                <AppLayout>
+                  <EventGallery />
+                </AppLayout>
+              }
+            />
 
             {/* Admin Routes — admin has full coordinator access */}
             <Route
@@ -238,6 +265,14 @@ export default function App() {
               element={
                 <AppLayout allowedRoles={['admin']}>
                   <AdminSettings />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/admin/media"
+              element={
+                <AppLayout allowedRoles={['admin']}>
+                  <AdminMedia />
                 </AppLayout>
               }
             />
