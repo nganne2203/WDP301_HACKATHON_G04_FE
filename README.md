@@ -1,5 +1,12 @@
 # React + TypeScript + Vite
 
+## Implemented Application Features
+
+- Media frontend is implemented:
+  - participant upload page with preview, progress, filters, and upload history,
+  - approved event gallery with signed-URL viewing,
+  - admin/coordinator media moderation with approve, reject, delete, filters, and statistics.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
