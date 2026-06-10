@@ -1,12 +1,6 @@
-import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, MoreVertical, Plus, Presentation } from 'lucide-react';
 
-import { eventsApi, timelinesApi, workshopsApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
-import type { Workshop } from '@/shared/api/types';
-import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/workshops';
-import { useStore } from '@/entities/session/model/store';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,155 +30,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table';
-import { toast } from 'sonner';
 import {
-  buildWorkshopPayload,
-  buildWorkshopUpdatePayload,
   createEmptyWorkshopForm,
   formatDateTime,
-  mapWorkshopToForm,
   workshopPresenterLabel,
-  type WorkshopFormState,
 } from '../model/workshop-form';
+import { useWorkshopsView } from '../model/useWorkshopsView';
 import { WorkshopForm, WorkshopInlineError, WorkshopMetricCard } from './WorkshopForm';
 
 export function Workshops() {
-  const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
-  const [selectedEventId, setSelectedEventId] = useState('');
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
-  const [createForm, setCreateForm] = useState<WorkshopFormState>(createEmptyWorkshopForm());
-  const [editForm, setEditForm] = useState<WorkshopFormState>(createEmptyWorkshopForm());
-
-  const eventsQuery = useQuery({
-    queryKey: ['coordinator-workshop-events'],
-    queryFn: async () => {
-      const response = await eventsApi.list({ page: 1, limit: 100 });
-      return response.data;
-    },
-  });
-
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return (
-      events.find((event) => event.id === selectedEventId) ||
-      events.find((event) => event.id === selectedEvent?.id) ||
-      events[0]
-    );
-  }, [events, selectedEventId, selectedEvent?.id]);
-
-  const workshopsQuery = useQuery({
-    queryKey: ['coordinator-workshops', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => {
-      const response = await workshopsApi.list({ eventId: activeEvent?.id, page: 1, limit: 100 });
-      return response.data;
-    },
-  });
-
-  const workshopTimelinesQuery = useQuery({
-    queryKey: ['coordinator-workshop-timelines', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => {
-      const response = await timelinesApi.list({
-        eventId: activeEvent?.id,
-        eventType: 'WORKSHOP',
-        page: 1,
-        limit: 100,
-      });
-      return response.data;
-    },
-  });
-
-  const workshops = workshopsQuery.data || [];
-  const workshopTimelines = workshopTimelinesQuery.data || [];
-
-  const createMutation = useMutation({
-    mutationFn: (payload: CreateWorkshopRequest) => workshopsApi.create(payload),
-    onSuccess: (response) => {
-      toast.success('Workshop created', { description: `${response.data.title} has been scheduled.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-workshops'] });
-      setCreateOpen(false);
-      setCreateForm(createEmptyWorkshopForm());
-    },
-    onError: (error: unknown) => {
-      toast.error('Failed to create workshop', {
-        description: error instanceof ApiError ? error.firstError : 'Unknown error',
-      });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateWorkshopRequest }) => workshopsApi.update(id, payload),
-    onSuccess: (response) => {
-      toast.success('Workshop updated', { description: `${response.data.title} has been updated.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-workshops'] });
-      setEditOpen(false);
-      setSelectedWorkshop(null);
-    },
-    onError: (error: unknown) => {
-      toast.error('Failed to update workshop', {
-        description: error instanceof ApiError ? error.firstError : 'Unknown error',
-      });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => workshopsApi.delete(id),
-    onSuccess: () => {
-      toast.success('Workshop deleted');
-      queryClient.invalidateQueries({ queryKey: ['coordinator-workshops'] });
-      setDeleteOpen(false);
-      setSelectedWorkshop(null);
-    },
-    onError: (error: unknown) => {
-      toast.error('Failed to delete workshop', {
-        description: error instanceof ApiError ? error.firstError : 'Unknown error',
-      });
-    },
-  });
-
-  const handleCreate = () => {
-    if (!activeEvent?.id) return;
-    if (!createForm.title.trim()) {
-      toast.error('Workshop title is required');
-      return;
-    }
-    if (!createForm.startTime || !createForm.endTime) {
-      toast.error('Start time and end time are required');
-      return;
-    }
-    createMutation.mutate(buildWorkshopPayload(createForm, activeEvent.id));
-  };
-
-  const handleUpdate = () => {
-    if (!selectedWorkshop) return;
-    if (!editForm.title.trim()) {
-      toast.error('Workshop title is required');
-      return;
-    }
-    if (!editForm.startTime || !editForm.endTime) {
-      toast.error('Start time and end time are required');
-      return;
-    }
-    updateMutation.mutate({
-      id: selectedWorkshop.id,
-      payload: buildWorkshopUpdatePayload(editForm),
-    });
-  };
-
-  const openEditDialog = (workshop: Workshop) => {
-    setSelectedWorkshop(workshop);
-    setEditForm(mapWorkshopToForm(workshop));
-    setEditOpen(true);
-  };
-
-  const liveCount = workshops.filter((workshop) => workshop.status === 'LIVE').length;
-  const completedCount = workshops.filter((workshop) => workshop.status === 'COMPLETED').length;
+  const view = useWorkshopsView();
 
   return (
     <div className="p-6 space-y-6">
@@ -197,12 +52,12 @@ export function Workshops() {
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
           <div className="w-full sm:w-80">
-            <Select value={activeEvent?.id || ''} onValueChange={setSelectedEventId} disabled={eventsQuery.isLoading}>
+            <Select value={view.activeEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
               <SelectTrigger>
                 <SelectValue placeholder="Select event" />
               </SelectTrigger>
               <SelectContent>
-                {events.map((event) => (
+                {view.events.map((event) => (
                   <SelectItem key={event.id} value={event.id}>
                     {event.title}
                   </SelectItem>
@@ -211,14 +66,14 @@ export function Workshops() {
             </Select>
           </div>
           <Dialog
-            open={createOpen}
+            open={view.createOpen}
             onOpenChange={(open) => {
-              setCreateOpen(open);
-              if (!open) setCreateForm(createEmptyWorkshopForm());
+              view.setCreateOpen(open);
+              if (!open) view.setCreateForm(createEmptyWorkshopForm());
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!activeEvent}>
+              <Button disabled={!view.activeEvent}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Workshop
               </Button>
@@ -226,15 +81,15 @@ export function Workshops() {
             <DialogContent className="max-w-3xl">
               <DialogHeader>
                 <DialogTitle>Create Workshop</DialogTitle>
-                <DialogDescription>Schedule a workshop for {activeEvent?.title || 'the selected event'}.</DialogDescription>
+                <DialogDescription>Schedule a workshop for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
               </DialogHeader>
-              <WorkshopForm form={createForm} onChange={setCreateForm} timelines={workshopTimelines} />
+              <WorkshopForm form={view.createForm} onChange={view.setCreateForm} timelines={view.workshopTimelines} />
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setCreateOpen(false)}>
+                <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreate} disabled={createMutation.isPending}>
-                  {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Workshop'}
+                <Button onClick={view.handleCreate} disabled={view.createMutation.isPending}>
+                  {view.createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Workshop'}
                 </Button>
               </div>
             </DialogContent>
@@ -243,21 +98,21 @@ export function Workshops() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <WorkshopMetricCard label="Total Workshops" value={String(workshops.length)} helper="Scheduled in selected event" />
-        <WorkshopMetricCard label="Live Now" value={String(liveCount)} helper="Sessions currently active" />
-        <WorkshopMetricCard label="Completed" value={String(completedCount)} helper="Finished workshops" />
+        <WorkshopMetricCard label="Total Workshops" value={String(view.workshops.length)} helper="Scheduled in selected event" />
+        <WorkshopMetricCard label="Live Now" value={String(view.liveCount)} helper="Sessions currently active" />
+        <WorkshopMetricCard label="Completed" value={String(view.completedCount)} helper="Finished workshops" />
       </div>
 
-      {eventsQuery.error && (
-        <WorkshopInlineError message={eventsQuery.error instanceof ApiError ? eventsQuery.error.firstError : 'Failed to load events'} />
+      {view.eventsQuery.error && (
+        <WorkshopInlineError message={view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load events'} />
       )}
 
-      {workshopsQuery.error && (
-        <WorkshopInlineError message={workshopsQuery.error instanceof ApiError ? workshopsQuery.error.firstError : 'Failed to load workshops'} />
+      {view.workshopsQuery.error && (
+        <WorkshopInlineError message={view.workshopsQuery.error instanceof ApiError ? view.workshopsQuery.error.firstError : 'Failed to load workshops'} />
       )}
 
-      {workshopTimelinesQuery.error && (
-        <WorkshopInlineError message={workshopTimelinesQuery.error instanceof ApiError ? workshopTimelinesQuery.error.firstError : 'Failed to load workshop timelines'} />
+      {view.workshopTimelinesQuery.error && (
+        <WorkshopInlineError message={view.workshopTimelinesQuery.error instanceof ApiError ? view.workshopTimelinesQuery.error.firstError : 'Failed to load workshop timelines'} />
       )}
 
       <Card>
@@ -273,7 +128,7 @@ export function Workshops() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(eventsQuery.isLoading || workshopsQuery.isLoading) && (
+            {(view.eventsQuery.isLoading || view.workshopsQuery.isLoading) && (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   <span className="inline-flex items-center gap-2">
@@ -284,7 +139,7 @@ export function Workshops() {
               </TableRow>
             )}
 
-            {!eventsQuery.isLoading && !workshopsQuery.isLoading && workshops.length === 0 && (
+            {!view.eventsQuery.isLoading && !view.workshopsQuery.isLoading && view.workshops.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   No workshops found for this event.
@@ -292,7 +147,7 @@ export function Workshops() {
               </TableRow>
             )}
 
-            {workshops.map((workshop) => (
+            {view.workshops.map((workshop) => (
               <TableRow key={workshop.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -324,14 +179,14 @@ export function Workshops() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEditDialog(workshop)}>
+                      <DropdownMenuItem onClick={() => view.openEditDialog(workshop)}>
                         Edit workshop
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => {
-                          setSelectedWorkshop(workshop);
-                          setDeleteOpen(true);
+                          view.setSelectedWorkshop(workshop);
+                          view.setDeleteOpen(true);
                         }}
                       >
                         Delete workshop
@@ -345,39 +200,39 @@ export function Workshops() {
         </Table>
       </Card>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+      <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit Workshop</DialogTitle>
             <DialogDescription>Update workshop speaker info and scheduling fields to match the backend.</DialogDescription>
           </DialogHeader>
-          <WorkshopForm form={editForm} onChange={setEditForm} timelines={workshopTimelines} />
+          <WorkshopForm form={view.editForm} onChange={view.setEditForm} timelines={view.workshopTimelines} />
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setEditOpen(false)}>
+            <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
+            <Button onClick={view.handleUpdate} disabled={view.updateMutation.isPending}>
+              {view.updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <AlertDialog open={view.deleteOpen} onOpenChange={view.setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete workshop</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete "{selectedWorkshop?.title}" and its related workshop interactions?
+              Delete "{view.selectedWorkshop?.title}" and its related workshop interactions?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedWorkshop && deleteMutation.mutate(selectedWorkshop.id)}
+              onClick={() => view.selectedWorkshop && view.deleteMutation.mutate(view.selectedWorkshop.id)}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              {view.deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
