@@ -34,7 +34,7 @@ export function CriterionForm({
           onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
         />
       </div>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="criterion-max-score">Max Score</Label>
           <Input

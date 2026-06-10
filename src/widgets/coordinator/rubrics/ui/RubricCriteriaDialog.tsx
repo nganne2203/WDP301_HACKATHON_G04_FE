@@ -44,13 +44,13 @@ export function RubricCriteriaDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] !w-[min(96vw,1280px)] !max-w-[min(96vw,1280px)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{selectedRubric?.title || 'Rubric Criteria'}</DialogTitle>
           <DialogDescription>Maintain detailed scoring criteria for judges.</DialogDescription>
         </DialogHeader>
         {selectedRubric && (
-          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.95fr)]">
             <div className="space-y-3">
               {selectedRubric.criteria.length === 0 && (
                 <p className="text-sm text-muted-foreground">No criteria yet. Add one from the form on the right.</p>
@@ -103,7 +103,7 @@ export function RubricCriteriaDialog({
               ))}
             </div>
 
-            <div className="space-y-4 rounded-lg border p-4">
+            <div className="min-w-0 space-y-4 rounded-lg border p-5 lg:min-w-[420px]">
               <div>
                 <h3 className="font-medium">{editingCriterion ? 'Edit Criterion' : 'Add Criterion'}</h3>
                 <p className="text-xs text-muted-foreground">
