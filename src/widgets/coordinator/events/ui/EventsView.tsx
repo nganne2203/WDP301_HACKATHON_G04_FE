@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
@@ -447,7 +447,7 @@ export function Events() {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Created By</Label>
-                  <p className="font-medium mt-1">{selectedEvent.createdBy?.fullName || '—'}</p>
+                  <p className="font-medium mt-1">{selectedEvent.createdBy?.fullName || '-'}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Team Size</Label>
@@ -609,3 +609,5 @@ export function Events() {
     </div>
   );
 }
+
+

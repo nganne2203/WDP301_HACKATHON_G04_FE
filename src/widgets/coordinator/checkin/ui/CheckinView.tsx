@@ -29,7 +29,7 @@ export function Checkin() {
       eventId: selectedEvent?.id,
       limit: 100,
     }),
-    enabled: true,
+    enabled: Boolean(selectedEvent?.id),
   });
 
   const participants = participantsResponse?.data || [];
@@ -53,8 +53,9 @@ export function Checkin() {
 
   // Fetch real workshops from backend
   const { data: workshopsResponse, isLoading: workshopsLoading, error: workshopsError } = useQuery({
-    queryKey: ['workshops'],
-    queryFn: () => workshopsApi.list({ page: 1, limit: 10 }),
+    queryKey: ['workshops', selectedEvent?.id],
+    queryFn: () => workshopsApi.list({ eventId: selectedEvent?.id, page: 1, limit: 10 }),
+    enabled: Boolean(selectedEvent?.id),
   });
 
   const workshops = workshopsResponse?.data || [];
@@ -67,6 +68,13 @@ export function Checkin() {
           Manage participant attendance and workshop sessions
         </p>
       </div>
+
+      {!selectedEvent && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span>Select an event from the header to load check-in data.</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
@@ -137,25 +145,44 @@ export function Checkin() {
               </div>
             )}
 
-            {!workshopsLoading && !workshopsError && workshops.map((workshop: Workshop) => {
-              const totalAttendees = 87; // fallback mock total
-              const attendanceCount = workshop.status === 'COMPLETED' ? 45 : workshop.status === 'LIVE' ? 38 : 0;
-              const rate = Math.round((attendanceCount / totalAttendees) * 100);
-
-              return (
-                <div key={workshop.id}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium truncate max-w-[160px]" title={workshop.title}>
+            {!workshopsLoading && !workshopsError && workshops.map((workshop: Workshop) => (
+              <div key={workshop.id} className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="block truncate text-sm font-medium" title={workshop.title}>
                       {workshop.title}
                     </span>
-                    <Badge variant={workshop.status === 'COMPLETED' ? 'default' : workshop.status === 'LIVE' ? 'secondary' : 'outline'}>
-                      {workshop.status === 'COMPLETED' ? `${attendanceCount}/${totalAttendees}` : workshop.status === 'LIVE' ? 'Live' : 'Upcoming'}
-                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(workshop.startTime).toLocaleString()} - {new Date(workshop.endTime).toLocaleTimeString()}
+                    </span>
                   </div>
-                  <Progress value={rate} />
+                  <Badge
+                    variant={
+                      workshop.status === 'COMPLETED'
+                        ? 'default'
+                        : workshop.status === 'LIVE'
+                          ? 'secondary'
+                          : 'outline'
+                    }
+                  >
+                    {workshop.status === 'COMPLETED'
+                      ? 'Completed'
+                      : workshop.status === 'LIVE'
+                        ? 'Live'
+                        : 'Scheduled'}
+                  </Badge>
                 </div>
-              );
-            })}
+                <Progress
+                  value={
+                    workshop.status === 'COMPLETED'
+                      ? 100
+                      : workshop.status === 'LIVE'
+                        ? 60
+                        : 0
+                  }
+                />
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>
@@ -215,10 +242,10 @@ export function Checkin() {
                   participants.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">
-                        {p.user?.fullName || '—'}
+                        {p.user?.fullName || '-'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {p.user?.email || '—'}
+                        {p.user?.email || '-'}
                       </TableCell>
                       <TableCell>
                         {p.team?.name || (

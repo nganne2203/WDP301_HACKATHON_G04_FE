@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Loader2, Shuffle, Trophy, Users } from 'lucide-react';
 import { toast } from 'sonner';
@@ -63,21 +63,22 @@ function BoardDetailDialog({
   const sheetsQuery = useQuery({
     queryKey: ['scoring-sheets-board', roundId, board?.id],
     enabled: open && Boolean(board?.id),
-    queryFn: () => scoringApi.listSheets({ roundId, boardId: board!.id, limit: 100 }),
+    queryFn: () => scoringApi.listSheets({ roundId, limit: 100 }),
   });
 
   const sheets = sheetsQuery.data?.data || [];
+  const boardTeamIds = board ? new Set(board.teams.map((team) => team.id)) : new Set<string>();
   const teamScoreMap = useMemo(() => {
     const m: Record<string, number> = {};
     for (const s of sheets) {
-      if (s.status === 'SUBMITTED' || s.status === 'LOCKED') {
+      if (boardTeamIds.has(s.teamId) && (s.status === 'SUBMITTED' || s.status === 'LOCKED')) {
         if (!m[s.teamId] || s.finalScore > m[s.teamId]) {
           m[s.teamId] = s.finalScore;
         }
       }
     }
     return m;
-  }, [sheets]);
+  }, [boardTeamIds, sheets]);
 
   if (!board) return null;
 
@@ -88,7 +89,7 @@ function BoardDetailDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{board.name} — Details</DialogTitle>
+          <DialogTitle>{board.name} - Details</DialogTitle>
           <DialogDescription>
             Team list, scores, and judge assignments for {board.name}.
           </DialogDescription>
@@ -164,7 +165,7 @@ function BoardDetailDialog({
                               {score.toFixed(1)}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-muted-foreground">-</span>
                           )}
                         </td>
                       </tr>
@@ -228,7 +229,7 @@ export function Judging() {
 
   const autoAssignMutation = useMutation({
     mutationFn: () =>
-      judgingBoardsApi.autoAssign({ eventId: activeEvent!.id, roundId: activeRound!.id, teamsPerBoard: 10 }),
+      judgingBoardsApi.autoAssign({ eventId: activeEvent!.id, roundId: activeRound!.id }),
     onSuccess: (res) => {
       const created = res.data || [];
       setAssignedBoards(created);
@@ -288,7 +289,7 @@ export function Judging() {
             disabled={!activeEvent || roundsQuery.isLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder={roundsQuery.isLoading ? 'Loading rounds…' : 'Select round'} />
+              <SelectValue placeholder={roundsQuery.isLoading ? 'Loading rounds...' : 'Select round'} />
             </SelectTrigger>
             <SelectContent>
               {rounds.map((r) => (
@@ -303,7 +304,16 @@ export function Judging() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading boards</AlertTitle>
-          <AlertDescription>Fetching judging board data…</AlertDescription>
+          <AlertDescription>Fetching judging board data...</AlertDescription>
+        </Alert>
+      )}
+
+      {boardsQuery.error && (
+        <Alert>
+          <AlertTitle>Could not load judging boards</AlertTitle>
+          <AlertDescription>
+            {boardsQuery.error instanceof Error ? boardsQuery.error.message : 'Please try again later.'}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -461,3 +471,5 @@ export function Judging() {
     </div>
   );
 }
+
+

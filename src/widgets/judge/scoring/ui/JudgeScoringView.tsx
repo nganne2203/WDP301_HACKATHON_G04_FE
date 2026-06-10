@@ -99,12 +99,20 @@ export function JudgeScoring() {
 
   const selectedTeam = assignedTeams.find((t) => t.id === selectedTeamId) || assignedTeams[0] || null;
 
-  const sheetQuery = useQuery({
-    queryKey: ['judge-sheet', activeRound?.id, selectedTeam?.id, user?.id],
-    enabled: Boolean(activeRound?.id && selectedTeam?.id),
-    queryFn: () => scoringApi.listSheets({ roundId: activeRound!.id, teamId: selectedTeam!.id, judgeId: user?.id }),
+  const sheetsQuery = useQuery({
+    queryKey: ['judge-sheets', activeRound?.id, user?.id],
+    enabled: Boolean(activeRound?.id && user?.id),
+    queryFn: () => scoringApi.listSheets({ roundId: activeRound!.id, judgeId: user?.id, limit: 100 }),
   });
-  const existingSheet: ScoreSheet | null = sheetQuery.data?.data?.[0] || null;
+  const allSheets = sheetsQuery.data?.data || [];
+  const existingSheet: ScoreSheet | null = allSheets.find((sheet) => sheet.teamId === selectedTeam?.id) || null;
+  const sheetStatusByTeamId = useMemo(() => {
+    const statusMap = new Map<string, ScoreSheet['status']>();
+    for (const sheet of allSheets) {
+      statusMap.set(sheet.teamId, sheet.status);
+    }
+    return statusMap;
+  }, [allSheets]);
 
   useEffect(() => {
     if (existingSheet) {
@@ -134,8 +142,13 @@ export function JudgeScoring() {
   const saveMutation = useMutation({
     mutationFn: (submit: boolean) =>
       scoringApi.submitSheet({
+        scoreSheetId: existingSheet?.id,
+        eventId: activeEvent!.id,
         roundId: activeRound!.id,
+        boardId: myBoard!.id,
         teamId: selectedTeam!.id,
+        submissionId: submission!.id,
+        rubricId: activeRound!.rubricId,
         generalComment,
         submit,
         scores: Object.entries(scores).map(([criterionId, scoreValue]) => ({
@@ -145,7 +158,7 @@ export function JudgeScoring() {
         })),
       }),
     onSuccess: (_, submit) => {
-      queryClient.invalidateQueries({ queryKey: ['judge-sheet'] });
+      queryClient.invalidateQueries({ queryKey: ['judge-sheets'] });
       toast.success(submit ? `Score sheet submitted for ${selectedTeam?.name}` : 'Draft saved');
       setSubmitConfirm(false);
     },
@@ -175,7 +188,7 @@ export function JudgeScoring() {
         </div>
         <div className="w-full md:w-60">
           <Select value={activeRound?.id || ''} onValueChange={setSelectedRoundId} disabled={!activeEvent || roundsQuery.isLoading}>
-            <SelectTrigger><SelectValue placeholder={roundsQuery.isLoading ? 'Loading…' : 'Select round'} /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={roundsQuery.isLoading ? 'Loading...' : 'Select round'} /></SelectTrigger>
             <SelectContent>
               {rounds.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
             </SelectContent>
@@ -206,8 +219,8 @@ export function JudgeScoring() {
             </CardHeader>
             <CardContent className="space-y-2">
               {assignedTeams.map((team) => {
-                const sheet = sheetQuery.data?.data?.find((s) => s.teamId === team.id);
-                const done = sheet?.status === 'SUBMITTED' || sheet?.status === 'LOCKED';
+                const status = sheetStatusByTeamId.get(team.id);
+                const done = status === 'SUBMITTED' || status === 'LOCKED';
                 return (
                   <button
                     key={team.id}
@@ -312,7 +325,7 @@ export function JudgeScoring() {
                             type="number"
                             min={0}
                             max={c.maxScore}
-                            placeholder={`0–${c.maxScore}`}
+                            placeholder={`0-${c.maxScore}`}
                             value={scores[c.id] ?? ''}
                             disabled={isSubmitted}
                             onChange={(e) => {
@@ -333,7 +346,7 @@ export function JudgeScoring() {
                       <div className="space-y-1 pt-2">
                         <Label>General Comment</Label>
                         <Textarea
-                          placeholder="Overall feedback for the team…"
+                          placeholder="Overall feedback for the team..."
                           rows={3}
                           value={generalComment}
                           disabled={isSubmitted}
@@ -346,14 +359,19 @@ export function JudgeScoring() {
                           <Button
                             variant="outline"
                             onClick={() => saveMutation.mutate(false)}
-                            disabled={saveMutation.isPending}
+                            disabled={saveMutation.isPending || !submission || !myBoard}
                           >
                             {saveMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                             Save Draft
                           </Button>
                           <Button
                             onClick={() => setSubmitConfirm(true)}
-                            disabled={saveMutation.isPending || criteria.some((c) => scores[c.id] === undefined)}
+                            disabled={
+                              saveMutation.isPending ||
+                              !submission ||
+                              !myBoard ||
+                              criteria.some((c) => scores[c.id] === undefined)
+                            }
                           >
                             <Send className="w-4 h-4 mr-2" />
                             Submit Score

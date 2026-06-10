@@ -634,6 +634,8 @@ export interface Track {
   code?: string;
   name: string;
   description?: string | null;
+  topic?: string | null;
+  problemStatement?: string | null;
   type?: TrackType;
   teamIds: string[];
   maxTeams?: number;
@@ -647,6 +649,8 @@ export interface CreateTrackRequest {
   code?: string;
   name: string;
   description?: string;
+  topic?: string | null;
+  problemStatement?: string | null;
   type?: TrackType;
   teamIds?: string[];
   maxTeams?: number;
@@ -735,11 +739,13 @@ export interface ListParticipantsQuery {
   page?: number;
   limit?: number;
   eventId?: string;
+  userId?: string;
   teamId?: string;
   checkInStatus?: CheckInStatus;
   status?: ParticipantStatus;
   eligibilityStatus?: EligibilityStatus;
   githubAccessStatus?: GitHubAccessStatus;
+  chapterName?: string;
 }
 
 // ============================================================
@@ -788,6 +794,7 @@ export interface ListTimelinesQuery {
   eventId?: string;
   eventType?: TimelineEventType;
   status?: TimelineStatus;
+  search?: string;
 }
 
 // ============================================================
@@ -904,9 +911,33 @@ export interface Round {
   submissionDeadline: string | null;
   publishTime: string | null;
   maxPromotedTeams: number | null;
+  assignedTeams?: {
+    id: string;
+    name?: string;
+    chapterName?: string | null;
+    projectName?: string | null;
+    status?: string;
+    trackId?: string | null;
+    boardNumber?: number | null;
+    placementSlot?: number | null;
+  }[];
   assignedTeamIds: string[];
+  promotedTeams?: {
+    id: string;
+    name?: string;
+    chapterName?: string | null;
+    projectName?: string | null;
+    status?: string;
+    trackId?: string | null;
+    boardNumber?: number | null;
+    placementSlot?: number | null;
+  }[];
   promotedTeamIds: string[];
   assignedJudges: UserSummary[];
+  assignedJudgeIds?: string[];
+  promotionRule?: string | null;
+  tieBreakRule?: string | null;
+  tieBreakDurationMinutes?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -916,25 +947,49 @@ export interface CreateRoundRequest {
   name: string;
   roundType?: RoundType;
   trackId?: string | null;
+  assignedTeamIds?: string[];
+  promotedTeamIds?: string[];
+  assignedJudgeIds?: string[];
   rubricId?: string | null;
   startTime?: string | null;
   endTime?: string | null;
   submissionDeadline?: string | null;
   publishTime?: string | null;
   maxPromotedTeams?: number | null;
+  promotionRule?: string | null;
+  tieBreakRule?: string | null;
+  tieBreakDurationMinutes?: number | null;
+  status?: RoundStatus;
 }
 
 export interface UpdateRoundRequest {
+  eventId?: string;
   name?: string;
   roundType?: RoundType;
   status?: RoundStatus;
   trackId?: string | null;
+  assignedTeamIds?: string[];
+  promotedTeamIds?: string[];
+  assignedJudgeIds?: string[];
   rubricId?: string | null;
   startTime?: string | null;
   endTime?: string | null;
   submissionDeadline?: string | null;
   publishTime?: string | null;
   maxPromotedTeams?: number | null;
+  promotionRule?: string | null;
+  tieBreakRule?: string | null;
+  tieBreakDurationMinutes?: number | null;
+}
+
+export interface ListRoundsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  trackId?: string;
+  roundType?: RoundType;
+  status?: RoundStatus;
+  search?: string;
 }
 
 // ============================================================
@@ -976,15 +1031,28 @@ export interface CreateJudgingBoardRequest {
 export interface AutoAssignRequest {
   eventId: string;
   roundId: string;
-  teamsPerBoard?: number;
 }
 
 export interface UpdateJudgingBoardRequest {
+  eventId?: string;
+  roundId?: string;
+  trackId?: string | null;
   name?: string;
+  boardNumber?: number;
   status?: JudgingBoardStatus;
   maxTeams?: number;
   teamIds?: string[];
   judgeIds?: string[];
+}
+
+export interface ListJudgingBoardsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  trackId?: string;
+  status?: JudgingBoardStatus;
+  search?: string;
 }
 
 // ============================================================
@@ -1000,6 +1068,13 @@ export interface Submission {
   round: { id: string; name: string; roundType: RoundType; status: RoundStatus } | null;
   teamId: string;
   team: { id: string; name: string; projectName: string | null } | null;
+  repositoryId?: string | null;
+  repository?: {
+    id: string;
+    repositoryFullName?: string;
+    repositoryUrl?: string;
+    status?: string;
+  } | null;
   demoUrl: string | null;
   reportUrl: string | null;
   presentationUrl: string | null;
@@ -1010,18 +1085,31 @@ export interface Submission {
 }
 
 export interface CreateSubmissionRequest {
+  eventId: string;
   roundId: string;
   teamId: string;
+  repositoryId?: string | null;
+  demoUrl?: string | null;
+  reportUrl?: string | null;
+  presentationUrl?: string | null;
+  status?: SubmissionStatus;
+}
+
+export interface UpdateSubmissionRequest {
+  repositoryId?: string | null;
   demoUrl?: string | null;
   reportUrl?: string | null;
   presentationUrl?: string | null;
 }
 
-export interface UpdateSubmissionRequest {
-  demoUrl?: string | null;
-  reportUrl?: string | null;
-  presentationUrl?: string | null;
-  submit?: boolean;
+export interface ListSubmissionsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  teamId?: string;
+  repositoryId?: string;
+  status?: SubmissionStatus;
 }
 
 // ============================================================
@@ -1034,34 +1122,47 @@ export interface Criterion {
   description: string | null;
   maxScore: number;
   weight: number;
+  order?: number;
+  judgeOnly?: boolean;
+  aiSupportForAudit?: boolean;
+  aiInstruction?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+export type RubricStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
 export interface Rubric {
   id: string;
-  eventId: string | null;
-  event: { id: string; title: string } | null;
+  eventId: string;
+  roundId?: string | null;
+  event: { id: string; title: string; status?: string } | null;
+  round?: { id: string; name: string; roundType?: RoundType; status?: RoundStatus } | null;
   title: string;
   description: string | null;
   totalScore: number | null;
-  createdBy: UserSummary | null;
+  version?: number;
+  status?: RubricStatus;
   criteria: Criterion[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateRubricRequest {
-  eventId?: string | null;
+  eventId: string;
+  roundId?: string | null;
   title: string;
   description?: string | null;
   totalScore?: number | null;
+  version?: number;
+  status?: RubricStatus;
 }
 
 export interface UpdateRubricRequest {
   title?: string;
   description?: string | null;
-  totalScore?: number | null;
+  version?: number;
+  status?: RubricStatus;
 }
 
 export interface CreateCriterionRequest {
@@ -1069,6 +1170,10 @@ export interface CreateCriterionRequest {
   description?: string | null;
   maxScore: number;
   weight?: number;
+  order?: number;
+  judgeOnly?: boolean;
+  aiSupportForAudit?: boolean;
+  aiInstruction?: string | null;
 }
 
 export interface UpdateCriterionRequest {
@@ -1076,6 +1181,18 @@ export interface UpdateCriterionRequest {
   description?: string | null;
   maxScore?: number;
   weight?: number;
+  order?: number;
+  judgeOnly?: boolean;
+  aiSupportForAudit?: boolean;
+  aiInstruction?: string | null;
+}
+
+export interface ListRubricsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  status?: RubricStatus;
 }
 
 // ============================================================
@@ -1084,8 +1201,10 @@ export interface UpdateCriterionRequest {
 export type ScoreSheetStatus = 'DRAFT' | 'SUBMITTED' | 'LOCKED';
 
 export interface ScoreEntry {
+  id?: string;
   criterionId: string;
-  criterion: { id: string; name: string; maxScore: number; weight: number } | null;
+  criterion: { id: string; name: string; maxScore: number; weight: number; order?: number } | null;
+  judgeId?: string;
   scoreValue: number;
   comment: string | null;
   isOverridden: boolean;
@@ -1106,21 +1225,38 @@ export interface ScoreSheet {
   judgeId: string;
   judge: UserSummary | null;
   rubricId: string | null;
+  rubric?: { id: string; title: string; totalScore: number | null } | null;
   totalScore: number;
   weightedScore: number;
   finalScore: number;
   generalComment: string | null;
   status: ScoreSheetStatus;
   submittedAt: string | null;
+  lockedAt?: string | null;
   scores: ScoreEntry[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface SubmitScoreSheetRequest {
+  scoreSheetId?: string;
+  eventId: string;
   roundId: string;
+  boardId: string;
   teamId: string;
+  submissionId: string;
+  rubricId?: string | null;
   generalComment?: string | null;
   submit?: boolean;
   scores: { criterionId: string; scoreValue: number; comment?: string | null }[];
+}
+
+export interface ListScoreSheetsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  teamId?: string;
+  judgeId?: string;
+  status?: ScoreSheetStatus;
 }

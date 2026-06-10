@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
@@ -169,7 +169,7 @@ export function Participants() {
   };
 
   const getRoleLabels = (user: User) => {
-    return user.roles.map((r) => r.name).join(', ') || '—';
+    return user.roles.map((r) => r.name).join(', ') || '-';
   };
 
   return (
@@ -179,8 +179,8 @@ export function Participants() {
           <h1 className="text-2xl font-semibold mb-1">Participants</h1>
           <p className="text-sm text-muted-foreground">
             Manage participant registration and status
-            {selectedIds.length > 0 && ` • ${selectedIds.length} selected`}
-            {pagination && ` • ${pagination.totalItems} total`}
+            {selectedIds.length > 0 && ` - ${selectedIds.length} selected`}
+            {pagination && ` - ${pagination.totalItems} total`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -305,9 +305,9 @@ export function Participants() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {user.studentId ? (
-                        <span>{user.studentId}{user.schoolName ? ` · ${user.schoolName}` : ''}</span>
+                        <span>{user.studentId}{user.schoolName ? ` - ${user.schoolName}` : ''}</span>
                       ) : (
-                        <span className="italic">—</span>
+                        <span className="italic">-</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -318,7 +318,7 @@ export function Participants() {
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
                             <span className="sr-only">Actions</span>
-                            ···
+                            ...
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -434,3 +434,5 @@ export function Participants() {
     </div>
   );
 }
+
+

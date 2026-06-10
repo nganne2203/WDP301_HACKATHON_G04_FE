@@ -6,10 +6,11 @@ import type {
   UpdateRubricRequest,
   CreateCriterionRequest,
   UpdateCriterionRequest,
+  ListRubricsQuery,
 } from './types';
 
 export const rubricsApi = {
-  list: (query?: { eventId?: string; page?: number; limit?: number }) =>
+  list: (query?: ListRubricsQuery) =>
     api.get<Rubric[]>('/rubrics', { params: query as Record<string, string | number | undefined> }),
 
   getById: (id: string) =>
@@ -24,15 +25,12 @@ export const rubricsApi = {
   delete: (id: string) =>
     api.delete<null>(`/rubrics/${id}`),
 
-  listCriteria: (rubricId: string) =>
-    api.get<Criterion[]>(`/rubrics/${rubricId}/criteria`),
-
   createCriterion: (rubricId: string, data: CreateCriterionRequest) =>
-    api.post<Criterion>(`/rubrics/${rubricId}/criteria`, data),
+    api.post<{ criterion: Criterion; rubric: Rubric }>(`/rubrics/${rubricId}/criteria`, data),
 
   updateCriterion: (rubricId: string, criterionId: string, data: UpdateCriterionRequest) =>
-    api.patch<Criterion>(`/rubrics/${rubricId}/criteria/${criterionId}`, data),
+    api.patch<{ criterion: Criterion; rubric: Rubric }>(`/rubrics/${rubricId}/criteria/${criterionId}`, data),
 
   deleteCriterion: (rubricId: string, criterionId: string) =>
-    api.delete<null>(`/rubrics/${rubricId}/criteria/${criterionId}`),
+    api.delete<{ deletedCriterionId: string; rubric: Rubric }>(`/rubrics/${rubricId}/criteria/${criterionId}`),
 };
