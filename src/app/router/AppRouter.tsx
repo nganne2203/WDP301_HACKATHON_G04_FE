@@ -18,6 +18,11 @@ const CoordinatorDashboard = lazy(async () => ({
   default: (await import('@/pages/coordinator/Dashboard')).CoordinatorDashboard,
 }));
 const Events = lazy(async () => ({ default: (await import('@/pages/coordinator/Events')).Events }));
+const Rounds = lazy(async () => ({ default: (await import('@/pages/coordinator/Rounds')).Rounds }));
+const Rubrics = lazy(async () => ({ default: (await import('@/pages/coordinator/Rubrics')).Rubrics }));
+const Tracks = lazy(async () => ({ default: (await import('@/pages/coordinator/Tracks')).Tracks }));
+const Timelines = lazy(async () => ({ default: (await import('@/pages/coordinator/Timelines')).Timelines }));
+const Workshops = lazy(async () => ({ default: (await import('@/pages/coordinator/Workshops')).Workshops }));
 const Participants = lazy(async () => ({
   default: (await import('@/pages/coordinator/Participants')).Participants,
 }));
@@ -36,6 +41,9 @@ const ParticipantDashboard = lazy(async () => ({
 }));
 const ParticipantTeam = lazy(async () => ({
   default: (await import('@/pages/participant/Team')).ParticipantTeam,
+}));
+const ParticipantSubmissions = lazy(async () => ({
+  default: (await import('@/pages/participant/Submissions')).ParticipantSubmissions,
 }));
 const ParticipantMedia = lazy(async () => ({
   default: (await import('@/pages/participant/Media')).ParticipantMedia,
@@ -140,6 +148,46 @@ export function AppRouter() {
             }
           />
           <Route
+            path="/coordinator/rounds"
+            element={
+              <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                <Rounds />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/rubrics"
+            element={
+              <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                <Rubrics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/tracks"
+            element={
+              <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                <Tracks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/timelines"
+            element={
+              <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                <Timelines />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/workshops"
+            element={
+              <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                <Workshops />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/coordinator/teams"
             element={
               <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
@@ -218,6 +266,14 @@ export function AppRouter() {
             element={
               <ProtectedRoute allowedRoles={['participant', 'admin']}>
                 <ParticipantTeam />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/participant/submissions"
+            element={
+              <ProtectedRoute allowedRoles={['participant', 'admin']}>
+                <ParticipantSubmissions />
               </ProtectedRoute>
             }
           />

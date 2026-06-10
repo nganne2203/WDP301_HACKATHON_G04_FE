@@ -4,10 +4,11 @@ import type {
   CreateJudgingBoardRequest,
   UpdateJudgingBoardRequest,
   AutoAssignRequest,
+  ListJudgingBoardsQuery,
 } from './types';
 
 export const judgingBoardsApi = {
-  list: (query?: { eventId?: string; roundId?: string; status?: string; page?: number; limit?: number }) =>
+  list: (query?: ListJudgingBoardsQuery) =>
     api.get<JudgingBoard[]>('/judging-boards', { params: query as Record<string, string | number | undefined> }),
 
   getById: (id: string) =>

@@ -1,11 +1,16 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Calendar,
+  Clock3,
   ClipboardCheck,
+  FileText,
+  GitBranch,
   Github,
   Images,
   LayoutDashboard,
+  Presentation,
   Scale,
+  Send,
   Settings,
   Trophy,
   Users,
@@ -22,6 +27,11 @@ export interface NavigationItem {
 const coordinatorNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/coordinator' },
   { icon: Calendar, label: 'Events', href: '/coordinator/events' },
+  { icon: Calendar, label: 'Rounds', href: '/coordinator/rounds' },
+  { icon: FileText, label: 'Rubrics', href: '/coordinator/rubrics' },
+  { icon: GitBranch, label: 'Tracks', href: '/coordinator/tracks' },
+  { icon: Clock3, label: 'Timelines', href: '/coordinator/timelines' },
+  { icon: Presentation, label: 'Workshops', href: '/coordinator/workshops' },
   { icon: Users, label: 'Participants', href: '/coordinator/participants' },
   { icon: UsersRound, label: 'Teams', href: '/coordinator/teams' },
   { icon: ClipboardCheck, label: 'Check-in', href: '/coordinator/checkin' },
@@ -40,6 +50,7 @@ const judgeNavigation: NavigationItem[] = [
 const participantNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/participant' },
   { icon: UsersRound, label: 'My Team', href: '/participant/team' },
+  { icon: Send, label: 'Submissions', href: '/participant/submissions' },
   { icon: Images, label: 'Media', href: '/participant/media' },
 ];
 
