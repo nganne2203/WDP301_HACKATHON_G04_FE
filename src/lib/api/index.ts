@@ -1,10 +1,17 @@
 export { api, apiRequest, getAccessToken, getRefreshToken, setTokens, clearTokens, ApiError } from './client';
+export { judgingBoardsApi } from './judging-boards';
+export { roundsApi } from './rounds';
+export { rubricsApi } from './rubrics';
+export { scoringApi } from './scoring';
+export { submissionsApi } from './submissions';
 export { authApi } from './auth';
 export { eventsApi } from './events';
 export { githubApi } from './github';
 export { mediaApi } from './media';
+export { participantsApi } from './participants';
 export { teamsApi } from './teams';
-export { usersApi } from './users';
+export { timelinesApi } from './timelines';
 export { tracksApi } from './tracks';
+export { usersApi } from './users';
 export { workshopsApi } from './workshops';
 export type * from './types';
