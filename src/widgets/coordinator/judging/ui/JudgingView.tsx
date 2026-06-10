@@ -31,6 +31,7 @@ import { eventsApi } from '@/entities/event/api';
 import { roundsApi } from '@/entities/round/api';
 import { judgingBoardsApi } from '@/entities/judging-board/api';
 import { scoringApi } from '@/entities/score-sheet/api';
+import { submissionsApi } from '@/entities/submission/api';
 import type { JudgingBoard, Round } from '@/shared/api/types';
 
 function getInitials(value?: string | null) {
@@ -60,14 +61,43 @@ function BoardDetailDialog({
   onClose: () => void;
   roundId: string;
 }) {
+  const queryClient = useQueryClient();
   const sheetsQuery = useQuery({
     queryKey: ['scoring-sheets-board', roundId, board?.id],
     enabled: open && Boolean(board?.id),
     queryFn: () => scoringApi.listSheets({ roundId, limit: 100 }),
   });
 
+  const submissionsQuery = useQuery({
+    queryKey: ['judging-board-submissions', roundId],
+    enabled: open && Boolean(roundId),
+    queryFn: () => submissionsApi.list({ roundId, limit: 100 }),
+  });
+
+  const submissionStatusMutation = useMutation({
+    mutationFn: ({ submissionId, status }: { submissionId: string; status: 'ACCEPTED' | 'REJECTED' }) =>
+      submissionsApi.updateStatus(submissionId, status),
+    onSuccess: async (_, variables) => {
+      toast.success(`Submission marked as ${variables.status.toLowerCase()}`);
+      await queryClient.invalidateQueries({ queryKey: ['judging-board-submissions', roundId] });
+    },
+    onError: () => {
+      toast.error('Failed to update submission status');
+    },
+  });
+
   const sheets = sheetsQuery.data?.data || [];
+  const submissions = submissionsQuery.data?.data || [];
   const boardTeamIds = board ? new Set(board.teams.map((team) => team.id)) : new Set<string>();
+  const submissionMap = useMemo(() => {
+    const m: Record<string, (typeof submissions)[0]> = {};
+    for (const submission of submissions) {
+      if (boardTeamIds.has(submission.teamId)) {
+        m[submission.teamId] = submission;
+      }
+    }
+    return m;
+  }, [boardTeamIds, submissions]);
   const teamScoreMap = useMemo(() => {
     const m: Record<string, number> = {};
     for (const s of sheets) {
@@ -138,17 +168,48 @@ function BoardDetailDialog({
                   <tr>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">#</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Team</th>
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">Submission</th>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">Status</th>
                     <th className="text-right px-3 py-2 font-medium text-muted-foreground">Score</th>
+                    <th className="text-right px-3 py-2 font-medium text-muted-foreground">Review</th>
                   </tr>
                 </thead>
                 <tbody>
                   {board.teams.map((team, idx) => {
                     const score = teamScoreMap[team.id];
+                    const submission = submissionMap[team.id];
                     return (
                       <tr key={team.id} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="px-3 py-2 text-muted-foreground">{idx + 1}</td>
                         <td className="px-3 py-2 font-medium">{team.name}</td>
+                        <td className="px-3 py-2">
+                          {submission ? (
+                            <div className="space-y-1">
+                              <Badge variant={submission.status === 'SUBMITTED' ? 'default' : 'secondary'}>
+                                {submission.status}
+                              </Badge>
+                              <div className="flex flex-wrap gap-1 text-xs">
+                                {submission.demoUrl && (
+                                  <a className="text-blue-700 underline" href={submission.demoUrl} target="_blank" rel="noreferrer">
+                                    Demo
+                                  </a>
+                                )}
+                                {submission.reportUrl && (
+                                  <a className="text-blue-700 underline" href={submission.reportUrl} target="_blank" rel="noreferrer">
+                                    Report
+                                  </a>
+                                )}
+                                {submission.presentationUrl && (
+                                  <a className="text-blue-700 underline" href={submission.presentationUrl} target="_blank" rel="noreferrer">
+                                    Slides
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">No submission</span>
+                          )}
+                        </td>
                         <td className="px-3 py-2">
                           {score !== undefined ? (
                             <span className="inline-flex items-center gap-1 text-green-700">
@@ -168,6 +229,30 @@ function BoardDetailDialog({
                             <span className="text-muted-foreground">-</span>
                           )}
                         </td>
+                        <td className="px-3 py-2 text-right">
+                          {submission ? (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={submissionStatusMutation.isPending || submission.status === 'ACCEPTED'}
+                                onClick={() => submissionStatusMutation.mutate({ submissionId: submission.id, status: 'ACCEPTED' })}
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={submissionStatusMutation.isPending || submission.status === 'REJECTED'}
+                                onClick={() => submissionStatusMutation.mutate({ submissionId: submission.id, status: 'REJECTED' })}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -175,6 +260,14 @@ function BoardDetailDialog({
               </table>
             </div>
           </div>
+
+          {submissionsQuery.isLoading && (
+            <Alert>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertTitle>Loading submissions</AlertTitle>
+              <AlertDescription>Fetching team submission status for this round...</AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <div className="flex justify-end mt-4">

@@ -7,6 +7,10 @@ import type {
   GitHubConfig,
   InviteGitHubOrganizationMemberRequest,
   InviteGitHubOrganizationMemberResult,
+  RegisterGitHubWebhookRequest,
+  RegisterGitHubWebhookResult,
+  RevokeGitHubCollaboratorRequest,
+  RevokeGitHubCollaboratorResult,
   RevokeGitHubMembersRequest,
   RevokeGitHubMembersResult,
   SaveGitHubConfigRequest,
@@ -30,6 +34,18 @@ export const githubApi = {
     api.put<AssignGitHubCollaboratorResult>(
       `/github/repositories/${encodeURIComponent(repoName)}/collaborators/${encodeURIComponent(username)}`,
       data
+    ),
+
+  registerRepositoryWebhook: (repoName: string, data: RegisterGitHubWebhookRequest) =>
+    api.post<RegisterGitHubWebhookResult>(
+      `/github/repositories/${encodeURIComponent(repoName)}/webhooks/register`,
+      data
+    ),
+
+  revokeCollaborator: (repoName: string, username: string, data: RevokeGitHubCollaboratorRequest) =>
+    api.delete<RevokeGitHubCollaboratorResult>(
+      `/github/repositories/${encodeURIComponent(repoName)}/collaborators/${encodeURIComponent(username)}`,
+      { data }
     ),
 
   inviteOrganizationMember: (data: InviteGitHubOrganizationMemberRequest) =>

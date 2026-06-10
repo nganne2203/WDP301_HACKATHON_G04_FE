@@ -25,6 +25,7 @@ import {
 import { ApiError } from '@/shared/api/client';
 import { eventsApi } from '@/entities/event/api';
 import { judgingBoardsApi } from '@/entities/judging-board/api';
+import { repositoriesApi } from '@/entities/repository/api';
 import { roundsApi } from '@/entities/round/api';
 import { rubricsApi } from '@/entities/rubric/api';
 import { scoringApi } from '@/entities/score-sheet/api';
@@ -98,6 +99,25 @@ export function JudgeScoring() {
   const maxScore = criteria.reduce((sum, c) => sum + c.maxScore, 0);
 
   const selectedTeam = assignedTeams.find((t) => t.id === selectedTeamId) || assignedTeams[0] || null;
+  const submission = selectedTeam ? submissionByTeam[selectedTeam.id] : null;
+
+  const repositoryQuery = useQuery({
+    queryKey: ['judge-repository', submission?.repositoryId],
+    enabled: Boolean(submission?.repositoryId),
+    queryFn: async () => (await repositoriesApi.getById(submission!.repositoryId!)).data,
+  });
+
+  const repositoryAnalysisQuery = useQuery({
+    queryKey: ['judge-repository-analysis', submission?.repositoryId],
+    enabled: Boolean(submission?.repositoryId),
+    queryFn: async () => (await repositoriesApi.listStaticAnalysis(submission!.repositoryId!, 1, 3)).data,
+  });
+
+  const repositoryAiQuery = useQuery({
+    queryKey: ['judge-repository-ai', submission?.repositoryId],
+    enabled: Boolean(submission?.repositoryId),
+    queryFn: async () => (await repositoriesApi.listAiReviews(submission!.repositoryId!, 1, 3)).data,
+  });
 
   const sheetsQuery = useQuery({
     queryKey: ['judge-sheets', activeRound?.id, user?.id],
@@ -168,7 +188,8 @@ export function JudgeScoring() {
   });
 
   const isSubmitted = existingSheet?.status === 'SUBMITTED' || existingSheet?.status === 'LOCKED';
-  const submission = selectedTeam ? submissionByTeam[selectedTeam.id] : null;
+  const latestAnalysis = repositoryAnalysisQuery.data?.[0] || null;
+  const latestAiReview = repositoryAiQuery.data?.aiReviews?.[0] || null;
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -260,30 +281,62 @@ export function JudgeScoring() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {submission ? (
-                      <div className="flex flex-wrap gap-2">
-                        {submission.demoUrl && (
-                          <a href={submission.demoUrl} target="_blank" rel="noreferrer">
-                            <Button variant="outline" size="sm">
-                              <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                              Demo
-                            </Button>
-                          </a>
-                        )}
-                        {submission.reportUrl && (
-                          <a href={submission.reportUrl} target="_blank" rel="noreferrer">
-                            <Button variant="outline" size="sm">
-                              <FileText className="w-3.5 h-3.5 mr-1" />
-                              Report
-                            </Button>
-                          </a>
-                        )}
-                        {submission.presentationUrl && (
-                          <a href={submission.presentationUrl} target="_blank" rel="noreferrer">
-                            <Button variant="outline" size="sm">
-                              <Github className="w-3.5 h-3.5 mr-1" />
-                              Slides
-                            </Button>
-                          </a>
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap gap-2">
+                          {submission.demoUrl && (
+                            <a href={submission.demoUrl} target="_blank" rel="noreferrer">
+                              <Button variant="outline" size="sm">
+                                <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                                Demo
+                              </Button>
+                            </a>
+                          )}
+                          {submission.reportUrl && (
+                            <a href={submission.reportUrl} target="_blank" rel="noreferrer">
+                              <Button variant="outline" size="sm">
+                                <FileText className="w-3.5 h-3.5 mr-1" />
+                                Report
+                              </Button>
+                            </a>
+                          )}
+                          {submission.presentationUrl && (
+                            <a href={submission.presentationUrl} target="_blank" rel="noreferrer">
+                              <Button variant="outline" size="sm">
+                                <Github className="w-3.5 h-3.5 mr-1" />
+                                Slides
+                              </Button>
+                            </a>
+                          )}
+                        </div>
+
+                        {submission.repositoryId && (
+                          <div className="rounded-lg border p-3 space-y-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {repositoryQuery.data?.repositoryFullName || submission.repository?.repositoryFullName || 'Repository linked'}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Access: {repositoryQuery.data?.accessState || 'UNKNOWN'} • Webhook: {repositoryQuery.data?.webhookStatus || 'UNKNOWN'}
+                                </p>
+                              </div>
+                              {repositoryQuery.data?.repositoryUrl && (
+                                <a href={repositoryQuery.data.repositoryUrl} target="_blank" rel="noreferrer">
+                                  <Button variant="outline" size="sm">Open repo</Button>
+                                </a>
+                              )}
+                            </div>
+                            {latestAnalysis && (
+                              <p className="text-xs text-muted-foreground">
+                                Static analysis: {latestAnalysis.errorCount} errors, {latestAnalysis.warningCount} warnings.
+                              </p>
+                            )}
+                            {latestAiReview && (
+                              <p className="text-xs text-muted-foreground">
+                                AI review: {latestAiReview.summary || latestAiReview.reviewKind}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     ) : (

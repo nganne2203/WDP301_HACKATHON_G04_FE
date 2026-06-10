@@ -1,6 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle2, Github, Loader2, Plus, ShieldCheck, ShieldX, UserPlus } from 'lucide-react';
+import {
+  AlertTriangle,
+  Bot,
+  CheckCircle2,
+  ExternalLink,
+  Github,
+  GitCommitHorizontal,
+  Loader2,
+  Plus,
+  RefreshCcw,
+  ShieldCheck,
+  ShieldX,
+  UserPlus,
+  Webhook,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -19,14 +33,25 @@ import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Checkbox } from '@/shared/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Switch } from '@/shared/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { ApiError } from '@/shared/api/client';
 import { eventsApi } from '@/entities/event/api';
 import { githubApi } from '@/entities/github/api';
-import type { RevokeGitHubMembersResult } from '@/shared/api/types';
+import { repositoriesApi } from '@/entities/repository/api';
+import { roundsApi } from '@/entities/round/api';
+import { teamsApi } from '@/entities/team/api';
+import type { Repository, RevokeGitHubMembersResult } from '@/shared/api/types';
 
 const PERMISSIONS = ['pull', 'triage', 'push', 'maintain', 'admin'] as const;
 
@@ -34,6 +59,291 @@ function getApiErrorMessage(error: unknown) {
   if (error instanceof ApiError) return error.firstError;
   if (error instanceof Error) return error.message;
   return 'Could not connect to server.';
+}
+
+function accessVariant(state: Repository['accessState']) {
+  if (state === 'GRANTED') return 'default' as const;
+  if (state === 'PENDING') return 'secondary' as const;
+  if (state === 'REVOKED') return 'destructive' as const;
+  return 'outline' as const;
+}
+
+function webhookVariant(status: Repository['webhookStatus']) {
+  if (status === 'REGISTERED') return 'default' as const;
+  if (status === 'FAILED') return 'destructive' as const;
+  if (status === 'PENDING') return 'secondary' as const;
+  return 'outline' as const;
+}
+
+function statusVariant(status: Repository['status']) {
+  if (status === 'ACTIVE') return 'default' as const;
+  if (status === 'ARCHIVED') return 'secondary' as const;
+  if (status === 'DISCONNECTED') return 'destructive' as const;
+  return 'outline' as const;
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('vi-VN');
+}
+
+function shortSha(value?: string | null) {
+  return value ? value.slice(0, 8) : '-';
+}
+
+function RepositoryDetailDialog({
+  repository,
+  open,
+  onClose,
+}: {
+  repository: Repository | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const commitsQuery = useQuery({
+    queryKey: ['repository-commits', repository?.id],
+    enabled: open && Boolean(repository?.id),
+    queryFn: async () => (await repositoriesApi.listCommits(repository!.id, 1, 10)).data,
+  });
+
+  const diffQuery = useQuery({
+    queryKey: ['repository-diffs', repository?.id],
+    enabled: open && Boolean(repository?.id),
+    queryFn: async () => (await repositoriesApi.listCommitDiffs(repository!.id, 1, 5)).data,
+  });
+
+  const analysisQuery = useQuery({
+    queryKey: ['repository-analysis', repository?.id],
+    enabled: open && Boolean(repository?.id),
+    queryFn: async () => (await repositoriesApi.listStaticAnalysis(repository!.id, 1, 5)).data,
+  });
+
+  const impactQuery = useQuery({
+    queryKey: ['repository-impact', repository?.id],
+    enabled: open && Boolean(repository?.id),
+    queryFn: async () => (await repositoriesApi.listImpactDecisions(repository!.id, 1, 5)).data,
+  });
+
+  const reviewsQuery = useQuery({
+    queryKey: ['repository-ai-reviews', repository?.id],
+    enabled: open && Boolean(repository?.id),
+    queryFn: async () => (await repositoriesApi.listAiReviews(repository!.id, 1, 5)).data,
+  });
+
+  if (!repository) return null;
+
+  const commits = commitsQuery.data || [];
+  const diffs = diffQuery.data || [];
+  const analyses = analysisQuery.data || [];
+  const impacts = impactQuery.data || [];
+  const aiReviews = reviewsQuery.data?.aiReviews || [];
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Github className="w-5 h-5" />
+            {repository.repositoryFullName}
+          </DialogTitle>
+          <DialogDescription>
+            Theo dõi webhook, commit evidence, phân tích tĩnh và AI review của repository này.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="rounded-lg border p-3">
+            <p className="text-sm text-muted-foreground">Team</p>
+            <p className="font-medium">{repository.team?.name || '-'}</p>
+            <p className="text-xs text-muted-foreground">{repository.team?.projectName || 'Chưa có project name'}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-sm text-muted-foreground">Round</p>
+            <p className="font-medium">{repository.round?.name || 'Chưa gắn round'}</p>
+            <p className="text-xs text-muted-foreground">{repository.defaultBranch}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-sm text-muted-foreground">Latest commit</p>
+            <p className="font-medium">{shortSha(repository.latestCommitSha)}</p>
+            <p className="text-xs text-muted-foreground">Processed: {shortSha(repository.lastProcessedCommitSha)}</p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-sm text-muted-foreground">Webhook</p>
+            <div className="mt-1">
+              <Badge variant={webhookVariant(repository.webhookStatus)}>{repository.webhookStatus}</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{formatDate(repository.webhookRegisteredAt)}</p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="commits" className="mt-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="commits">Commits</TabsTrigger>
+            <TabsTrigger value="diffs">Diffs</TabsTrigger>
+            <TabsTrigger value="analysis">Static Analysis</TabsTrigger>
+            <TabsTrigger value="impact">Impact</TabsTrigger>
+            <TabsTrigger value="ai">AI Reviews</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="commits" className="space-y-3 pt-3">
+            {commitsQuery.isLoading ? (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertTitle>Đang tải commit evidence</AlertTitle>
+                <AlertDescription>Đang đọc danh sách commit mới nhất từ backend.</AlertDescription>
+              </Alert>
+            ) : commits.length === 0 ? (
+              <Alert>
+                <AlertTitle>Chưa có commit evidence</AlertTitle>
+                <AlertDescription>Repository này chưa sync commit về hệ thống.</AlertDescription>
+              </Alert>
+            ) : (
+              commits.map((commit) => (
+                <div key={commit.id} className="rounded-lg border p-3 space-y-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium">{commit.message || '(No commit message)'}</p>
+                    <Badge variant="outline">{shortSha(commit.commitSha)}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {commit.authorName || commit.authorUsername || 'Unknown'} • {formatDate(commit.timestamp)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    +{commit.linesAdded} / -{commit.linesRemoved} • {commit.filesChanged} files
+                  </p>
+                </div>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="diffs" className="space-y-3 pt-3">
+            {diffQuery.isLoading ? (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertTitle>Đang tải diff evidence</AlertTitle>
+                <AlertDescription>Backend đang trả về các diff mới nhất của repository.</AlertDescription>
+              </Alert>
+            ) : diffs.length === 0 ? (
+              <Alert>
+                <AlertTitle>Chưa có diff evidence</AlertTitle>
+                <AlertDescription>Hãy sync commits hoặc đợi webhook xử lý thêm.</AlertDescription>
+              </Alert>
+            ) : (
+              diffs.map((diff) => (
+                <div key={diff.id} className="rounded-lg border p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium">
+                      {shortSha(diff.baseCommitSha)} → {shortSha(diff.headCommitSha)}
+                    </p>
+                    <Badge variant="outline">{diff.status}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {diff.patchSummary || `${diff.includedFiles} included / ${diff.excludedFiles} excluded`}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {diff.files.slice(0, 5).map((file) => (
+                      <Badge key={`${diff.id}-${file.filePath}`} variant="secondary">
+                        {file.filePath}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="analysis" className="space-y-3 pt-3">
+            {analysisQuery.isLoading ? (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertTitle>Đang tải static analysis</AlertTitle>
+                <AlertDescription>Đang đọc kết quả phân tích tĩnh gần nhất.</AlertDescription>
+              </Alert>
+            ) : analyses.length === 0 ? (
+              <Alert>
+                <AlertTitle>Chưa có static analysis</AlertTitle>
+                <AlertDescription>Chưa có bản ghi phân tích nào cho repository này.</AlertDescription>
+              </Alert>
+            ) : (
+              analyses.map((item) => (
+                <div key={item.id} className="rounded-lg border p-3 space-y-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium">{shortSha(item.commitSha)}</p>
+                    <Badge variant="outline">{item.status}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Errors: {item.errorCount} • Warnings: {item.warningCount}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Source: {item.source || '-'}</p>
+                </div>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="impact" className="space-y-3 pt-3">
+            {impactQuery.isLoading ? (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertTitle>Đang tải impact decisions</AlertTitle>
+                <AlertDescription>Đang đọc đánh giá mức độ ảnh hưởng của các commit.</AlertDescription>
+              </Alert>
+            ) : impacts.length === 0 ? (
+              <Alert>
+                <AlertTitle>Chưa có impact decision</AlertTitle>
+                <AlertDescription>Chưa có dữ liệu impact cho repository này.</AlertDescription>
+              </Alert>
+            ) : (
+              impacts.map((item) => (
+                <div key={item.id} className="rounded-lg border p-3 space-y-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium">{shortSha(item.commitSha)}</p>
+                    <Badge variant={item.needsHumanReview ? 'destructive' : 'secondary'}>
+                      {item.impactLevel}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Decision: {item.decision} • Score: {item.impactScore}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{item.reasons.join(', ') || 'Không có reasons'}</p>
+                </div>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="ai" className="space-y-3 pt-3">
+            {reviewsQuery.isLoading ? (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertTitle>Đang tải AI reviews</AlertTitle>
+                <AlertDescription>Đang đọc lịch sử AI audit của repository.</AlertDescription>
+              </Alert>
+            ) : aiReviews.length === 0 ? (
+              <Alert>
+                <AlertTitle>Chưa có AI review</AlertTitle>
+                <AlertDescription>Repository này chưa có per-push hoặc aggregate audit.</AlertDescription>
+              </Alert>
+            ) : (
+              aiReviews.map((review) => (
+                <div key={review.id} className="rounded-lg border p-3 space-y-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-medium">{review.reviewKind}</p>
+                    <Badge variant={review.needsHumanReview ? 'destructive' : 'secondary'}>
+                      {review.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{review.summary || 'Chưa có summary.'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {review.modelName || 'Unknown model'} • {formatDate(review.completedAt || review.requestedAt)}
+                  </p>
+                </div>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function Repositories() {
@@ -44,10 +354,14 @@ export function Repositories() {
   const [githubToken, setGithubToken] = useState('');
   const [enabled, setEnabled] = useState(false);
 
+  const [selectedTeamId, setSelectedTeamId] = useState('');
+  const [selectedRoundId, setSelectedRoundId] = useState('none');
   const [repoName, setRepoName] = useState('');
   const [repoDescription, setRepoDescription] = useState('');
   const [repoPrivate, setRepoPrivate] = useState(true);
 
+  const [selectedRepositoryId, setSelectedRepositoryId] = useState('');
+  const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null);
   const [collabRepoName, setCollabRepoName] = useState('');
   const [collabUsername, setCollabUsername] = useState('');
   const [collabPermission, setCollabPermission] = useState<typeof PERMISSIONS[number]>('push');
@@ -58,10 +372,7 @@ export function Repositories() {
 
   const eventsQuery = useQuery({
     queryKey: ['github-config-events'],
-    queryFn: async () => {
-      const response = await eventsApi.list({ page: 1, limit: 100 });
-      return response.data;
-    },
+    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
   });
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
@@ -73,17 +384,41 @@ export function Repositories() {
   const configQuery = useQuery({
     queryKey: ['github-config', activeEventId],
     enabled: Boolean(activeEventId),
-    queryFn: async () => {
-      const response = await githubApi.getConfig(activeEventId);
-      return response.data;
-    },
+    queryFn: async () => (await githubApi.getConfig(activeEventId)).data,
   });
+
+  const teamsQuery = useQuery({
+    queryKey: ['repository-teams', activeEventId],
+    enabled: Boolean(activeEventId),
+    queryFn: async () => (await teamsApi.list({ eventId: activeEventId, limit: 100 })).data,
+  });
+
+  const roundsQuery = useQuery({
+    queryKey: ['repository-rounds', activeEventId],
+    enabled: Boolean(activeEventId),
+    queryFn: async () => (await roundsApi.list({ eventId: activeEventId, limit: 100 })).data,
+  });
+
+  const repositoriesQuery = useQuery({
+    queryKey: ['repositories', activeEventId],
+    enabled: Boolean(activeEventId),
+    queryFn: async () => (await repositoriesApi.list({ eventId: activeEventId, limit: 100 })).data,
+  });
+
+  const teams = teamsQuery.data || [];
+  const rounds = roundsQuery.data || [];
+  const repositories = repositoriesQuery.data || [];
+  const selectedRepositorySummary = repositories.find((repository) => repository.id === selectedRepositoryId) || null;
 
   useEffect(() => {
     setOrganizationName('');
     setOwnerUsername('');
     setGithubToken('');
     setEnabled(false);
+    setSelectedTeamId('');
+    setSelectedRoundId('none');
+    setSelectedRepositoryId('');
+    setCollabRepoName('');
     setRevokeResult(null);
   }, [activeEventId]);
 
@@ -94,17 +429,23 @@ export function Repositories() {
     setEnabled(Boolean(configQuery.data.enabled));
   }, [configQuery.data]);
 
+  useEffect(() => {
+    if (!repositories.length) return;
+    const preferred = repositories.find((item) => item.id === selectedRepositoryId) || repositories[0];
+    setSelectedRepositoryId(preferred.id);
+    setCollabRepoName((current) => current || preferred.githubRepo);
+  }, [repositories, selectedRepositoryId]);
+
   const saveConfigMutation = useMutation({
     mutationFn: async () => {
       if (!activeEventId) throw new Error('Please select an event first.');
-      const response = await githubApi.saveConfig({
+      return (await githubApi.saveConfig({
         eventId: activeEventId,
         organizationName,
         ownerUsername,
         githubToken,
         enabled,
-      });
-      return response.data;
+      })).data;
     },
     onSuccess: async () => {
       setGithubToken('');
@@ -117,8 +458,7 @@ export function Repositories() {
   const testConnectionMutation = useMutation({
     mutationFn: async () => {
       if (!activeEventId) throw new Error('Please select an event first.');
-      const response = await githubApi.testConnection(activeEventId);
-      return response.data;
+      return (await githubApi.testConnection(activeEventId)).data;
     },
     onSuccess: (result) => {
       toast.success('GitHub connection works', {
@@ -131,21 +471,25 @@ export function Repositories() {
   const createRepositoryMutation = useMutation({
     mutationFn: async () => {
       if (!activeEventId) throw new Error('Please select an event first.');
-      const response = await githubApi.createRepository({
+      if (!selectedTeamId) throw new Error('Please select a team first.');
+      return (await githubApi.createRepository({
         eventId: activeEventId,
+        teamId: selectedTeamId,
+        roundId: selectedRoundId === 'none' ? null : selectedRoundId,
         repoName,
         description: repoDescription,
         private: repoPrivate,
-      });
-      return response.data;
+      })).data;
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       toast.success('Repository created', {
         description: result.htmlUrl || result.repoName,
       });
       setRepoName('');
       setRepoDescription('');
       setRepoPrivate(true);
+      setCollabRepoName(result.repoName);
+      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
     },
     onError: (error) => toast.error('Could not create repository', { description: getApiErrorMessage(error) }),
   });
@@ -153,30 +497,60 @@ export function Repositories() {
   const assignCollaboratorMutation = useMutation({
     mutationFn: async () => {
       if (!activeEventId) throw new Error('Please select an event first.');
-      const response = await githubApi.assignCollaborator(collabRepoName, collabUsername, {
+      return (await githubApi.assignCollaborator(collabRepoName, collabUsername, {
         eventId: activeEventId,
         permission: collabPermission,
-      });
-      return response.data;
+      })).data;
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       toast.success('Collaborator assigned', {
         description: `${result.username} has ${result.permission} access to ${result.repoName}.`,
       });
       setCollabUsername('');
+      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
     },
     onError: (error) => toast.error('Could not assign collaborator', { description: getApiErrorMessage(error) }),
+  });
+
+  const revokeCollaboratorMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      return (await githubApi.revokeCollaborator(collabRepoName, collabUsername, {
+        eventId: activeEventId,
+      })).data;
+    },
+    onSuccess: async (result) => {
+      toast.success('Collaborator revoked', {
+        description: `${result.username} was removed from ${result.repoName}.`,
+      });
+      setCollabUsername('');
+      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+    },
+    onError: (error) => toast.error('Could not revoke collaborator', { description: getApiErrorMessage(error) }),
+  });
+
+  const registerWebhookMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      return (await githubApi.registerRepositoryWebhook(collabRepoName, { eventId: activeEventId })).data;
+    },
+    onSuccess: async (result) => {
+      toast.success('Webhook registered', {
+        description: `${result.repoName} is now pointing to ${result.callbackUrl}.`,
+      });
+      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+    },
+    onError: (error) => toast.error('Could not register webhook', { description: getApiErrorMessage(error) }),
   });
 
   const inviteMemberMutation = useMutation({
     mutationFn: async () => {
       if (!activeEventId) throw new Error('Please select an event first.');
-      const response = await githubApi.inviteOrganizationMember({
+      return (await githubApi.inviteOrganizationMember({
         eventId: activeEventId,
         email: inviteEmail,
         role: 'direct_member',
-      });
-      return response.data;
+      })).data;
     },
     onSuccess: (result) => {
       toast.success('Organization invitation sent', {
@@ -190,11 +564,10 @@ export function Repositories() {
   const revokeMembersMutation = useMutation({
     mutationFn: async () => {
       if (!activeEventId) throw new Error('Please select an event first.');
-      const response = await githubApi.revokeMembers({
+      return (await githubApi.revokeMembers({
         eventId: activeEventId,
         confirmationText: 'REVOKE MEMBERS',
-      });
-      return response.data;
+      })).data;
     },
     onSuccess: (result) => {
       setRevokeResult(result);
@@ -206,13 +579,36 @@ export function Repositories() {
     onError: (error) => toast.error('Could not revoke organization members', { description: getApiErrorMessage(error) }),
   });
 
+  const syncRepositoryMutation = useMutation({
+    mutationFn: (repositoryId: string) => repositoriesApi.syncCommits(repositoryId),
+    onSuccess: async () => {
+      toast.success('Sync commits requested');
+      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+    },
+    onError: (error) => toast.error('Could not sync commits', { description: getApiErrorMessage(error) }),
+  });
+
+  const analyzeRepositoryMutation = useMutation({
+    mutationFn: (repositoryId: string) => repositoriesApi.analyzeCommit(repositoryId),
+    onSuccess: () => toast.success('Analyze commit requested'),
+    onError: (error) => toast.error('Could not request analysis', { description: getApiErrorMessage(error) }),
+  });
+
+  const triggerAiReviewMutation = useMutation({
+    mutationFn: (repositoryId: string) => repositoriesApi.triggerTeamAggregateReview(repositoryId),
+    onSuccess: () => toast.success('Team aggregate AI review requested'),
+    onError: (error) => toast.error('Could not trigger AI review', { description: getApiErrorMessage(error) }),
+  });
+
   const config = configQuery.data;
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold mb-1">Repository Management</h1>
-        <p className="text-sm text-muted-foreground">Each event has its own GitHub organization configuration.</p>
+        <p className="text-sm text-muted-foreground">
+          Quản lý GitHub config, repository linkage, quyền truy cập và evidence pipeline theo từng event.
+        </p>
       </div>
 
       <Card>
@@ -247,8 +643,8 @@ export function Repositories() {
           <AlertTitle>{config?.enabled ? 'GitHub integration enabled' : 'GitHub integration disabled'}</AlertTitle>
           <AlertDescription>
             Organization: <strong>{config?.organizationName || 'Not configured'}</strong>
-            {' '}· Token: <strong>{config?.hasToken ? 'Configured' : 'Missing'}</strong>
-            {' '}· Event: <strong>{activeEvent?.title || 'No event selected'}</strong>
+            {' '}• Token: <strong>{config?.hasToken ? 'Configured' : 'Missing'}</strong>
+            {' '}• Event: <strong>{activeEvent?.title || 'No event selected'}</strong>
           </AlertDescription>
         </Alert>
       )}
@@ -333,11 +729,44 @@ export function Repositories() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5" />
-              Repository Management
+              Create Repository
             </CardTitle>
-            <CardDescription>Create a repository inside the configured organization.</CardDescription>
+            <CardDescription>Tạo repo GitHub và link luôn vào team của event hiện tại.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Team</Label>
+                <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Round</Label>
+                <Select value={selectedRoundId} onValueChange={setSelectedRoundId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Optional round" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No round</SelectItem>
+                    {rounds.map((round) => (
+                      <SelectItem key={round.id} value={round.id}>
+                        {round.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="repo-name">Repo name</Label>
               <Input
@@ -362,7 +791,7 @@ export function Repositories() {
             </div>
             <Button
               onClick={() => createRepositoryMutation.mutate()}
-              disabled={createRepositoryMutation.isPending || !activeEventId}
+              disabled={createRepositoryMutation.isPending || !activeEventId || !selectedTeamId || !repoName}
             >
               {createRepositoryMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Create repository
@@ -370,25 +799,129 @@ export function Repositories() {
           </CardContent>
         </Card>
 
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <CardTitle>Linked Repositories</CardTitle>
+            <CardDescription>
+              Danh sách repository đã link với event, kèm trạng thái quyền truy cập, webhook và pipeline evidence.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {repositoriesQuery.isLoading ? (
+              <Alert>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertTitle>Loading repositories</AlertTitle>
+                <AlertDescription>Đang đọc danh sách repository từ backend.</AlertDescription>
+              </Alert>
+            ) : repositories.length === 0 ? (
+              <Alert>
+                <AlertTitle>No repositories linked yet</AlertTitle>
+                <AlertDescription>Tạo repository đầu tiên để bắt đầu pipeline GitHub cho event này.</AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-3">
+                {repositories.map((repository) => (
+                  <div key={repository.id} className="rounded-lg border p-4 space-y-3">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium">{repository.repositoryFullName}</p>
+                          <Badge variant={statusVariant(repository.status)}>{repository.status}</Badge>
+                          <Badge variant={accessVariant(repository.accessState)}>{repository.accessState}</Badge>
+                          <Badge variant={webhookVariant(repository.webhookStatus)}>{repository.webhookStatus}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Team: {repository.team?.name || '-'} • Round: {repository.round?.name || 'Chưa gắn'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Latest: {shortSha(repository.latestCommitSha)} • Processed: {shortSha(repository.lastProcessedCommitSha)}
+                        </p>
+                        {repository.lastWebhookRegistrationError && (
+                          <p className="text-xs text-destructive">{repository.lastWebhookRegistrationError}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <a href={repository.repositoryUrl} target="_blank" rel="noreferrer">
+                          <Button variant="outline" size="sm">
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Open
+                          </Button>
+                        </a>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => syncRepositoryMutation.mutate(repository.id)}
+                          disabled={syncRepositoryMutation.isPending}
+                        >
+                          <RefreshCcw className="w-4 h-4 mr-2" />
+                          Sync
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => analyzeRepositoryMutation.mutate(repository.id)}
+                          disabled={analyzeRepositoryMutation.isPending}
+                        >
+                          <GitCommitHorizontal className="w-4 h-4 mr-2" />
+                          Analyze
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => triggerAiReviewMutation.mutate(repository.id)}
+                          disabled={triggerAiReviewMutation.isPending}
+                        >
+                          <Bot className="w-4 h-4 mr-2" />
+                          AI Review
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setSelectedRepository(repository);
+                            setSelectedRepositoryId(repository.id);
+                            setCollabRepoName(repository.githubRepo);
+                          }}
+                        >
+                          View details
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5" />
-              Collaborator Management
+              Access + Webhook Actions
             </CardTitle>
-            <CardDescription>Assign a GitHub user to a repository with a selected permission.</CardDescription>
+            <CardDescription>Gán hoặc thu hồi collaborator, đồng thời đăng ký lại webhook khi cần.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Repository</Label>
+              <Select
+                value={collabRepoName}
+                onValueChange={setCollabRepoName}
+                disabled={repositories.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select repository" />
+                </SelectTrigger>
+                <SelectContent>
+                  {repositories.map((repository) => (
+                    <SelectItem key={repository.id} value={repository.githubRepo}>
+                      {repository.repositoryFullName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="collab-repo">Repo name</Label>
-                <Input
-                  id="collab-repo"
-                  value={collabRepoName}
-                  onChange={(event) => setCollabRepoName(event.target.value)}
-                  placeholder="team-alpha-project"
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="collab-user">GitHub username</Label>
                 <Input
@@ -398,27 +931,57 @@ export function Repositories() {
                   placeholder="octocat"
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Permission</Label>
+                <Select value={collabPermission} onValueChange={(value) => setCollabPermission(value as typeof PERMISSIONS[number])}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PERMISSIONS.map((permission) => (
+                      <SelectItem key={permission} value={permission}>{permission}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Permission</Label>
-              <Select value={collabPermission} onValueChange={(value) => setCollabPermission(value as typeof PERMISSIONS[number])}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PERMISSIONS.map((permission) => (
-                    <SelectItem key={permission} value={permission}>{permission}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => assignCollaboratorMutation.mutate()}
+                disabled={assignCollaboratorMutation.isPending || !activeEventId || !collabRepoName || !collabUsername}
+              >
+                {assignCollaboratorMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Assign member
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => revokeCollaboratorMutation.mutate()}
+                disabled={revokeCollaboratorMutation.isPending || !activeEventId || !collabRepoName || !collabUsername}
+              >
+                {revokeCollaboratorMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Revoke collaborator
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => registerWebhookMutation.mutate()}
+                disabled={registerWebhookMutation.isPending || !activeEventId || !collabRepoName}
+              >
+                {registerWebhookMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Webhook className="w-4 h-4 mr-2" />
+                )}
+                Register webhook
+              </Button>
             </div>
-            <Button
-              onClick={() => assignCollaboratorMutation.mutate()}
-              disabled={assignCollaboratorMutation.isPending || !activeEventId}
-            >
-              {assignCollaboratorMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Assign member
-            </Button>
+            {selectedRepositorySummary && (
+              <div className="rounded-md border p-3 text-sm">
+                <p className="font-medium">{selectedRepositorySummary.repositoryFullName}</p>
+                <p className="text-muted-foreground mt-1">
+                  Access: {selectedRepositorySummary.accessState} • Webhook: {selectedRepositorySummary.webhookStatus}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -528,6 +1091,12 @@ export function Repositories() {
           )}
         </CardContent>
       </Card>
+
+      <RepositoryDetailDialog
+        repository={selectedRepository}
+        open={Boolean(selectedRepository)}
+        onClose={() => setSelectedRepository(null)}
+      />
     </div>
   );
 }

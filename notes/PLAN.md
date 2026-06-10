@@ -124,7 +124,7 @@ This phase should align to BE operations/audit modules, not guessed UI.
 - refine mobile/tablet layouts for all role-critical screens
 - add bundle and interaction-budget checks
 
-### 4. Build a role-feature matrix from BE docs/src, then implement by dependency
+### 4. Build a role-feature matrix from BE src, then implement by dependency
 In `FE_FEATURE_MATRIX.md`, map each role to modules and screen families:
 
 - `participant`: registration, team, media, submissions, workshop attendance, status visibility
