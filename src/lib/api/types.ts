@@ -663,6 +663,134 @@ export interface ListTracksQuery {
 }
 
 // ============================================================
+// Participant Types
+// ============================================================
+
+export type ParticipantStatus = 'INVITED' | 'REGISTERED' | 'ACTIVE' | 'WITHDRAWN';
+export type CheckInStatus = 'NOT_CHECKED_IN' | 'CHECKED_IN';
+export type GitHubAccessStatus = 'NOT_GRANTED' | 'GRANTED' | 'REVOKED';
+export type EligibilityStatus = 'PENDING' | 'ELIGIBLE' | 'INELIGIBLE';
+export type TeamRole = 'MEMBER' | 'LEADER';
+export type AttendedActivity = 'WORKSHOP' | 'OPENING' | 'TEAM_MEETING' | 'CODING' | 'PRESENTATION' | 'CLOSING';
+
+export interface ParticipantUserSummary {
+  id: string;
+  fullName?: string;
+  email?: string;
+  avatarUrl?: string | null;
+  studentId?: string | null;
+  studentType?: 'FPT' | 'EXTERNAL' | null;
+  schoolName?: string | null;
+}
+
+export interface ParticipantTeamSummary {
+  id: string;
+  name?: string;
+  status?: string;
+}
+
+export interface Participant {
+  id: string;
+  eventId: string;
+  user: ParticipantUserSummary | null;
+  team: ParticipantTeamSummary | null;
+  chapterName?: string | null;
+  teamRole?: TeamRole;
+  isGraduated?: boolean;
+  consentMediaUse?: boolean;
+  eligibilityStatus: EligibilityStatus;
+  attendedActivities: AttendedActivity[];
+  checkInStatus: CheckInStatus;
+  githubAccessStatus: GitHubAccessStatus;
+  status: ParticipantStatus;
+  joinedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateParticipantRequest {
+  eventId: string;
+  userId?: string;
+  teamId?: string | null;
+  chapterName?: string;
+  teamRole?: TeamRole;
+  isGraduated?: boolean;
+  consentMediaUse?: boolean;
+  status?: ParticipantStatus;
+}
+
+export interface UpdateParticipantRequest {
+  status?: ParticipantStatus;
+  eligibilityStatus?: EligibilityStatus;
+  teamId?: string | null;
+  teamRole?: TeamRole;
+  chapterName?: string | null;
+  isGraduated?: boolean;
+  consentMediaUse?: boolean;
+  githubAccessStatus?: GitHubAccessStatus;
+  attendedActivities?: AttendedActivity[];
+}
+
+export interface ListParticipantsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  teamId?: string;
+  checkInStatus?: CheckInStatus;
+  status?: ParticipantStatus;
+  eligibilityStatus?: EligibilityStatus;
+  githubAccessStatus?: GitHubAccessStatus;
+}
+
+// ============================================================
+// Timeline Types
+// ============================================================
+
+export type TimelineEventType = 'WORKSHOP' | 'CHECK_IN' | 'ROUND' | 'RESULT_PUBLISHING' | 'CEREMONY' | 'OTHER';
+export type TimelineStatus = 'SCHEDULED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+
+export interface TimelineEventSummary {
+  id: string;
+  title?: string;
+  semester?: string;
+  status?: string;
+}
+
+export interface TimelineEvent {
+  id: string;
+  event: TimelineEventSummary | null;
+  eventId: string;
+  title: string;
+  description?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  eventType: TimelineEventType;
+  status: TimelineStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTimelineRequest {
+  eventId: string;
+  title: string;
+  description?: string;
+  startTime?: string;
+  endTime?: string;
+  eventType?: TimelineEventType;
+  status?: TimelineStatus;
+}
+
+export type UpdateTimelineRequest = Partial<Omit<CreateTimelineRequest, 'eventId'>>;
+
+export interface ListTimelinesQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  eventType?: TimelineEventType;
+  status?: TimelineStatus;
+}
+
+// ============================================================
 // Workshop Types
 // ============================================================
 
