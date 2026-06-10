@@ -1,4 +1,9 @@
 export { api, apiRequest, getAccessToken, getRefreshToken, setTokens, clearTokens, ApiError } from './client';
+export { judgingBoardsApi } from './judging-boards';
+export { roundsApi } from './rounds';
+export { rubricsApi } from './rubrics';
+export { scoringApi } from './scoring';
+export { submissionsApi } from './submissions';
 export { authApi } from './auth';
 export { eventsApi } from './events';
 export { githubApi } from './github';

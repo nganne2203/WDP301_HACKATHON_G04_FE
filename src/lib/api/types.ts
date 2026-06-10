@@ -881,3 +881,246 @@ export interface WorkshopFeedback {
   createdAt: string;
   updatedAt: string;
 }
+
+// ============================================================
+// Round Types
+// ============================================================
+export type RoundType = 'PRELIMINARY' | 'FINAL';
+export type RoundStatus = 'DRAFT' | 'OPEN' | 'CLOSED' | 'SCORING' | 'COMPLETED';
+
+export interface Round {
+  id: string;
+  eventId: string;
+  event: { id: string; title: string; status: string } | null;
+  trackId: string | null;
+  track: { id: string; code: string; name: string } | null;
+  rubricId: string | null;
+  rubric: { id: string; title: string; totalScore: number | null } | null;
+  name: string;
+  roundType: RoundType;
+  status: RoundStatus;
+  startTime: string | null;
+  endTime: string | null;
+  submissionDeadline: string | null;
+  publishTime: string | null;
+  maxPromotedTeams: number | null;
+  assignedTeamIds: string[];
+  promotedTeamIds: string[];
+  assignedJudges: UserSummary[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRoundRequest {
+  eventId: string;
+  name: string;
+  roundType?: RoundType;
+  trackId?: string | null;
+  rubricId?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  submissionDeadline?: string | null;
+  publishTime?: string | null;
+  maxPromotedTeams?: number | null;
+}
+
+export interface UpdateRoundRequest {
+  name?: string;
+  roundType?: RoundType;
+  status?: RoundStatus;
+  trackId?: string | null;
+  rubricId?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  submissionDeadline?: string | null;
+  publishTime?: string | null;
+  maxPromotedTeams?: number | null;
+}
+
+// ============================================================
+// Judging Board Types
+// ============================================================
+export type JudgingBoardStatus = 'DRAFT' | 'ASSIGNED' | 'SCORING' | 'COMPLETED';
+
+export interface JudgingBoard {
+  id: string;
+  eventId: string;
+  event: { id: string; title: string } | null;
+  roundId: string;
+  round: { id: string; name: string; roundType: RoundType; status: RoundStatus } | null;
+  trackId: string | null;
+  track: { id: string; code: string; name: string } | null;
+  name: string;
+  boardNumber: number;
+  status: JudgingBoardStatus;
+  maxTeams: number;
+  teams: { id: string; name: string; projectName: string | null; status: string }[];
+  judges: UserSummary[];
+  teamIds: string[];
+  judgeIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateJudgingBoardRequest {
+  eventId: string;
+  roundId: string;
+  trackId?: string | null;
+  name: string;
+  boardNumber: number;
+  maxTeams?: number;
+  teamIds?: string[];
+  judgeIds?: string[];
+}
+
+export interface AutoAssignRequest {
+  eventId: string;
+  roundId: string;
+  teamsPerBoard?: number;
+}
+
+export interface UpdateJudgingBoardRequest {
+  name?: string;
+  status?: JudgingBoardStatus;
+  maxTeams?: number;
+  teamIds?: string[];
+  judgeIds?: string[];
+}
+
+// ============================================================
+// Submission Types
+// ============================================================
+export type SubmissionStatus = 'DRAFT' | 'SUBMITTED' | 'ACCEPTED' | 'REJECTED';
+
+export interface Submission {
+  id: string;
+  eventId: string;
+  event: { id: string; title: string } | null;
+  roundId: string;
+  round: { id: string; name: string; roundType: RoundType; status: RoundStatus } | null;
+  teamId: string;
+  team: { id: string; name: string; projectName: string | null } | null;
+  demoUrl: string | null;
+  reportUrl: string | null;
+  presentationUrl: string | null;
+  status: SubmissionStatus;
+  submittedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSubmissionRequest {
+  roundId: string;
+  teamId: string;
+  demoUrl?: string | null;
+  reportUrl?: string | null;
+  presentationUrl?: string | null;
+}
+
+export interface UpdateSubmissionRequest {
+  demoUrl?: string | null;
+  reportUrl?: string | null;
+  presentationUrl?: string | null;
+  submit?: boolean;
+}
+
+// ============================================================
+// Rubric + Criterion Types
+// ============================================================
+export interface Criterion {
+  id: string;
+  rubricId: string;
+  name: string;
+  description: string | null;
+  maxScore: number;
+  weight: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Rubric {
+  id: string;
+  eventId: string | null;
+  event: { id: string; title: string } | null;
+  title: string;
+  description: string | null;
+  totalScore: number | null;
+  createdBy: UserSummary | null;
+  criteria: Criterion[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRubricRequest {
+  eventId?: string | null;
+  title: string;
+  description?: string | null;
+  totalScore?: number | null;
+}
+
+export interface UpdateRubricRequest {
+  title?: string;
+  description?: string | null;
+  totalScore?: number | null;
+}
+
+export interface CreateCriterionRequest {
+  name: string;
+  description?: string | null;
+  maxScore: number;
+  weight?: number;
+}
+
+export interface UpdateCriterionRequest {
+  name?: string;
+  description?: string | null;
+  maxScore?: number;
+  weight?: number;
+}
+
+// ============================================================
+// Scoring Types
+// ============================================================
+export type ScoreSheetStatus = 'DRAFT' | 'SUBMITTED' | 'LOCKED';
+
+export interface ScoreEntry {
+  criterionId: string;
+  criterion: { id: string; name: string; maxScore: number; weight: number } | null;
+  scoreValue: number;
+  comment: string | null;
+  isOverridden: boolean;
+  overrideReason: string | null;
+}
+
+export interface ScoreSheet {
+  id: string;
+  eventId: string;
+  roundId: string;
+  round: { id: string; name: string; roundType: RoundType } | null;
+  boardId: string | null;
+  board: { id: string; name: string; boardNumber: number } | null;
+  teamId: string;
+  team: { id: string; name: string; projectName: string | null } | null;
+  submissionId: string;
+  submission: { id: string; demoUrl: string | null; reportUrl: string | null; presentationUrl: string | null } | null;
+  judgeId: string;
+  judge: UserSummary | null;
+  rubricId: string | null;
+  totalScore: number;
+  weightedScore: number;
+  finalScore: number;
+  generalComment: string | null;
+  status: ScoreSheetStatus;
+  submittedAt: string | null;
+  scores: ScoreEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubmitScoreSheetRequest {
+  roundId: string;
+  teamId: string;
+  generalComment?: string | null;
+  submit?: boolean;
+  scores: { criterionId: string; scoreValue: number; comment?: string | null }[];
+}
