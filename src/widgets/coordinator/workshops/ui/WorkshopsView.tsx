@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, Loader2, MoreVertical, Plus, Presentation } from 'lucide-react';
+import { Loader2, MoreVertical, Plus, Presentation } from 'lucide-react';
 
 import { eventsApi, timelinesApi, workshopsApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
-import type { TimelineEvent, Workshop, WorkshopStatus } from '@/shared/api/types';
+import type { Workshop } from '@/shared/api/types';
 import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/workshops';
 import { useStore } from '@/entities/session/model/store';
 import {
@@ -26,7 +26,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
@@ -37,132 +36,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table';
-import { Textarea } from '@/shared/ui/textarea';
 import { toast } from 'sonner';
-
-const workshopStatusOptions: WorkshopStatus[] = ['SCHEDULED', 'LIVE', 'COMPLETED', 'CANCELLED'];
-
-interface WorkshopFormState {
-  timelineEventId: string;
-  title: string;
-  description: string;
-  presenterId: string;
-  speakerName: string;
-  speakerTitle: string;
-  speakerEmail: string;
-  speakerBio: string;
-  meetLink: string;
-  startTime: string;
-  endTime: string;
-  questionnaire: string;
-  status: WorkshopStatus;
-}
-
-function createEmptyWorkshopForm(): WorkshopFormState {
-  return {
-    timelineEventId: 'none',
-    title: '',
-    description: '',
-    presenterId: '',
-    speakerName: '',
-    speakerTitle: '',
-    speakerEmail: '',
-    speakerBio: '',
-    meetLink: '',
-    startTime: '',
-    endTime: '',
-    questionnaire: '',
-    status: 'SCHEDULED',
-  };
-}
-
-function normalizeOptionalText(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function toDateTimeInputValue(value?: string | null) {
-  if (!value) return '';
-  const date = new Date(value);
-  const timezoneOffset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return '-';
-  return new Date(value).toLocaleString();
-}
-
-function parseQuestionnaire(value: string) {
-  const items = value
-    .split(/[\n,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-  return Array.from(new Set(items));
-}
-
-function mapWorkshopToForm(workshop: Workshop): WorkshopFormState {
-  return {
-    timelineEventId: workshop.timelineEventId || 'none',
-    title: workshop.title,
-    description: workshop.description || '',
-    presenterId: workshop.presenterId || '',
-    speakerName: workshop.speakerInfo?.name || '',
-    speakerTitle: workshop.speakerInfo?.title || '',
-    speakerEmail: workshop.speakerInfo?.email || '',
-    speakerBio: workshop.speakerInfo?.bio || '',
-    meetLink: workshop.meetLink || '',
-    startTime: toDateTimeInputValue(workshop.startTime),
-    endTime: toDateTimeInputValue(workshop.endTime),
-    questionnaire: (workshop.questionnaire || []).join('\n'),
-    status: workshop.status,
-  };
-}
-
-function buildWorkshopPayload(form: WorkshopFormState, eventId: string): CreateWorkshopRequest {
-  return {
-    eventId,
-    timelineEventId: form.timelineEventId === 'none' ? undefined : form.timelineEventId,
-    title: form.title.trim(),
-    description: normalizeOptionalText(form.description) || undefined,
-    presenterId: normalizeOptionalText(form.presenterId) || undefined,
-    speakerInfo: {
-      name: normalizeOptionalText(form.speakerName) || undefined,
-      title: normalizeOptionalText(form.speakerTitle) || undefined,
-      email: normalizeOptionalText(form.speakerEmail) || undefined,
-      bio: normalizeOptionalText(form.speakerBio) || undefined,
-    },
-    meetLink: normalizeOptionalText(form.meetLink) || undefined,
-    startTime: form.startTime,
-    endTime: form.endTime,
-    questionnaire: parseQuestionnaire(form.questionnaire),
-    status: form.status,
-  };
-}
-
-function buildWorkshopUpdatePayload(form: WorkshopFormState): UpdateWorkshopRequest {
-  return {
-    timelineEventId: form.timelineEventId === 'none' ? undefined : form.timelineEventId,
-    title: form.title.trim(),
-    description: normalizeOptionalText(form.description) || undefined,
-    presenterId: normalizeOptionalText(form.presenterId) || undefined,
-    speakerInfo: {
-      name: normalizeOptionalText(form.speakerName) || undefined,
-      title: normalizeOptionalText(form.speakerTitle) || undefined,
-      email: normalizeOptionalText(form.speakerEmail) || undefined,
-      bio: normalizeOptionalText(form.speakerBio) || undefined,
-    },
-    meetLink: normalizeOptionalText(form.meetLink) || undefined,
-    startTime: form.startTime || undefined,
-    endTime: form.endTime || undefined,
-    questionnaire: parseQuestionnaire(form.questionnaire),
-    status: form.status,
-  };
-}
-
-function workshopPresenterLabel(workshop: Workshop) {
-  return workshop.presenter?.fullName || workshop.speakerInfo?.name || workshop.presenter?.email || '-';
-}
+import {
+  buildWorkshopPayload,
+  buildWorkshopUpdatePayload,
+  createEmptyWorkshopForm,
+  formatDateTime,
+  mapWorkshopToForm,
+  workshopPresenterLabel,
+  type WorkshopFormState,
+} from '../model/workshop-form';
+import { WorkshopForm, WorkshopInlineError, WorkshopMetricCard } from './WorkshopForm';
 
 export function Workshops() {
   const queryClient = useQueryClient();
@@ -359,21 +243,21 @@ export function Workshops() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <MetricCard label="Total Workshops" value={String(workshops.length)} helper="Scheduled in selected event" />
-        <MetricCard label="Live Now" value={String(liveCount)} helper="Sessions currently active" />
-        <MetricCard label="Completed" value={String(completedCount)} helper="Finished workshops" />
+        <WorkshopMetricCard label="Total Workshops" value={String(workshops.length)} helper="Scheduled in selected event" />
+        <WorkshopMetricCard label="Live Now" value={String(liveCount)} helper="Sessions currently active" />
+        <WorkshopMetricCard label="Completed" value={String(completedCount)} helper="Finished workshops" />
       </div>
 
       {eventsQuery.error && (
-        <InlineError message={eventsQuery.error instanceof ApiError ? eventsQuery.error.firstError : 'Failed to load events'} />
+        <WorkshopInlineError message={eventsQuery.error instanceof ApiError ? eventsQuery.error.firstError : 'Failed to load events'} />
       )}
 
       {workshopsQuery.error && (
-        <InlineError message={workshopsQuery.error instanceof ApiError ? workshopsQuery.error.firstError : 'Failed to load workshops'} />
+        <WorkshopInlineError message={workshopsQuery.error instanceof ApiError ? workshopsQuery.error.firstError : 'Failed to load workshops'} />
       )}
 
       {workshopTimelinesQuery.error && (
-        <InlineError message={workshopTimelinesQuery.error instanceof ApiError ? workshopTimelinesQuery.error.firstError : 'Failed to load workshop timelines'} />
+        <WorkshopInlineError message={workshopTimelinesQuery.error instanceof ApiError ? workshopTimelinesQuery.error.firstError : 'Failed to load workshop timelines'} />
       )}
 
       <Card>
@@ -498,197 +382,6 @@ export function Workshops() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-function WorkshopForm({
-  form,
-  onChange,
-  timelines,
-}: {
-  form: WorkshopFormState;
-  onChange: React.Dispatch<React.SetStateAction<WorkshopFormState>>;
-  timelines: TimelineEvent[];
-}) {
-  return (
-    <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="workshop-title">Title</Label>
-          <Input
-            id="workshop-title"
-            value={form.title}
-            onChange={(event) => onChange((current) => ({ ...current, title: event.target.value }))}
-            placeholder="GitHub workflow clinic"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Timeline Item</Label>
-          <Select
-            value={form.timelineEventId}
-            onValueChange={(value) => onChange((current) => ({ ...current, timelineEventId: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Optional timeline reference" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No linked timeline item</SelectItem>
-              {timelines.map((timeline) => (
-                <SelectItem key={timeline.id} value={timeline.id}>
-                  {timeline.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="workshop-start">Start Time</Label>
-          <Input
-            id="workshop-start"
-            type="datetime-local"
-            value={form.startTime}
-            onChange={(event) => onChange((current) => ({ ...current, startTime: event.target.value }))}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="workshop-end">End Time</Label>
-          <Input
-            id="workshop-end"
-            type="datetime-local"
-            value={form.endTime}
-            onChange={(event) => onChange((current) => ({ ...current, endTime: event.target.value }))}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="workshop-presenter-id">Presenter Id</Label>
-          <Input
-            id="workshop-presenter-id"
-            value={form.presenterId}
-            onChange={(event) => onChange((current) => ({ ...current, presenterId: event.target.value }))}
-            placeholder="Optional user id from backend"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select
-            value={form.status}
-            onValueChange={(value: WorkshopStatus) => onChange((current) => ({ ...current, status: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {workshopStatusOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="speaker-name">Speaker Name</Label>
-          <Input
-            id="speaker-name"
-            value={form.speakerName}
-            onChange={(event) => onChange((current) => ({ ...current, speakerName: event.target.value }))}
-            placeholder="Internal or guest speaker name"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="speaker-title">Speaker Title</Label>
-          <Input
-            id="speaker-title"
-            value={form.speakerTitle}
-            onChange={(event) => onChange((current) => ({ ...current, speakerTitle: event.target.value }))}
-            placeholder="Mentor, Engineer, Lecturer..."
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="speaker-email">Speaker Email</Label>
-          <Input
-            id="speaker-email"
-            type="email"
-            value={form.speakerEmail}
-            onChange={(event) => onChange((current) => ({ ...current, speakerEmail: event.target.value }))}
-            placeholder="speaker@example.com"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="workshop-link">Meet Link</Label>
-          <Input
-            id="workshop-link"
-            value={form.meetLink}
-            onChange={(event) => onChange((current) => ({ ...current, meetLink: event.target.value }))}
-            placeholder="https://meet.google.com/..."
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="workshop-description">Description</Label>
-        <Textarea
-          id="workshop-description"
-          rows={3}
-          value={form.description}
-          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
-          placeholder="Describe the workshop and expected attendee outcome."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="speaker-bio">Speaker Bio</Label>
-        <Textarea
-          id="speaker-bio"
-          rows={3}
-          value={form.speakerBio}
-          onChange={(event) => onChange((current) => ({ ...current, speakerBio: event.target.value }))}
-          placeholder="Short speaker biography for event staff."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="workshop-questionnaire">Questionnaire</Label>
-        <Textarea
-          id="workshop-questionnaire"
-          rows={4}
-          value={form.questionnaire}
-          onChange={(event) => onChange((current) => ({ ...current, questionnaire: event.target.value }))}
-          placeholder="One question per line. These will be sent as a string array."
-        />
-      </div>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, helper }: { label: string; value: string; helper: string }) {
-  return (
-    <Card className="p-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-2 text-3xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
-    </Card>
-  );
-}
-
-function InlineError({ message }: { message: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-      <span>{message}</span>
     </div>
   );
 }

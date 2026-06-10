@@ -1,16 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, Clock3, Loader2, MoreVertical, Plus } from 'lucide-react';
+import { Clock3, Loader2, MoreVertical, Plus } from 'lucide-react';
 
 import { eventsApi, timelinesApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
-import type {
-  CreateTimelineRequest,
-  TimelineEvent,
-  TimelineEventType,
-  TimelineStatus,
-  UpdateTimelineRequest,
-} from '@/shared/api/types';
+import type { CreateTimelineRequest, TimelineEvent, UpdateTimelineRequest } from '@/shared/api/types';
 import { useStore } from '@/entities/session/model/store';
 import {
   AlertDialog,
@@ -31,7 +25,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
@@ -42,86 +35,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table';
-import { Textarea } from '@/shared/ui/textarea';
 import { toast } from 'sonner';
-
-const timelineTypeOptions: TimelineEventType[] = ['WORKSHOP', 'CHECK_IN', 'ROUND', 'RESULT_PUBLISHING', 'CEREMONY', 'OTHER'];
-const timelineStatusOptions: TimelineStatus[] = ['SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'];
-
-interface TimelineFormState {
-  title: string;
-  description: string;
-  startTime: string;
-  endTime: string;
-  eventType: TimelineEventType;
-  status: TimelineStatus;
-}
-
-function createEmptyTimelineForm(): TimelineFormState {
-  return {
-    title: '',
-    description: '',
-    startTime: '',
-    endTime: '',
-    eventType: 'OTHER',
-    status: 'SCHEDULED',
-  };
-}
-
-function normalizeOptionalText(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function toDateTimeInputValue(value?: string | null) {
-  if (!value) return '';
-  const date = new Date(value);
-  const timezoneOffset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return '-';
-  return new Date(value).toLocaleString();
-}
-
-function mapTimelineToForm(timeline: TimelineEvent): TimelineFormState {
-  return {
-    title: timeline.title,
-    description: timeline.description || '',
-    startTime: toDateTimeInputValue(timeline.startTime),
-    endTime: toDateTimeInputValue(timeline.endTime),
-    eventType: timeline.eventType,
-    status: timeline.status,
-  };
-}
-
-function buildTimelinePayload(form: TimelineFormState, eventId: string): CreateTimelineRequest {
-  return {
-    eventId,
-    title: form.title.trim(),
-    description: normalizeOptionalText(form.description),
-    startTime: form.startTime || undefined,
-    endTime: form.endTime || undefined,
-    eventType: form.eventType,
-    status: form.status,
-  };
-}
-
-function buildTimelineUpdatePayload(form: TimelineFormState): UpdateTimelineRequest {
-  return {
-    title: form.title.trim(),
-    description: normalizeOptionalText(form.description),
-    startTime: form.startTime || undefined,
-    endTime: form.endTime || undefined,
-    eventType: form.eventType,
-    status: form.status,
-  };
-}
-
-function formatTimelineType(type: TimelineEventType) {
-  return type.replaceAll('_', ' ');
-}
+import {
+  buildTimelinePayload,
+  buildTimelineUpdatePayload,
+  createEmptyTimelineForm,
+  formatDateTime,
+  formatTimelineType,
+  mapTimelineToForm,
+  type TimelineFormState,
+} from '../model/timeline-form';
+import { TimelineForm, TimelineInlineError, TimelineMetricCard } from './TimelineForm';
 
 export function Timelines() {
   const queryClient = useQueryClient();
@@ -295,17 +219,17 @@ export function Timelines() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <MetricCard label="Total Items" value={String(timelines.length)} helper="Milestones in selected event" />
-        <MetricCard label="In Progress" value={String(activeCount)} helper="Items currently ongoing" />
-        <MetricCard label="Completed" value={String(completedCount)} helper="Finished milestones" />
+        <TimelineMetricCard label="Total Items" value={String(timelines.length)} helper="Milestones in selected event" />
+        <TimelineMetricCard label="In Progress" value={String(activeCount)} helper="Items currently ongoing" />
+        <TimelineMetricCard label="Completed" value={String(completedCount)} helper="Finished milestones" />
       </div>
 
       {eventsQuery.error && (
-        <InlineError message={eventsQuery.error instanceof ApiError ? eventsQuery.error.firstError : 'Failed to load events'} />
+        <TimelineInlineError message={eventsQuery.error instanceof ApiError ? eventsQuery.error.firstError : 'Failed to load events'} />
       )}
 
       {timelinesQuery.error && (
-        <InlineError message={timelinesQuery.error instanceof ApiError ? timelinesQuery.error.firstError : 'Failed to load timelines'} />
+        <TimelineInlineError message={timelinesQuery.error instanceof ApiError ? timelinesQuery.error.firstError : 'Failed to load timelines'} />
       )}
 
       <Card>
@@ -423,118 +347,6 @@ export function Timelines() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-function TimelineForm({
-  form,
-  onChange,
-}: {
-  form: TimelineFormState;
-  onChange: React.Dispatch<React.SetStateAction<TimelineFormState>>;
-}) {
-  return (
-    <div className="grid gap-4 py-4">
-      <div className="space-y-2">
-        <Label htmlFor="timeline-title">Title</Label>
-        <Input
-          id="timeline-title"
-          value={form.title}
-          onChange={(event) => onChange((current) => ({ ...current, title: event.target.value }))}
-          placeholder="Opening ceremony"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label>Type</Label>
-          <Select
-            value={form.eventType}
-            onValueChange={(value: TimelineEventType) => onChange((current) => ({ ...current, eventType: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {timelineTypeOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {formatTimelineType(option)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select
-            value={form.status}
-            onValueChange={(value: TimelineStatus) => onChange((current) => ({ ...current, status: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {timelineStatusOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="timeline-start">Start Time</Label>
-          <Input
-            id="timeline-start"
-            type="datetime-local"
-            value={form.startTime}
-            onChange={(event) => onChange((current) => ({ ...current, startTime: event.target.value }))}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="timeline-end">End Time</Label>
-          <Input
-            id="timeline-end"
-            type="datetime-local"
-            value={form.endTime}
-            onChange={(event) => onChange((current) => ({ ...current, endTime: event.target.value }))}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="timeline-description">Description</Label>
-        <Textarea
-          id="timeline-description"
-          rows={4}
-          value={form.description}
-          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
-          placeholder="Optional agenda details, logistics, or reminders."
-        />
-      </div>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, helper }: { label: string; value: string; helper: string }) {
-  return (
-    <Card className="p-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-2 text-3xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
-    </Card>
-  );
-}
-
-function InlineError({ message }: { message: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-      <span>{message}</span>
     </div>
   );
 }

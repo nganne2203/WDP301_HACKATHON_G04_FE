@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, GitBranch, Loader2, MoreVertical, Plus } from 'lucide-react';
+import { GitBranch, Loader2, MoreVertical, Plus } from 'lucide-react';
 
 import { eventsApi, tracksApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
-import type { CreateTrackRequest, Event, Track, TrackStatus, TrackType, UpdateTrackRequest } from '@/shared/api/types';
+import type { CreateTrackRequest, Event, Track, UpdateTrackRequest } from '@/shared/api/types';
 import { useStore } from '@/entities/session/model/store';
 import {
   AlertDialog,
@@ -25,7 +25,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
@@ -36,84 +35,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table';
-import { Textarea } from '@/shared/ui/textarea';
 import { toast } from 'sonner';
-
-const trackTypeOptions: TrackType[] = ['PRELIMINARY_GROUP', 'FINAL_POOL', 'GENERAL'];
-const trackStatusOptions: TrackStatus[] = ['DRAFT', 'OPEN', 'LOCKED', 'COMPLETED'];
-
-interface TrackFormState {
-  code: string;
-  name: string;
-  description: string;
-  topic: string;
-  problemStatement: string;
-  type: TrackType;
-  maxTeams: string;
-  status: TrackStatus;
-}
-
-function createEmptyTrackForm(): TrackFormState {
-  return {
-    code: '',
-    name: '',
-    description: '',
-    topic: '',
-    problemStatement: '',
-    type: 'PRELIMINARY_GROUP',
-    maxTeams: '',
-    status: 'DRAFT',
-  };
-}
-
-function normalizeOptionalText(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function buildTrackPayload(form: TrackFormState, eventId: string): CreateTrackRequest {
-  return {
-    eventId,
-    code: normalizeOptionalText(form.code)?.toUpperCase() || undefined,
-    name: form.name.trim(),
-    description: normalizeOptionalText(form.description),
-    topic: normalizeOptionalText(form.topic),
-    problemStatement: normalizeOptionalText(form.problemStatement),
-    type: form.type,
-    maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
-    status: form.status,
-  };
-}
-
-function buildTrackUpdatePayload(form: TrackFormState): UpdateTrackRequest {
-  return {
-    code: normalizeOptionalText(form.code)?.toUpperCase() || null || undefined,
-    name: form.name.trim(),
-    description: normalizeOptionalText(form.description),
-    topic: normalizeOptionalText(form.topic),
-    problemStatement: normalizeOptionalText(form.problemStatement),
-    type: form.type,
-    maxTeams: form.maxTeams ? Number(form.maxTeams) : null,
-    status: form.status,
-  };
-}
-
-function mapTrackToForm(track: Track): TrackFormState {
-  return {
-    code: track.code || '',
-    name: track.name,
-    description: track.description || '',
-    topic: track.topic || '',
-    problemStatement: track.problemStatement || '',
-    type: track.type || 'PRELIMINARY_GROUP',
-    maxTeams: track.maxTeams ? String(track.maxTeams) : '',
-    status: track.status || 'DRAFT',
-  };
-}
-
-function formatTrackType(type?: TrackType) {
-  return (type || 'GENERAL').replaceAll('_', ' ');
-}
+import {
+  buildTrackPayload,
+  buildTrackUpdatePayload,
+  createEmptyTrackForm,
+  formatTrackType,
+  mapTrackToForm,
+  type TrackFormState,
+} from '../model/track-form';
+import { TrackForm, TrackInlineError, TrackMetricCard } from './TrackForm';
 
 export function Tracks() {
   const queryClient = useQueryClient();
@@ -295,9 +226,9 @@ export function Tracks() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <MetricCard label="Total Tracks" value={String(tracks.length)} helper="Tracks in selected event" />
-        <MetricCard label="Open or Completed" value={String(confirmedTracks)} helper="Operational tracks" />
-        <MetricCard
+        <TrackMetricCard label="Total Tracks" value={String(tracks.length)} helper="Tracks in selected event" />
+        <TrackMetricCard label="Open or Completed" value={String(confirmedTracks)} helper="Operational tracks" />
+        <TrackMetricCard
           label="Total Capacity"
           value={String(tracks.reduce((sum, track) => sum + (track.maxTeams || 0), 0))}
           helper="Configured max teams"
@@ -305,15 +236,15 @@ export function Tracks() {
       </div>
 
       {eventsQuery.error && (
-        <InlineError message={eventsQuery.error instanceof ApiError ? eventsQuery.error.firstError : 'Failed to load events'} />
+        <TrackInlineError message={eventsQuery.error instanceof ApiError ? eventsQuery.error.firstError : 'Failed to load events'} />
       )}
 
       {!activeEvent && !eventsQuery.isLoading && (
-        <InlineError message="No event available. Create an event first before managing tracks." />
+        <TrackInlineError message="No event available. Create an event first before managing tracks." />
       )}
 
       {tracksQuery.error && (
-        <InlineError message={tracksQuery.error instanceof ApiError ? tracksQuery.error.firstError : 'Failed to load tracks'} />
+        <TrackInlineError message={tracksQuery.error instanceof ApiError ? tracksQuery.error.firstError : 'Failed to load tracks'} />
       )}
 
       <Card>
@@ -427,134 +358,6 @@ export function Tracks() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-function TrackForm({
-  form,
-  onChange,
-}: {
-  form: TrackFormState;
-  onChange: React.Dispatch<React.SetStateAction<TrackFormState>>;
-}) {
-  return (
-    <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="track-code">Code</Label>
-          <Input
-            id="track-code"
-            value={form.code}
-            onChange={(event) => onChange((current) => ({ ...current, code: event.target.value }))}
-            placeholder="AI-01"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="track-name">Name</Label>
-          <Input
-            id="track-name"
-            value={form.name}
-            onChange={(event) => onChange((current) => ({ ...current, name: event.target.value }))}
-            placeholder="AI for Education"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="space-y-2">
-          <Label>Type</Label>
-          <Select value={form.type} onValueChange={(value: TrackType) => onChange((current) => ({ ...current, type: value }))}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {trackTypeOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {formatTrackType(option)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={form.status} onValueChange={(value: TrackStatus) => onChange((current) => ({ ...current, status: value }))}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {trackStatusOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="track-capacity">Max Teams</Label>
-          <Input
-            id="track-capacity"
-            type="number"
-            min="1"
-            value={form.maxTeams}
-            onChange={(event) => onChange((current) => ({ ...current, maxTeams: event.target.value }))}
-            placeholder="12"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="track-description">Description</Label>
-        <Textarea
-          id="track-description"
-          rows={3}
-          value={form.description}
-          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
-          placeholder="Short summary for coordinators and participants."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="track-topic">Topic</Label>
-        <Input
-          id="track-topic"
-          value={form.topic}
-          onChange={(event) => onChange((current) => ({ ...current, topic: event.target.value }))}
-          placeholder="Smart Campus, AI Tutor, Sustainability..."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="track-problem-statement">Problem Statement</Label>
-        <Textarea
-          id="track-problem-statement"
-          rows={5}
-          value={form.problemStatement}
-          onChange={(event) => onChange((current) => ({ ...current, problemStatement: event.target.value }))}
-          placeholder="Describe the challenge and expected solution scope."
-        />
-      </div>
-    </div>
-  );
-}
-
-function MetricCard({ label, value, helper }: { label: string; value: string; helper: string }) {
-  return (
-    <Card className="p-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-2 text-3xl font-semibold">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
-    </Card>
-  );
-}
-
-function InlineError({ message }: { message: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-      <span>{message}</span>
     </div>
   );
 }
