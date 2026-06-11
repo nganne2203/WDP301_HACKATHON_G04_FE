@@ -8,7 +8,7 @@ export const operationsApi = {
     }),
 
   getPipelineSummary: (query?: { eventId?: string }) =>
-    api.get<PipelineSummary[]>('/operations/pipeline-summary', {
+    api.get<PipelineSummary>('/operations/pipeline-summary', {
       params: query as Record<string, string | undefined>,
     }),
 };
