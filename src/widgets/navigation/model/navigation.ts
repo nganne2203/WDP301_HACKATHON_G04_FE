@@ -3,6 +3,7 @@ import {
   Calendar,
   Clock3,
   ClipboardCheck,
+  ClipboardList,
   FileText,
   GitBranch,
   Github,
@@ -11,6 +12,7 @@ import {
   Presentation,
   Scale,
   Send,
+  Server,
   Settings,
   Trophy,
   Users,
@@ -42,6 +44,26 @@ const coordinatorNavigation: NavigationItem[] = [
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
+const adminNavigation: NavigationItem[] = [
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/coordinator' },
+  { icon: Calendar, label: 'Events', href: '/coordinator/events' },
+  { icon: Calendar, label: 'Rounds', href: '/coordinator/rounds' },
+  { icon: FileText, label: 'Rubrics', href: '/coordinator/rubrics' },
+  { icon: GitBranch, label: 'Tracks', href: '/coordinator/tracks' },
+  { icon: Clock3, label: 'Timelines', href: '/coordinator/timelines' },
+  { icon: Presentation, label: 'Workshops', href: '/coordinator/workshops' },
+  { icon: Users, label: 'Participants', href: '/coordinator/participants' },
+  { icon: UsersRound, label: 'Teams', href: '/coordinator/teams' },
+  { icon: ClipboardCheck, label: 'Check-in', href: '/coordinator/checkin' },
+  { icon: Github, label: 'Repositories', href: '/coordinator/repos' },
+  { icon: Scale, label: 'Judging', href: '/coordinator/judging' },
+  { icon: Trophy, label: 'Results', href: '/coordinator/results' },
+  { icon: Images, label: 'Media', href: '/coordinator/media' },
+  { icon: ClipboardList, label: 'Audit Logs', href: '/admin/audit-logs' },
+  { icon: Server, label: 'Operations', href: '/admin/operations' },
+  { icon: Settings, label: 'Settings', href: '/admin/settings' },
+];
+
 const judgeNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/judge' },
   { icon: Scale, label: 'Score Teams', href: '/judge/scoring' },
@@ -60,7 +82,8 @@ const mentorNavigation: NavigationItem[] = [
 ];
 
 export function getNavigationItems(role: AppRole | null | undefined) {
-  if (role === 'coordinator' || role === 'admin') return coordinatorNavigation;
+  if (role === 'admin') return adminNavigation;
+  if (role === 'coordinator') return coordinatorNavigation;
   if (role === 'judge') return judgeNavigation;
   if (role === 'mentor') return mentorNavigation;
   return participantNavigation;

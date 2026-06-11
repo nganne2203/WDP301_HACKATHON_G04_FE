@@ -1514,3 +1514,163 @@ export interface ListScoreSheetsQuery {
   judgeId?: string;
   status?: ScoreSheetStatus;
 }
+
+// ============================================================
+// Ranking Types
+// ============================================================
+export type RankingType = 'TEAM' | 'CHAPTER' | 'INDIVIDUAL';
+export type TieBreakMethod = 'NONE' | 'PENALTY_EVALUATION' | 'MINI_TEST';
+
+export interface RankingTeamSummary {
+  id: string;
+  name?: string;
+  chapterName?: string | null;
+  projectName?: string | null;
+  boardNumber?: number | null;
+  trackId?: string | null;
+  status?: string;
+}
+
+export interface Ranking {
+  id: string;
+  eventId: string;
+  event: { id: string; title: string; status: string } | null;
+  rankingType: RankingType;
+  roundId: string | null;
+  round: { id: string; name: string; roundType: RoundType; status: RoundStatus } | null;
+  trackId: string | null;
+  track: { id: string; code: string; name: string } | null;
+  teamId: string | null;
+  team: RankingTeamSummary | null;
+  score: number;
+  pointDelta: number;
+  tieBreakMethod: TieBreakMethod;
+  tieBreakScore: number;
+  penaltyScore: number;
+  miniTestScore: number;
+  rank: number;
+  calculationSource: string;
+  calculationSummary: Record<string, unknown> | null;
+  calculatedAt: string | null;
+  isSelectedForFinal: boolean;
+  selectionReason?: string | null;
+  note?: string | null;
+  publishedAt: string | null;
+  publishedBy: { id: string; fullName?: string; email?: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListRankingsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  trackId?: string;
+  teamId?: string;
+  rankingType?: RankingType;
+}
+
+export interface GenerateRankingsRequest {
+  eventId: string;
+  roundId: string;
+  rankingType?: RankingType;
+}
+
+export interface GenerateRankingsResult {
+  generated: number;
+  rankings: Ranking[];
+}
+
+// ============================================================
+// Finalist Types
+// ============================================================
+export interface SelectFinalistsRequest {
+  eventId: string;
+  roundId: string;
+}
+
+export interface SelectFinalistsResult {
+  selected: number;
+  rankings: Ranking[];
+}
+
+// ============================================================
+// Result / Publication Types
+// ============================================================
+export type RepositoryAccessAction = 'NONE' | 'FREEZE' | 'REVOKE';
+
+export interface PublishResultsRequest {
+  eventId: string;
+  roundId: string;
+  repositoryAccessAction?: RepositoryAccessAction;
+}
+
+export interface PublishResultsResult {
+  published: number;
+  repositoryAccessAction: RepositoryAccessAction;
+  notified?: number;
+}
+
+// ============================================================
+// Audit Log Types
+// ============================================================
+export interface AuditLog {
+  id: string;
+  userId: string | null;
+  user: { id: string; fullName?: string; email?: string } | null;
+  action: string;
+  resourceType: string | null;
+  resourceId: string | null;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+export interface AuditLogSummary {
+  totalLogs: number;
+  byAction: Array<{ action: string; count: number }>;
+  byResourceType: Array<{ resourceType: string; count: number }>;
+  byUser: Array<{ userId: string; fullName?: string; email?: string; count: number }>;
+}
+
+export interface ListAuditLogsQuery {
+  page?: number;
+  limit?: number;
+  userId?: string;
+  action?: string;
+  resourceType?: string;
+  resourceId?: string;
+  from?: string;
+  to?: string;
+}
+
+// ============================================================
+// Operations / Pipeline Types
+// ============================================================
+export interface OperationsDashboardMetrics {
+  totalRepositories: number;
+  activeRepositories: number;
+  webhooksRegistered: number;
+  webhooksFailed: number;
+  commitsProcessed: number;
+  aiReviewsCompleted: number;
+  aiReviewsPending: number;
+  staticAnalysisRuns: number;
+  failedJobs: number;
+  [key: string]: unknown;
+}
+
+export interface PipelineSummary {
+  repositoryId: string;
+  repositoryFullName: string;
+  teamName: string | null;
+  lastSync: string | null;
+  lastAnalysis: string | null;
+  lastAiReview: string | null;
+  commitCount: number;
+  errorCount: number;
+  warningCount: number;
+  [key: string]: unknown;
+}

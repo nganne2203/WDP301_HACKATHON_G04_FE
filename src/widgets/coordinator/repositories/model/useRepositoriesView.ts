@@ -27,6 +27,10 @@ export function useRepositoriesView() {
   const [repoDescription, setRepoDescription] = useState('');
   const [repoPrivate, setRepoPrivate] = useState(true);
 
+  const [linkOwner, setLinkOwner] = useState('');
+  const [linkRepo, setLinkRepo] = useState('');
+  const [linkBranch, setLinkBranch] = useState('main');
+
   const [selectedRepositoryId, setSelectedRepositoryId] = useState('');
   const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null);
   const [collabRepoName, setCollabRepoName] = useState('');
@@ -84,6 +88,9 @@ export function useRepositoriesView() {
     setEnabled(false);
     setSelectedTeamId('');
     setSelectedRoundId('none');
+    setLinkOwner('');
+    setLinkRepo('');
+    setLinkBranch('main');
     setSelectedRepositoryId('');
     setCollabRepoName('');
     setRevokeResult(null);
@@ -267,6 +274,35 @@ export function useRepositoriesView() {
     onError: (error) => toast.error('Could not trigger AI review', { description: getApiErrorMessage(error) }),
   });
 
+  const triggerPerPushReviewMutation = useMutation({
+    mutationFn: (repositoryId: string) => repositoriesApi.triggerPerPushReview(repositoryId),
+    onSuccess: () => toast.success('Per-push AI review requested'),
+    onError: (error) => toast.error('Could not trigger per-push review', { description: getApiErrorMessage(error) }),
+  });
+
+  const linkRepositoryMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!selectedTeamId) throw new Error('Please select a team first.');
+      return (await repositoriesApi.create({
+        eventId: activeEventId,
+        teamId: selectedTeamId,
+        githubOwner: linkOwner,
+        githubRepo: linkRepo,
+        repositoryUrl: `https://github.com/${linkOwner}/${linkRepo}`,
+        defaultBranch: linkBranch || 'main',
+      })).data;
+    },
+    onSuccess: async (result) => {
+      toast.success('Repository linked', { description: result.repositoryFullName });
+      setLinkOwner('');
+      setLinkRepo('');
+      setLinkBranch('main');
+      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+    },
+    onError: (error) => toast.error('Could not link repository', { description: getApiErrorMessage(error) }),
+  });
+
   return {
     selectedEventId,
     setSelectedEventId,
@@ -326,6 +362,14 @@ export function useRepositoriesView() {
     syncRepositoryMutation,
     analyzeRepositoryMutation,
     triggerAiReviewMutation,
+    triggerPerPushReviewMutation,
+    linkRepositoryMutation,
+    linkOwner,
+    setLinkOwner,
+    linkRepo,
+    setLinkRepo,
+    linkBranch,
+    setLinkBranch,
     config: configQuery.data,
   };
 }
