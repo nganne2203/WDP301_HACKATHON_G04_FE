@@ -9,6 +9,7 @@ export { eventsApi } from './events';
 export { githubApi } from './github';
 export { mediaApi } from './media';
 export { participantsApi } from './participants';
+export { repositoriesApi } from './repositories';
 export { teamsApi } from './teams';
 export { timelinesApi } from './timelines';
 export { tracksApi } from './tracks';

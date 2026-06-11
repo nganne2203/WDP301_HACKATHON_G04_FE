@@ -526,6 +526,20 @@ export interface CreateGitHubRepositoryRequest {
   repoName: string;
   description?: string;
   private: boolean;
+  teamId?: string;
+  roundId?: string | null;
+}
+
+export interface RegisterGitHubWebhookRequest {
+  eventId: string;
+}
+
+export interface RegisterGitHubWebhookResult {
+  repoName: string;
+  callbackUrl: string;
+  events: string[];
+  hookId: number | null;
+  active: boolean;
 }
 
 export interface CreateGitHubRepositoryResult {
@@ -533,6 +547,7 @@ export interface CreateGitHubRepositoryResult {
   htmlUrl?: string;
   cloneUrl?: string;
   visibility?: string;
+  webhookRegistration?: RegisterGitHubWebhookResult | null;
 }
 
 export interface AssignGitHubCollaboratorRequest {
@@ -545,6 +560,16 @@ export interface AssignGitHubCollaboratorResult {
   username: string;
   permission: string;
   status: string;
+}
+
+export interface RevokeGitHubCollaboratorRequest {
+  eventId: string;
+}
+
+export interface RevokeGitHubCollaboratorResult {
+  repoName: string;
+  username: string;
+  status: 'revoked';
 }
 
 export interface InviteGitHubOrganizationMemberRequest {
@@ -572,6 +597,235 @@ export interface RevokeGitHubMembersResult {
     username: string;
     reason: string;
   }>;
+}
+
+// ============================================================
+// Repository Types
+// ============================================================
+
+export type RepositoryStatus = 'PENDING' | 'ACTIVE' | 'ARCHIVED' | 'DISCONNECTED';
+export type RepositoryAccessState = 'UNKNOWN' | 'PENDING' | 'GRANTED' | 'REVOKED';
+export type RepositoryWebhookStatus = 'NOT_CONFIGURED' | 'PENDING' | 'REGISTERED' | 'FAILED';
+
+export interface RepositoryEventSummary {
+  id: string;
+  title?: string;
+  semester?: string;
+  season?: string;
+  year?: number;
+  status?: string;
+}
+
+export interface RepositoryTeamSummary {
+  id: string;
+  name?: string;
+  projectName?: string | null;
+  chapterName?: string | null;
+  status?: string;
+  boardNumber?: number | null;
+  placementSlot?: number | null;
+}
+
+export interface RepositoryRoundSummary {
+  id: string;
+  name?: string;
+  roundType?: RoundType;
+  status?: RoundStatus;
+}
+
+export interface Repository {
+  id: string;
+  event: RepositoryEventSummary | null;
+  eventId: string;
+  team: RepositoryTeamSummary | null;
+  teamId: string;
+  round: RepositoryRoundSummary | null;
+  roundId: string | null;
+  githubOwner: string;
+  githubRepo: string;
+  repositoryFullName: string;
+  repositoryUrl: string;
+  repositoryLocalPath: string | null;
+  defaultBranch: string;
+  latestCommitSha: string | null;
+  lastProcessedCommitSha: string | null;
+  status: RepositoryStatus;
+  accessState: RepositoryAccessState;
+  accessGrantedAt: string | null;
+  accessRevokedAt: string | null;
+  webhookRegisteredAt: string | null;
+  webhookStatus: RepositoryWebhookStatus;
+  lastWebhookRegistrationError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRepositoryRequest {
+  eventId: string;
+  teamId: string;
+  roundId?: string | null;
+  githubOwner: string;
+  githubRepo: string;
+  repositoryUrl: string;
+  repositoryLocalPath?: string | null;
+  defaultBranch?: string;
+  latestCommitSha?: string | null;
+  lastProcessedCommitSha?: string | null;
+  status?: RepositoryStatus;
+  accessState?: RepositoryAccessState;
+}
+
+export interface UpdateRepositoryRequest {
+  roundId?: string | null;
+  defaultBranch?: string;
+  latestCommitSha?: string | null;
+  lastProcessedCommitSha?: string | null;
+  status?: RepositoryStatus;
+  accessState?: RepositoryAccessState;
+  repositoryUrl?: string;
+  repositoryLocalPath?: string | null;
+  githubOwner?: string;
+  githubRepo?: string;
+}
+
+export interface ListRepositoriesQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  teamId?: string;
+  roundId?: string;
+  status?: RepositoryStatus;
+  accessState?: RepositoryAccessState;
+  search?: string;
+}
+
+export interface RepositoryCommit {
+  id: string;
+  repositoryId: string;
+  commitSha: string;
+  branch: string | null;
+  provider?: string | null;
+  repositoryFullName?: string | null;
+  authorName?: string | null;
+  authorEmail?: string | null;
+  authorUsername?: string | null;
+  timestamp?: string | null;
+  message?: string | null;
+  commitUrl?: string | null;
+  linesAdded: number;
+  linesRemoved: number;
+  filesChanged: number;
+}
+
+export interface RepositoryCommitDiffFile {
+  filePath: string;
+  previousFilePath?: string | null;
+  fileName?: string | null;
+  language?: string | null;
+  status: string;
+  additions: number;
+  deletions: number;
+  changes: number;
+  cleanPatch: string;
+  patchSummary?: string;
+  excludedReason?: string | null;
+  isExcluded: boolean;
+  isBinary: boolean;
+  isGenerated: boolean;
+  isMinified: boolean;
+  isBuildArtifact: boolean;
+  isLockFile: boolean;
+  isTruncated: boolean;
+  cleanPatchSize: number;
+  hunkCount: number;
+  addedLineCount: number;
+  removedLineCount: number;
+}
+
+export interface RepositoryCommitDiff {
+  id: string;
+  repositoryId: string;
+  commitId: string | null;
+  baseCommitSha: string | null;
+  headCommitSha: string | null;
+  provider?: string | null;
+  status: string;
+  totalFiles: number;
+  includedFiles: number;
+  excludedFiles: number;
+  totalCleanPatchSize: number;
+  cleanDiffSummary?: string | null;
+  fetchedAt?: string | null;
+  patchSummary?: string;
+  files: RepositoryCommitDiffFile[];
+}
+
+export interface RepositoryStaticAnalysisFinding {
+  [key: string]: unknown;
+}
+
+export interface RepositoryStaticAnalysisResult {
+  id: string;
+  repositoryId: string;
+  commitSha: string;
+  source?: string | null;
+  status: string;
+  errorCount: number;
+  warningCount: number;
+  findings: RepositoryStaticAnalysisFinding[];
+  rawOutput?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RepositoryImpactDecision {
+  id: string;
+  repositoryId: string;
+  commitSha: string;
+  impactScore: number;
+  impactLevel: string;
+  decision: string;
+  reasons: string[];
+  needsHumanReview: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RepositoryAiReview {
+  id: string;
+  repositoryId: string;
+  eventId: string | null;
+  teamId: string | null;
+  roundId: string | null;
+  commitId: string | null;
+  commitDiffId: string | null;
+  impactDecisionId: string | null;
+  reviewKind: string;
+  status: string;
+  summary: string;
+  overallSummary: string;
+  needsHumanReview: boolean;
+  isScoreBased: boolean;
+  isFinalDecision: boolean;
+  commitSha: string | null;
+  provider: string | null;
+  modelName: string | null;
+  promptVersion: string | null;
+  requestedAt: string | null;
+  completedAt: string | null;
+  normalizedOutput: Record<string, unknown> | null;
+}
+
+export interface AnalyzeRepositoryCommitRequest {
+  commitSha?: string | null;
+}
+
+export interface TriggerPerPushReviewRequest {
+  commitSha?: string | null;
+}
+
+export interface TriggerTeamAggregateReviewRequest {
+  batchId?: string | null;
 }
 
 // ============================================================
@@ -634,6 +888,8 @@ export interface Track {
   code?: string;
   name: string;
   description?: string | null;
+  topic?: string | null;
+  problemStatement?: string | null;
   type?: TrackType;
   teamIds: string[];
   maxTeams?: number;
@@ -647,6 +903,8 @@ export interface CreateTrackRequest {
   code?: string;
   name: string;
   description?: string;
+  topic?: string | null;
+  problemStatement?: string | null;
   type?: TrackType;
   teamIds?: string[];
   maxTeams?: number;
@@ -735,11 +993,13 @@ export interface ListParticipantsQuery {
   page?: number;
   limit?: number;
   eventId?: string;
+  userId?: string;
   teamId?: string;
   checkInStatus?: CheckInStatus;
   status?: ParticipantStatus;
   eligibilityStatus?: EligibilityStatus;
   githubAccessStatus?: GitHubAccessStatus;
+  chapterName?: string;
 }
 
 // ============================================================
@@ -788,6 +1048,7 @@ export interface ListTimelinesQuery {
   eventId?: string;
   eventType?: TimelineEventType;
   status?: TimelineStatus;
+  search?: string;
 }
 
 // ============================================================
@@ -904,9 +1165,33 @@ export interface Round {
   submissionDeadline: string | null;
   publishTime: string | null;
   maxPromotedTeams: number | null;
+  assignedTeams?: {
+    id: string;
+    name?: string;
+    chapterName?: string | null;
+    projectName?: string | null;
+    status?: string;
+    trackId?: string | null;
+    boardNumber?: number | null;
+    placementSlot?: number | null;
+  }[];
   assignedTeamIds: string[];
+  promotedTeams?: {
+    id: string;
+    name?: string;
+    chapterName?: string | null;
+    projectName?: string | null;
+    status?: string;
+    trackId?: string | null;
+    boardNumber?: number | null;
+    placementSlot?: number | null;
+  }[];
   promotedTeamIds: string[];
   assignedJudges: UserSummary[];
+  assignedJudgeIds?: string[];
+  promotionRule?: string | null;
+  tieBreakRule?: string | null;
+  tieBreakDurationMinutes?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -916,25 +1201,49 @@ export interface CreateRoundRequest {
   name: string;
   roundType?: RoundType;
   trackId?: string | null;
+  assignedTeamIds?: string[];
+  promotedTeamIds?: string[];
+  assignedJudgeIds?: string[];
   rubricId?: string | null;
   startTime?: string | null;
   endTime?: string | null;
   submissionDeadline?: string | null;
   publishTime?: string | null;
   maxPromotedTeams?: number | null;
+  promotionRule?: string | null;
+  tieBreakRule?: string | null;
+  tieBreakDurationMinutes?: number | null;
+  status?: RoundStatus;
 }
 
 export interface UpdateRoundRequest {
+  eventId?: string;
   name?: string;
   roundType?: RoundType;
   status?: RoundStatus;
   trackId?: string | null;
+  assignedTeamIds?: string[];
+  promotedTeamIds?: string[];
+  assignedJudgeIds?: string[];
   rubricId?: string | null;
   startTime?: string | null;
   endTime?: string | null;
   submissionDeadline?: string | null;
   publishTime?: string | null;
   maxPromotedTeams?: number | null;
+  promotionRule?: string | null;
+  tieBreakRule?: string | null;
+  tieBreakDurationMinutes?: number | null;
+}
+
+export interface ListRoundsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  trackId?: string;
+  roundType?: RoundType;
+  status?: RoundStatus;
+  search?: string;
 }
 
 // ============================================================
@@ -976,15 +1285,28 @@ export interface CreateJudgingBoardRequest {
 export interface AutoAssignRequest {
   eventId: string;
   roundId: string;
-  teamsPerBoard?: number;
 }
 
 export interface UpdateJudgingBoardRequest {
+  eventId?: string;
+  roundId?: string;
+  trackId?: string | null;
   name?: string;
+  boardNumber?: number;
   status?: JudgingBoardStatus;
   maxTeams?: number;
   teamIds?: string[];
   judgeIds?: string[];
+}
+
+export interface ListJudgingBoardsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  trackId?: string;
+  status?: JudgingBoardStatus;
+  search?: string;
 }
 
 // ============================================================
@@ -1000,6 +1322,13 @@ export interface Submission {
   round: { id: string; name: string; roundType: RoundType; status: RoundStatus } | null;
   teamId: string;
   team: { id: string; name: string; projectName: string | null } | null;
+  repositoryId?: string | null;
+  repository?: {
+    id: string;
+    repositoryFullName?: string;
+    repositoryUrl?: string;
+    status?: string;
+  } | null;
   demoUrl: string | null;
   reportUrl: string | null;
   presentationUrl: string | null;
@@ -1010,18 +1339,31 @@ export interface Submission {
 }
 
 export interface CreateSubmissionRequest {
+  eventId: string;
   roundId: string;
   teamId: string;
+  repositoryId?: string | null;
+  demoUrl?: string | null;
+  reportUrl?: string | null;
+  presentationUrl?: string | null;
+  status?: SubmissionStatus;
+}
+
+export interface UpdateSubmissionRequest {
+  repositoryId?: string | null;
   demoUrl?: string | null;
   reportUrl?: string | null;
   presentationUrl?: string | null;
 }
 
-export interface UpdateSubmissionRequest {
-  demoUrl?: string | null;
-  reportUrl?: string | null;
-  presentationUrl?: string | null;
-  submit?: boolean;
+export interface ListSubmissionsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  teamId?: string;
+  repositoryId?: string;
+  status?: SubmissionStatus;
 }
 
 // ============================================================
@@ -1034,34 +1376,47 @@ export interface Criterion {
   description: string | null;
   maxScore: number;
   weight: number;
+  order?: number;
+  judgeOnly?: boolean;
+  aiSupportForAudit?: boolean;
+  aiInstruction?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+export type RubricStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
 export interface Rubric {
   id: string;
-  eventId: string | null;
-  event: { id: string; title: string } | null;
+  eventId: string;
+  roundId?: string | null;
+  event: { id: string; title: string; status?: string } | null;
+  round?: { id: string; name: string; roundType?: RoundType; status?: RoundStatus } | null;
   title: string;
   description: string | null;
   totalScore: number | null;
-  createdBy: UserSummary | null;
+  version?: number;
+  status?: RubricStatus;
   criteria: Criterion[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateRubricRequest {
-  eventId?: string | null;
+  eventId: string;
+  roundId?: string | null;
   title: string;
   description?: string | null;
   totalScore?: number | null;
+  version?: number;
+  status?: RubricStatus;
 }
 
 export interface UpdateRubricRequest {
   title?: string;
   description?: string | null;
-  totalScore?: number | null;
+  version?: number;
+  status?: RubricStatus;
 }
 
 export interface CreateCriterionRequest {
@@ -1069,6 +1424,10 @@ export interface CreateCriterionRequest {
   description?: string | null;
   maxScore: number;
   weight?: number;
+  order?: number;
+  judgeOnly?: boolean;
+  aiSupportForAudit?: boolean;
+  aiInstruction?: string | null;
 }
 
 export interface UpdateCriterionRequest {
@@ -1076,6 +1435,18 @@ export interface UpdateCriterionRequest {
   description?: string | null;
   maxScore?: number;
   weight?: number;
+  order?: number;
+  judgeOnly?: boolean;
+  aiSupportForAudit?: boolean;
+  aiInstruction?: string | null;
+}
+
+export interface ListRubricsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  status?: RubricStatus;
 }
 
 // ============================================================
@@ -1084,8 +1455,10 @@ export interface UpdateCriterionRequest {
 export type ScoreSheetStatus = 'DRAFT' | 'SUBMITTED' | 'LOCKED';
 
 export interface ScoreEntry {
+  id?: string;
   criterionId: string;
-  criterion: { id: string; name: string; maxScore: number; weight: number } | null;
+  criterion: { id: string; name: string; maxScore: number; weight: number; order?: number } | null;
+  judgeId?: string;
   scoreValue: number;
   comment: string | null;
   isOverridden: boolean;
@@ -1106,21 +1479,38 @@ export interface ScoreSheet {
   judgeId: string;
   judge: UserSummary | null;
   rubricId: string | null;
+  rubric?: { id: string; title: string; totalScore: number | null } | null;
   totalScore: number;
   weightedScore: number;
   finalScore: number;
   generalComment: string | null;
   status: ScoreSheetStatus;
   submittedAt: string | null;
+  lockedAt?: string | null;
   scores: ScoreEntry[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface SubmitScoreSheetRequest {
+  scoreSheetId?: string;
+  eventId: string;
   roundId: string;
+  boardId: string;
   teamId: string;
+  submissionId: string;
+  rubricId?: string | null;
   generalComment?: string | null;
   submit?: boolean;
   scores: { criterionId: string; scoreValue: number; comment?: string | null }[];
+}
+
+export interface ListScoreSheetsQuery {
+  page?: number;
+  limit?: number;
+  eventId?: string;
+  roundId?: string;
+  teamId?: string;
+  judgeId?: string;
+  status?: ScoreSheetStatus;
 }

@@ -1,0 +1,156 @@
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { useStore } from '@/entities/session/model/store';
+import { eventsApi, tracksApi } from '@/shared/api';
+import { ApiError } from '@/shared/api/client';
+import type { CreateTrackRequest, Track, UpdateTrackRequest } from '@/shared/api/types';
+
+import {
+  buildTrackPayload,
+  buildTrackUpdatePayload,
+  createEmptyTrackForm,
+  mapTrackToForm,
+  type TrackFormState,
+} from './track-form';
+
+export function useTracksView() {
+  const queryClient = useQueryClient();
+  const selectedEvent = useStore((state) => state.selectedEvent);
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const [createForm, setCreateForm] = useState<TrackFormState>(createEmptyTrackForm());
+  const [editForm, setEditForm] = useState<TrackFormState>(createEmptyTrackForm());
+
+  const eventsQuery = useQuery({
+    queryKey: ['coordinator-track-events'],
+    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
+  });
+
+  const events = eventsQuery.data || [];
+  const activeEvent = useMemo(() => {
+    if (!events.length) return null;
+    return events.find((event) => event.id === selectedEventId) || events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEventId, selectedEvent?.id]);
+
+  const tracksQuery = useQuery({
+    queryKey: ['coordinator-tracks', activeEvent?.id],
+    enabled: Boolean(activeEvent?.id),
+    queryFn: async () => (await tracksApi.list({ eventId: activeEvent?.id, page: 1, limit: 100 })).data,
+  });
+
+  const tracks = tracksQuery.data || [];
+
+  const createMutation = useMutation({
+    mutationFn: (payload: CreateTrackRequest) => tracksApi.create(payload),
+    onSuccess: (response) => {
+      toast.success('Track created', { description: `${response.data.name} is ready.` });
+      queryClient.invalidateQueries({ queryKey: ['coordinator-tracks'] });
+      setCreateOpen(false);
+      setCreateForm(createEmptyTrackForm());
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to create track', {
+        description: error instanceof ApiError ? error.firstError : 'Unknown error',
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateTrackRequest }) => tracksApi.update(id, payload),
+    onSuccess: (response) => {
+      toast.success('Track updated', { description: `${response.data.name} has been updated.` });
+      queryClient.invalidateQueries({ queryKey: ['coordinator-tracks'] });
+      setEditOpen(false);
+      setSelectedTrack(null);
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to update track', {
+        description: error instanceof ApiError ? error.firstError : 'Unknown error',
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => tracksApi.delete(id),
+    onSuccess: () => {
+      toast.success('Track deleted');
+      queryClient.invalidateQueries({ queryKey: ['coordinator-tracks'] });
+      setDeleteOpen(false);
+      setSelectedTrack(null);
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to delete track', {
+        description: error instanceof ApiError ? error.firstError : 'Unknown error',
+      });
+    },
+  });
+
+  const openEditDialog = (track: Track) => {
+    setSelectedTrack(track);
+    setEditForm(mapTrackToForm(track));
+    setEditOpen(true);
+  };
+
+  const openDeleteDialog = (track: Track) => {
+    setSelectedTrack(track);
+    setDeleteOpen(true);
+  };
+
+  const handleCreate = () => {
+    if (!activeEvent?.id) return;
+    if (!createForm.name.trim()) {
+      toast.error('Track name is required');
+      return;
+    }
+
+    createMutation.mutate(buildTrackPayload(createForm, activeEvent.id));
+  };
+
+  const handleUpdate = () => {
+    if (!selectedTrack) return;
+    if (!editForm.name.trim()) {
+      toast.error('Track name is required');
+      return;
+    }
+
+    updateMutation.mutate({
+      id: selectedTrack.id,
+      payload: buildTrackUpdatePayload(editForm),
+    });
+  };
+
+  const confirmedTracks = tracks.filter((track) => track.status === 'OPEN' || track.status === 'COMPLETED').length;
+
+  return {
+    activeEvent,
+    confirmedTracks,
+    createForm,
+    createMutation,
+    createOpen,
+    deleteMutation,
+    deleteOpen,
+    editForm,
+    editOpen,
+    events,
+    eventsQuery,
+    handleCreate,
+    handleUpdate,
+    openDeleteDialog,
+    openEditDialog,
+    selectedTrack,
+    setCreateForm,
+    setCreateOpen,
+    setDeleteOpen,
+    setEditForm,
+    setEditOpen,
+    setSelectedEventId,
+    tracks,
+    tracksQuery,
+    updateMutation,
+  };
+}

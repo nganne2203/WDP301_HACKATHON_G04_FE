@@ -1,4 +1,4 @@
-import type { ApiErrorResponse, ApiSuccessResponse } from './types';
+﻿import type { ApiErrorResponse, ApiSuccessResponse } from './types';
 
 // ============================================================
 // API Client Configuration
@@ -150,7 +150,7 @@ export async function apiRequest<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  // Handle token expired — try refresh once
+  // Handle token expired - try refresh once
   if (response.status === 401 && auth) {
     const errorJson = (await response.clone().json().catch(() => null)) as ApiErrorResponse | null;
 
@@ -177,7 +177,7 @@ export async function apiRequest<T>(
 
           return (await retryResponse.json()) as ApiSuccessResponse<T>;
         } else {
-          // Refresh failed — redirect to login
+          // Refresh failed - redirect to login
           clearTokens();
           window.location.href = '/login';
           throw new ApiError(
@@ -247,3 +247,5 @@ export const api = {
   delete: <T>(path: string, options?: RequestOptions) =>
     apiRequest<T>(path, { ...options, method: 'DELETE' }),
 };
+
+

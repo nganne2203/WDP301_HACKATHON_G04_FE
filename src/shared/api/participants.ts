@@ -20,5 +20,5 @@ export const participantsApi = {
     api.patch<Participant>(`/participants/${id}`, data),
 
   checkIn: (id: string) =>
-    api.patch<Participant>(`/participants/${id}/check-in`, {}),
+    api.patch<Participant>(`/participants/${id}/check-in`, { checkInStatus: 'CHECKED_IN' }),
 };
