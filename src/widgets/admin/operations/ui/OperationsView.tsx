@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bot, GitBranch, Loader2, Server, Webhook } from 'lucide-react';
+import { Bot, GitBranch, Loader2, Server, Users, Webhook } from 'lucide-react';
 
 import { operationsApi } from '@/entities/operations/api';
 import { eventsApi } from '@/entities/event/api';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
+import type { StatusCount } from '@/shared/api/types';
 
 function MetricCard({ icon: Icon, label, value, sub }: { icon: React.ElementType; label: string; value: number | string; sub?: string }) {
   return (
@@ -26,30 +27,81 @@ function MetricCard({ icon: Icon, label, value, sub }: { icon: React.ElementType
   );
 }
 
+function StatusBreakdownTable({ title, rows }: { title: string; rows: StatusCount[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No data</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Count</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.status}>
+                  <TableCell>
+                    <Badge variant="outline">{row.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-mono">{row.count}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function OperationsView() {
   const [selectedEventId, setSelectedEventId] = useState('');
 
   const eventsQuery = useQuery({
     queryKey: ['ops-events'],
-    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
+    queryFn: async () => eventsApi.list({ page: 1, limit: 100 }),
   });
-  const events = eventsQuery.data || [];
-  const activeEventId = selectedEventId || events[0]?.id || '';
+  const eventsData = eventsQuery.data?.data as any;
+  const events: any[] = Array.isArray(eventsData)
+    ? eventsData
+    : eventsData?.events ?? eventsData?.data ?? [];
+  const activeEventId = selectedEventId || events[0]?.id || events[0]?._id || '';
 
   const dashboardQuery = useQuery({
     queryKey: ['ops-dashboard', activeEventId],
     enabled: Boolean(activeEventId),
-    queryFn: async () => (await operationsApi.getDashboardMetrics({ eventId: activeEventId })).data,
+    queryFn: async () => operationsApi.getDashboardMetrics({ eventId: activeEventId }),
   });
 
   const pipelineQuery = useQuery({
     queryKey: ['ops-pipeline', activeEventId],
     enabled: Boolean(activeEventId),
-    queryFn: async () => (await operationsApi.getPipelineSummary({ eventId: activeEventId })).data,
+    queryFn: async () => operationsApi.getPipelineSummary({ eventId: activeEventId }),
   });
 
-  const metrics = dashboardQuery.data;
-  const pipeline = pipelineQuery.data || [];
+  // BE: { scope, metrics: { participants, teams, submissions, repositories, pendingAiReviews, failedJobs }, queue }
+  const dashboardPayload = dashboardQuery.data?.data as any;
+  const m = dashboardPayload?.metrics;
+  const queue = dashboardPayload?.queue;
+
+  // BE: { scope, queue, webhookStatusBreakdown, commitDiffStatusBreakdown, aiReviewStatusBreakdown }
+  const pipelinePayload = pipelineQuery.data?.data as any;
+  const webhookBreakdown: StatusCount[] = Array.isArray(pipelinePayload?.webhookStatusBreakdown)
+    ? pipelinePayload.webhookStatusBreakdown
+    : [];
+  const commitBreakdown: StatusCount[] = Array.isArray(pipelinePayload?.commitDiffStatusBreakdown)
+    ? pipelinePayload.commitDiffStatusBreakdown
+    : [];
+  const aiBreakdown: StatusCount[] = Array.isArray(pipelinePayload?.aiReviewStatusBreakdown)
+    ? pipelinePayload.aiReviewStatusBreakdown
+    : [];
 
   return (
     <div className="p-6 space-y-6">
@@ -74,8 +126,10 @@ export function OperationsView() {
               <Select value={selectedEventId || activeEventId} onValueChange={setSelectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Select event" /></SelectTrigger>
                 <SelectContent>
-                  {events.map((event) => (
-                    <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
+                  {events.map((event: any) => (
+                    <SelectItem key={event.id ?? event._id} value={event.id ?? event._id}>
+                      {event.title ?? event.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -91,13 +145,50 @@ export function OperationsView() {
           <AlertTitle>Loading metrics…</AlertTitle>
           <AlertDescription>Fetching operational data from the backend.</AlertDescription>
         </Alert>
-      ) : metrics ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <MetricCard icon={GitBranch} label="Active Repositories" value={metrics.activeRepositories ?? metrics.totalRepositories ?? '–'} />
-          <MetricCard icon={Webhook} label="Webhooks Registered" value={metrics.webhooksRegistered ?? '–'} sub={metrics.webhooksFailed ? `${metrics.webhooksFailed} failed` : undefined} />
-          <MetricCard icon={Bot} label="AI Reviews Done" value={metrics.aiReviewsCompleted ?? '–'} sub={metrics.aiReviewsPending ? `${metrics.aiReviewsPending} pending` : undefined} />
-          <MetricCard icon={Server} label="Failed Jobs" value={metrics.failedJobs ?? '–'} />
-        </div>
+      ) : m ? (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <MetricCard icon={GitBranch} label="Repositories" value={m.repositories ?? '–'} />
+            <MetricCard icon={Users} label="Teams" value={m.teams ?? '–'} sub={`${m.participants ?? 0} participants`} />
+            <MetricCard
+              icon={Bot}
+              label="Pending AI Reviews"
+              value={m.pendingAiReviews ?? '–'}
+              sub={m.fallbackAiReviews ? `${m.fallbackAiReviews} fallback` : undefined}
+            />
+            <MetricCard
+              icon={Server}
+              label="Failed Jobs"
+              value={m.failedJobs ?? '–'}
+              sub={queue ? `Queue: ${queue.redisStatus ?? '–'}` : undefined}
+            />
+          </div>
+
+          {/* Queue detail */}
+          {queue && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Webhook className="h-4 w-4" />
+                  Queue Status — {queue.queueName ?? 'Unknown'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  {Object.entries(queue.counts ?? {}).map(([key, val]) => (
+                    <div key={key} className="flex flex-col items-center rounded-md border p-3 min-w-[80px]">
+                      <span className="text-lg font-bold">{String(val)}</span>
+                      <span className="text-xs text-muted-foreground capitalize">{key}</span>
+                    </div>
+                  ))}
+                </div>
+                {queue.error && (
+                  <p className="mt-3 text-xs text-destructive">{queue.error}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
       ) : !activeEventId ? (
         <Alert>
           <Server className="h-4 w-4" />
@@ -106,67 +197,19 @@ export function OperationsView() {
         </Alert>
       ) : null}
 
-      {/* Pipeline summary table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Repository Pipeline Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {pipelineQuery.isLoading ? (
-            <Alert>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <AlertTitle>Loading pipeline data…</AlertTitle>
-            </Alert>
-          ) : pipeline.length === 0 ? (
-            <Alert>
-              <GitBranch className="h-4 w-4" />
-              <AlertTitle>No pipeline data</AlertTitle>
-              <AlertDescription>No repositories are connected to this event yet.</AlertDescription>
-            </Alert>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Repository</TableHead>
-                  <TableHead>Team</TableHead>
-                  <TableHead>Last Sync</TableHead>
-                  <TableHead>Last AI Review</TableHead>
-                  <TableHead>Errors / Warnings</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pipeline.map((item) => (
-                  <TableRow key={item.repositoryId}>
-                    <TableCell>
-                      <p className="font-mono text-sm">{item.repositoryFullName}</p>
-                    </TableCell>
-                    <TableCell>{item.teamName || '–'}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {item.lastSync ? new Date(item.lastSync).toLocaleString() : '–'}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {item.lastAiReview ? new Date(item.lastAiReview).toLocaleString() : '–'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {(item.errorCount ?? 0) > 0 && (
-                          <Badge variant="destructive">{item.errorCount} errors</Badge>
-                        )}
-                        {(item.warningCount ?? 0) > 0 && (
-                          <Badge variant="outline">{item.warningCount} warnings</Badge>
-                        )}
-                        {!item.errorCount && !item.warningCount && (
-                          <Badge variant="secondary">Clean</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      {/* Pipeline status breakdowns */}
+      {pipelineQuery.isLoading ? (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertTitle>Loading pipeline data…</AlertTitle>
+        </Alert>
+      ) : pipelinePayload ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatusBreakdownTable title="Webhook Events" rows={webhookBreakdown} />
+          <StatusBreakdownTable title="Commit Diffs" rows={commitBreakdown} />
+          <StatusBreakdownTable title="AI Reviews" rows={aiBreakdown} />
+        </div>
+      ) : null}
     </div>
   );
 }

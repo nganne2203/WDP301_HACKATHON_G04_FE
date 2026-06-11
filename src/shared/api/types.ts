@@ -1649,28 +1649,48 @@ export interface ListAuditLogsQuery {
 // ============================================================
 // Operations / Pipeline Types
 // ============================================================
-export interface OperationsDashboardMetrics {
-  totalRepositories: number;
-  activeRepositories: number;
-  webhooksRegistered: number;
-  webhooksFailed: number;
-  commitsProcessed: number;
-  aiReviewsCompleted: number;
-  aiReviewsPending: number;
-  staticAnalysisRuns: number;
+export interface StatusCount {
+  status: string;
+  count: number;
+}
+
+export interface QueueCounts {
+  waiting: number;
+  active: number;
+  completed: number;
+  failed: number;
+  delayed: number;
+  paused: number;
+}
+
+export interface QueueSummary {
+  queueName: string;
+  redisStatus: string;
+  counts: QueueCounts;
+  error?: string;
+}
+
+export interface DashboardMetrics {
+  participants: number;
+  teams: number;
+  submissions: number;
+  repositories: number;
+  pendingAiReviews: number;
+  fallbackAiReviews: number;
   failedJobs: number;
+}
+
+export interface OperationsDashboardMetrics {
+  scope: { eventId: string | null; roundId: string | null };
+  metrics: DashboardMetrics;
+  queue: QueueSummary;
   [key: string]: unknown;
 }
 
 export interface PipelineSummary {
-  repositoryId: string;
-  repositoryFullName: string;
-  teamName: string | null;
-  lastSync: string | null;
-  lastAnalysis: string | null;
-  lastAiReview: string | null;
-  commitCount: number;
-  errorCount: number;
-  warningCount: number;
-  [key: string]: unknown;
+  scope: { eventId: string | null; roundId: string | null };
+  queue: QueueSummary;
+  webhookStatusBreakdown: StatusCount[];
+  commitDiffStatusBreakdown: StatusCount[];
+  aiReviewStatusBreakdown: StatusCount[];
 }

@@ -61,8 +61,11 @@ export function formatDate(value?: string | null) {
   return new Date(value).toLocaleDateString();
 }
 
-export function MediaTypeBadge({ type }: { type: MediaType }) {
-  const meta = TYPE_META[type];
+export function MediaTypeBadge({ type }: { type: MediaType | string | undefined | null }) {
+  const meta = type ? TYPE_META[type as MediaType] : undefined;
+  if (!meta) {
+    return <Badge variant="outline">{type || 'Unknown'}</Badge>;
+  }
   const Icon = meta.icon;
 
   return (
@@ -73,8 +76,11 @@ export function MediaTypeBadge({ type }: { type: MediaType }) {
   );
 }
 
-export function MediaStatusBadge({ status }: { status: MediaStatus }) {
-  const meta = STATUS_META[status];
+export function MediaStatusBadge({ status }: { status: MediaStatus | string | undefined | null }) {
+  const meta = status ? STATUS_META[status as MediaStatus] : undefined;
+  if (!meta) {
+    return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+  }
 
   return (
     <Badge variant="outline" className={meta.className}>
