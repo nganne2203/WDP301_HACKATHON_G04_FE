@@ -170,7 +170,19 @@ export function Workshops() {
                     <p className="text-xs text-muted-foreground">{formatDateTime(workshop.endTime)}</p>
                   </div>
                 </TableCell>
-                <TableCell>{workshop.questionnaire?.length || 0}</TableCell>
+                <TableCell>
+                  {workshop.questionnaire && workshop.questionnaire.length > 0 ? (
+                    <ul className="space-y-1">
+                      {workshop.questionnaire.map((q, i) => (
+                        <li key={i} className="text-sm text-muted-foreground leading-snug">
+                          {i + 1}. {q}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-sm text-muted-foreground italic">No questions</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
