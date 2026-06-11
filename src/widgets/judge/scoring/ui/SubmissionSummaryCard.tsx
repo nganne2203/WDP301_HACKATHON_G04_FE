@@ -1,9 +1,10 @@
-import { ExternalLink, FileText, Github } from 'lucide-react';
+import { useState } from 'react';
+import { ExternalLink, FileText, Github, Search } from 'lucide-react';
 
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import type { ScoreSheet } from '@/shared/api/types';
+import { RepositoryEvidenceDialog } from './RepositoryEvidenceDialog';
 
 export function SubmissionSummaryCard({
   teamName,
@@ -20,6 +21,8 @@ export function SubmissionSummaryCard({
   latestAiReview: any;
   isSubmitted: boolean;
 }) {
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+
   return (
     <Card>
       <CardHeader>
@@ -67,11 +70,18 @@ export function SubmissionSummaryCard({
                       Access: {repository?.accessState || 'UNKNOWN'} - Webhook: {repository?.webhookStatus || 'UNKNOWN'}
                     </p>
                   </div>
-                  {repository?.repositoryUrl && (
-                    <a href={repository.repositoryUrl} target="_blank" rel="noreferrer">
-                      <Button variant="outline" size="sm">Open repo</Button>
-                    </a>
-                  )}
+                  <div className="flex gap-2">
+                    {repository?.repositoryUrl && (
+                      <a href={repository.repositoryUrl} target="_blank" rel="noreferrer">
+                        <Button variant="outline" size="sm">Open repo</Button>
+                      </a>
+                    )}
+                    {repository && (
+                      <Button variant="outline" size="sm" onClick={() => setEvidenceOpen(true)}>
+                        <Search className="h-3.5 w-3.5 mr-1" /> Evidence
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 {latestAnalysis && (
                   <p className="text-xs text-muted-foreground">
@@ -90,6 +100,11 @@ export function SubmissionSummaryCard({
           <p className="text-sm text-muted-foreground">No submission found for this team.</p>
         )}
       </CardContent>
+      <RepositoryEvidenceDialog
+        open={evidenceOpen}
+        onOpenChange={setEvidenceOpen}
+        repository={repository ?? null}
+      />
     </Card>
   );
 }

@@ -1,5 +1,10 @@
 export { api, apiRequest, getAccessToken, getRefreshToken, setTokens, clearTokens, ApiError } from './client';
+export { auditApi } from './audit';
+export { finalistsApi } from './finalists';
 export { judgingBoardsApi } from './judging-boards';
+export { operationsApi } from './operations';
+export { rankingsApi } from './rankings';
+export { resultsApi } from './results';
 export { roundsApi } from './rounds';
 export { rubricsApi } from './rubrics';
 export { scoringApi } from './scoring';

@@ -1,4 +1,4 @@
-import { CheckCircle2, Github, Loader2, Plus } from 'lucide-react';
+import { CheckCircle2, Github, Link, Loader2, Plus } from 'lucide-react';
 
 import type { useRepositoriesView } from '../model/useRepositoriesView';
 
@@ -147,6 +147,52 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link className="h-5 w-5" />
+            Link Existing Repository
+          </CardTitle>
+          <CardDescription>Link an already-existing GitHub repository to a team. Use this when the repo was created outside of SEAL.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label>Team</Label>
+              <Select value={view.selectedTeamId} onValueChange={view.setSelectedTeamId}>
+                <SelectTrigger><SelectValue placeholder="Select team" /></SelectTrigger>
+                <SelectContent>
+                  {view.teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-owner">GitHub owner</Label>
+              <Input id="link-owner" value={view.linkOwner} onChange={(e) => view.setLinkOwner(e.target.value)} placeholder="org-or-username" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-repo">Repository name</Label>
+              <Input id="link-repo" value={view.linkRepo} onChange={(e) => view.setLinkRepo(e.target.value)} placeholder="repo-name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="link-branch">Default branch</Label>
+              <Input id="link-branch" value={view.linkBranch} onChange={(e) => view.setLinkBranch(e.target.value)} placeholder="main" />
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => view.linkRepositoryMutation.mutate()}
+            disabled={view.linkRepositoryMutation.isPending || !view.activeEventId || !view.selectedTeamId || !view.linkOwner || !view.linkRepo}
+          >
+            {view.linkRepositoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Link className="mr-2 h-4 w-4" />
+            Link repository
+          </Button>
+        </CardContent>
+      </Card>
     </>
   );
 }
