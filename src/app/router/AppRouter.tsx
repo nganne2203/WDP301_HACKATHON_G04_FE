@@ -34,6 +34,8 @@ const Repositories = lazy(async () => ({
 const Judging = lazy(async () => ({ default: (await import('@/pages/coordinator/Judging')).Judging }));
 const Results = lazy(async () => ({ default: (await import('@/pages/coordinator/Results')).Results }));
 const AdminMedia = lazy(async () => ({ default: (await import('@/pages/admin/Media')).AdminMedia }));
+const AdminAuditLogs = lazy(async () => ({ default: (await import('@/pages/admin/AuditLogs')).AdminAuditLogs }));
+const AdminOperations = lazy(async () => ({ default: (await import('@/pages/admin/Operations')).AdminOperations }));
 const JudgeScoring = lazy(async () => ({ default: (await import('@/pages/judge/Scoring')).JudgeScoring }));
 const AdminSettings = lazy(async () => ({ default: (await import('@/pages/admin/Settings')).Settings }));
 const ParticipantDashboard = lazy(async () => ({
@@ -315,6 +317,22 @@ export function AppRouter() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminMedia />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminAuditLogs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/operations"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminOperations />
               </ProtectedRoute>
             }
           />
