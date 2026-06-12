@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
-import { eventsApi, tracksApi } from '@/shared/api';
+import { tracksApi } from '@/shared/api';
+import { useEventsQuery, useTracksQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { CreateTrackRequest, Track, UpdateTrackRequest } from '@/shared/api/types';
 
@@ -26,10 +28,7 @@ export function useTracksView() {
   const [createForm, setCreateForm] = useState<TrackFormState>(createEmptyTrackForm());
   const [editForm, setEditForm] = useState<TrackFormState>(createEmptyTrackForm());
 
-  const eventsQuery = useQuery({
-    queryKey: ['coordinator-track-events'],
-    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
-  });
+  const eventsQuery = useEventsQuery();
 
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
@@ -37,11 +36,10 @@ export function useTracksView() {
     return events.find((event) => event.id === selectedEventId) || events.find((event) => event.id === selectedEvent?.id) || events[0];
   }, [events, selectedEventId, selectedEvent?.id]);
 
-  const tracksQuery = useQuery({
-    queryKey: ['coordinator-tracks', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await tracksApi.list({ eventId: activeEvent?.id, page: 1, limit: 100 })).data,
-  });
+  const tracksQuery = useTracksQuery(
+    { eventId: activeEvent?.id, page: 1, limit: 10 },
+    { enabled: Boolean(activeEvent?.id) }
+  );
 
   const tracks = tracksQuery.data || [];
 
@@ -49,7 +47,7 @@ export function useTracksView() {
     mutationFn: (payload: CreateTrackRequest) => tracksApi.create(payload),
     onSuccess: (response) => {
       toast.success('Track created', { description: `${response.data.name} is ready.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-tracks'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks.lists() });
       setCreateOpen(false);
       setCreateForm(createEmptyTrackForm());
     },
@@ -64,7 +62,7 @@ export function useTracksView() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateTrackRequest }) => tracksApi.update(id, payload),
     onSuccess: (response) => {
       toast.success('Track updated', { description: `${response.data.name} has been updated.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-tracks'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks.lists() });
       setEditOpen(false);
       setSelectedTrack(null);
     },
@@ -79,7 +77,7 @@ export function useTracksView() {
     mutationFn: (id: string) => tracksApi.delete(id),
     onSuccess: () => {
       toast.success('Track deleted');
-      queryClient.invalidateQueries({ queryKey: ['coordinator-tracks'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracks.lists() });
       setDeleteOpen(false);
       setSelectedTrack(null);
     },

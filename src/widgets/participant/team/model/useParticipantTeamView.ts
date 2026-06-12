@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { eventsApi } from '@/entities/event/api';
 import { useStore } from '@/entities/session/model/store';
 import { teamsApi } from '@/entities/team/api';
 import {
@@ -12,12 +11,13 @@ import {
   normalizeMemberRows,
   type MemberInviteRow,
 } from '@/features/team/member-invites/model/helpers';
-import { ApiError } from '@/shared/api/client';
 import type { TeamInvitation } from '@/shared/api/types';
+import { useEventsQuery, useMyTeamQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useParticipantTeamView() {
   const queryClient = useQueryClient();
-  const { user } = useStore();
+  const user = useStore((state) => state.user);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [teamName, setTeamName] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -25,13 +25,7 @@ export function useParticipantTeamView() {
   const [newInvitedMembers, setNewInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [replacementEmails, setReplacementEmails] = useState<Record<string, string>>({});
 
-  const eventsQuery = useQuery({
-    queryKey: ['participant-team-events'],
-    queryFn: async () => {
-      const response = await eventsApi.list({ page: 1, limit: 100 });
-      return response.data;
-    },
-  });
+  const eventsQuery = useEventsQuery();
 
   const events = eventsQuery.data || [];
   const selectedEvent = useMemo(() => {
@@ -41,23 +35,10 @@ export function useParticipantTeamView() {
 
   const activeEventId = selectedEvent?.id || '';
 
-  const teamQuery = useQuery({
-    queryKey: ['my-team', activeEventId],
-    enabled: Boolean(activeEventId),
-    retry: false,
-    queryFn: async () => {
-      try {
-        const response = await teamsApi.getMyTeam(activeEventId);
-        return response.data;
-      } catch (error) {
-        if (error instanceof ApiError && error.statusCode === 404) return null;
-        throw error;
-      }
-    },
-  });
+  const teamQuery = useMyTeamQuery(activeEventId);
 
   const invalidateTeam = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['my-team', activeEventId] });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.teams.my(activeEventId) });
   };
 
   const createTeamMutation = useMutation({

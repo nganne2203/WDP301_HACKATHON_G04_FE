@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Bot, ExternalLink, GitCommitHorizontal } from 'lucide-react';
 
 import { repositoriesApi } from '@/entities/repository/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
@@ -11,8 +12,8 @@ import type { Repository } from '@/shared/api/types';
 
 function CommitsTab({ repositoryId }: { repositoryId: string }) {
   const commitsQuery = useQuery({
-    queryKey: ['judge-repo-commits', repositoryId],
-    queryFn: async () => (await repositoriesApi.listCommits(repositoryId, { limit: 20 })).data,
+    queryKey: queryKeys.repositories.commits(repositoryId),
+    queryFn: async () => (await repositoriesApi.listCommits(repositoryId, 1, 20)).data,
     enabled: Boolean(repositoryId),
   });
   const commits = commitsQuery.data || [];
@@ -47,8 +48,8 @@ function CommitsTab({ repositoryId }: { repositoryId: string }) {
 
 function AnalysisTab({ repositoryId }: { repositoryId: string }) {
   const analysisQuery = useQuery({
-    queryKey: ['judge-repo-analysis', repositoryId],
-    queryFn: async () => (await repositoriesApi.listStaticAnalysis(repositoryId, { limit: 5 })).data,
+    queryKey: queryKeys.repositories.analysis(repositoryId),
+    queryFn: async () => (await repositoriesApi.listStaticAnalysis(repositoryId, 1, 5)).data,
     enabled: Boolean(repositoryId),
   });
   const results = analysisQuery.data || [];
@@ -76,8 +77,8 @@ function AnalysisTab({ repositoryId }: { repositoryId: string }) {
 
 function AiReviewsTab({ repositoryId }: { repositoryId: string }) {
   const aiQuery = useQuery({
-    queryKey: ['judge-repo-ai-reviews', repositoryId],
-    queryFn: async () => (await repositoriesApi.listAiReviews(repositoryId, { limit: 5 })).data,
+    queryKey: queryKeys.repositories.aiReviews(repositoryId),
+    queryFn: async () => (await repositoriesApi.listAiReviews(repositoryId, 1, 5)).data,
     enabled: Boolean(repositoryId),
   });
   const reviews = aiQuery.data || [];

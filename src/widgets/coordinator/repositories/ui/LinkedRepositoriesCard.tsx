@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
+import { ListPagination } from '@/shared/ui/list-pagination';
 
 type RepositoriesViewModel = ReturnType<typeof useRepositoriesView>;
 
@@ -90,6 +91,11 @@ export function LinkedRepositoriesCard({ view }: { view: RepositoriesViewModel }
                 </div>
               </div>
             ))}
+            <ListPagination
+              page={view.repositoriesPage}
+              pagination={view.repositoriesPagination}
+              onPageChange={view.setRepositoriesPage}
+            />
           </div>
         )}
       </CardContent>

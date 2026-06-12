@@ -1,4 +1,5 @@
 import { type FormEvent, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { Loader2, LockKeyhole } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,10 +11,12 @@ import { Label } from '@/shared/ui/label';
 import { authApi } from '@/shared/api/auth';
 import { ApiError } from '@/shared/api/client';
 import { useStore } from '@/entities/session/model/store';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function ChangePassword() {
   const navigate = useNavigate();
-  const { setUser } = useStore();
+  const queryClient = useQueryClient();
+  const setUser = useStore((state) => state.setUser);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -36,6 +39,7 @@ export function ChangePassword() {
     try {
       const response = await authApi.changePassword({ currentPassword, newPassword });
       setUser(response.data);
+      queryClient.setQueryData(queryKeys.auth.me(), response.data);
       toast.success('Password changed successfully');
       navigate('/participant', { replace: true });
     } catch (error) {

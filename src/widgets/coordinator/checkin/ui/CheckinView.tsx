@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
@@ -12,29 +13,44 @@ import {
 } from '@/shared/ui/table';
 import { Badge } from '@/shared/ui/badge';
 import { Progress } from '@/shared/ui/progress';
+import { ListPagination } from '@/shared/ui/list-pagination';
 import { toast } from 'sonner';
 import { participantsApi, workshopsApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
 import type { Workshop } from '@/shared/api/types';
 import { useStore } from '@/entities/session/model/store';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function Checkin() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((s) => s.selectedEvent);
+  const [page, setPage] = useState(1);
 
   // Fetch real participants filtered by selected event
   const { data: participantsResponse, isLoading: participantsLoading, error: participantsError } = useQuery({
-    queryKey: ['participants', selectedEvent?.id],
+    queryKey: queryKeys.participants.list({ eventId: selectedEvent?.id, page, limit: 10 }),
     queryFn: () => participantsApi.list({
       eventId: selectedEvent?.id,
-      limit: 100,
+      page,
+      limit: 10,
+    }),
+    enabled: Boolean(selectedEvent?.id),
+  });
+
+  const { data: checkedInResponse } = useQuery({
+    queryKey: queryKeys.participants.list({ eventId: selectedEvent?.id, checkInStatus: 'CHECKED_IN', page: 1, limit: 10 }),
+    queryFn: () => participantsApi.list({
+      eventId: selectedEvent?.id,
+      checkInStatus: 'CHECKED_IN',
+      page: 1,
+      limit: 10,
     }),
     enabled: Boolean(selectedEvent?.id),
   });
 
   const participants = participantsResponse?.data || [];
-  const checkedInCount = participants.filter((p) => p.checkInStatus === 'CHECKED_IN').length;
-  const totalCount = participants.length;
+  const checkedInCount = checkedInResponse?.pagination?.totalItems || 0;
+  const totalCount = participantsResponse?.pagination?.totalItems || 0;
   const checkinRate = totalCount > 0 ? Math.round((checkedInCount / totalCount) * 100) : 0;
 
   // Check-in mutation
@@ -42,7 +58,7 @@ export function Checkin() {
     mutationFn: (id: string) => participantsApi.checkIn(id),
     onSuccess: () => {
       toast.success('Check-in successful');
-      queryClient.invalidateQueries({ queryKey: ['participants'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.participants.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Check-in failed', {
@@ -53,7 +69,7 @@ export function Checkin() {
 
   // Fetch real workshops from backend
   const { data: workshopsResponse, isLoading: workshopsLoading, error: workshopsError } = useQuery({
-    queryKey: ['workshops', selectedEvent?.id],
+    queryKey: queryKeys.workshops.list({ eventId: selectedEvent?.id, page: 1, limit: 10 }),
     queryFn: () => workshopsApi.list({ eventId: selectedEvent?.id, page: 1, limit: 10 }),
     enabled: Boolean(selectedEvent?.id),
   });
@@ -287,6 +303,7 @@ export function Checkin() {
               </TableBody>
             </Table>
           )}
+          <ListPagination page={page} pagination={participantsResponse?.pagination} onPageChange={setPage} />
         </CardContent>
       </Card>
     </div>
