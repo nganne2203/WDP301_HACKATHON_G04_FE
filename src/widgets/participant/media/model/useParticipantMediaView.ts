@@ -4,8 +4,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
-import { eventsApi } from '@/entities/event/api';
 import { mediaApi } from '@/entities/media/api';
+import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import type { MediaItem } from '@/shared/api/types';
 
 import {
@@ -17,7 +18,7 @@ import {
 
 export function useParticipantMediaView() {
   const queryClient = useQueryClient();
-  const { user } = useStore();
+  const user = useStore((state) => state.user);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -51,12 +52,9 @@ export function useParticipantMediaView() {
     return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
 
-  const eventsQuery = useQuery({
-    queryKey: ['events', 'media-selector'],
-    queryFn: () => eventsApi.list({ page: 1, limit: 100 }),
-  });
+  const eventsQuery = useEventsQuery();
 
-  const events = eventsQuery.data?.data || [];
+  const events = eventsQuery.data || [];
 
   useEffect(() => {
     if (!selectedEventId && events.length > 0) {
@@ -77,7 +75,7 @@ export function useParticipantMediaView() {
   });
 
   const historyQuery = useQuery({
-    queryKey: ['media', 'my-history', historyFilters],
+    queryKey: queryKeys.media.history(historyFilters),
     queryFn: () => mediaApi.getMyHistory(historyFilters),
   });
 
@@ -93,7 +91,7 @@ export function useParticipantMediaView() {
       setTags('');
       setFile(null);
       setUploadProgress(0);
-      await queryClient.invalidateQueries({ queryKey: ['media', 'my-history'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.media.all });
     },
     onError: (error: unknown) => {
       toast.error('Upload failed', { description: getMediaErrorMessage(error, 'Upload failed.') });
@@ -116,7 +114,7 @@ export function useParticipantMediaView() {
     onSuccess: async () => {
       toast.success('Media deleted');
       setDeleteMedia(null);
-      await queryClient.invalidateQueries({ queryKey: ['media', 'my-history'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.media.all });
     },
     onError: (error: unknown) => {
       toast.error('Delete failed', {

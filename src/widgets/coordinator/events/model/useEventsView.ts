@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 import { eventsApi } from '@/entities/event/api';
+import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { CreateEventRequest, Event } from '@/shared/api/types';
 import {
@@ -33,12 +35,9 @@ export function useEventsView() {
   const [inviteMessage, setInviteMessage] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  const eventsQuery = useQuery({
-    queryKey: ['events'],
-    queryFn: () => eventsApi.list({ page: 1, limit: 100 }),
-  });
+  const eventsQuery = useEventsQuery();
 
-  const events = eventsQuery.data?.data || [];
+  const events = eventsQuery.data || [];
 
   const createForm = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -55,7 +54,7 @@ export function useEventsView() {
       toast.success('Event Created', { description: `${response.data.title} has been created.` });
       setCreateOpen(false);
       createForm.reset({ status: 'DRAFT' });
-      await queryClient.invalidateQueries({ queryKey: ['events'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Failed to create event', {
@@ -69,7 +68,7 @@ export function useEventsView() {
     onSuccess: async (response) => {
       toast.success('Event Updated', { description: `${response.data.title} has been updated.` });
       setEditOpen(false);
-      await queryClient.invalidateQueries({ queryKey: ['events'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Failed to update event', {
@@ -84,7 +83,7 @@ export function useEventsView() {
       toast.success('Event Deleted', { description: 'The event has been deleted.' });
       setDeleteOpen(false);
       setSelectedEvent(null);
-      await queryClient.invalidateQueries({ queryKey: ['events'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Failed to delete event', {

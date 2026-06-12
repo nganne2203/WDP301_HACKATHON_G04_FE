@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { eventsApi } from '@/entities/event/api';
 import { judgingBoardsApi } from '@/entities/judging-board/api';
-import { roundsApi } from '@/entities/round/api';
+import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import type { JudgingBoard, Round } from '@/shared/api/types';
 
 export function statusVariant(status: string) {
@@ -22,31 +22,24 @@ export function useJudgingView() {
   const [assignedBoards, setAssignedBoards] = useState<JudgingBoard[]>([]);
   const [showAssignedResult, setShowAssignedResult] = useState(false);
 
-  const eventsQuery = useQuery({
-    queryKey: ['coordinator-judging-events'],
-    queryFn: () => eventsApi.list({ page: 1, limit: 100 }),
-  });
-  const events = eventsQuery.data?.data || [];
+  const eventsQuery = useEventsQuery();
+  const events = eventsQuery.data || [];
   const activeEvent = useMemo(
     () => events.find((event) => event.id === selectedEventId) || events[0] || null,
     [events, selectedEventId]
   );
 
-  const roundsQuery = useQuery({
-    queryKey: ['coordinator-judging-rounds', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: () => roundsApi.list({ eventId: activeEvent!.id, limit: 100 }),
-  });
-  const rounds: Round[] = roundsQuery.data?.data || [];
+  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
+  const rounds: Round[] = roundsQuery.data || [];
   const activeRound = useMemo(
     () => rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null,
     [rounds, selectedRoundId]
   );
 
   const boardsQuery = useQuery({
-    queryKey: ['coordinator-judging-boards', activeRound?.id],
+    queryKey: queryKeys.judging.boards(activeRound?.id),
     enabled: Boolean(activeRound?.id),
-    queryFn: () => judgingBoardsApi.list({ roundId: activeRound!.id, limit: 100 }),
+    queryFn: () => judgingBoardsApi.list({ roundId: activeRound!.id, limit: 10 }),
   });
   const boards: JudgingBoard[] = boardsQuery.data?.data || [];
   const totalTeams = boards.reduce((sum, board) => sum + board.teams.length, 0);
@@ -59,7 +52,7 @@ export function useJudgingView() {
       setAssignedBoards(created);
       setShowAutoAssignConfirm(false);
       setShowAssignedResult(true);
-      queryClient.invalidateQueries({ queryKey: ['coordinator-judging-boards'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.judging.all });
       toast.success(`Auto-assigned teams across ${created.length} judging boards`);
     },
     onError: () => {

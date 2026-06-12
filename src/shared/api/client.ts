@@ -1,4 +1,6 @@
-﻿import type { ApiErrorResponse, ApiSuccessResponse } from './types';
+﻿import { notifySessionExpired } from '@/lib/authEvents';
+
+import type { ApiErrorResponse, ApiSuccessResponse } from './types';
 
 // ============================================================
 // API Client Configuration
@@ -177,9 +179,9 @@ export async function apiRequest<T>(
 
           return (await retryResponse.json()) as ApiSuccessResponse<T>;
         } else {
-          // Refresh failed - redirect to login
+          // Refresh failed - let React state/router move the user to login.
           clearTokens();
-          window.location.href = '/login';
+          notifySessionExpired();
           throw new ApiError(
             { success: false, code: 'SESSION_EXPIRED', message: 'Session expired', errors: [] },
             401
@@ -247,5 +249,4 @@ export const api = {
   delete: <T>(path: string, options?: RequestOptions) =>
     apiRequest<T>(path, { ...options, method: 'DELETE' }),
 };
-
 

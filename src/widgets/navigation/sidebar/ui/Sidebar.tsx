@@ -1,14 +1,17 @@
+import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 import { cn } from '@/shared/lib/cn';
 import { Award, UserCircle } from 'lucide-react';
 import { useStore } from '@/entities/session/model/store';
 import { getNavigationItems } from '@/widgets/navigation/model/navigation';
 
-export function Sidebar() {
+export const Sidebar = memo(function Sidebar() {
   const location = useLocation();
-  const { user, appRole, sidebarCollapsed } = useStore();
+  const user = useStore((state) => state.user);
+  const appRole = useStore((state) => state.appRole);
+  const sidebarCollapsed = useStore((state) => state.sidebarCollapsed);
 
-  const navItems = getNavigationItems(appRole);
+  const navItems = useMemo(() => getNavigationItems(appRole), [appRole]);
 
   const displayName = user?.fullName || 'User';
   const primaryRole = appRole || 'participant';
@@ -73,4 +76,4 @@ export function Sidebar() {
       </div>
     </div>
   );
-}
+});

@@ -1,14 +1,18 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { eventsApi } from '@/entities/event/api';
 import { roundsApi } from '@/entities/round/api';
-import { rubricsApi } from '@/entities/rubric/api';
 import { useStore } from '@/entities/session/model/store';
-import { teamsApi } from '@/entities/team/api';
-import { tracksApi } from '@/entities/track/api';
-import { usersApi } from '@/entities/user/api';
+import {
+  useEventsQuery,
+  useRoundsQuery,
+  useRubricsQuery,
+  useTeamsQuery,
+  useTracksQuery,
+  useUsersQuery,
+} from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import type { CreateRoundRequest, Round, UpdateRoundRequest } from '@/shared/api/types';
 
 import {
@@ -33,10 +37,7 @@ export function useRoundsView() {
   const [createForm, setCreateForm] = useState<RoundFormState>(createEmptyRoundForm());
   const [editForm, setEditForm] = useState<RoundFormState>(createEmptyRoundForm());
 
-  const eventsQuery = useQuery({
-    queryKey: ['coordinator-round-events'],
-    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
-  });
+  const eventsQuery = useEventsQuery();
 
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
@@ -44,46 +45,27 @@ export function useRoundsView() {
     return events.find((event) => event.id === selectedEventId) || events.find((event) => event.id === selectedEvent?.id) || events[0];
   }, [events, selectedEventId, selectedEvent?.id]);
 
-  const roundsQuery = useQuery({
-    queryKey: ['coordinator-rounds', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await roundsApi.list({ eventId: activeEvent?.id, limit: 100 })).data,
-  });
+  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
 
-  const tracksQuery = useQuery({
-    queryKey: ['coordinator-round-tracks', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await tracksApi.list({ eventId: activeEvent?.id, limit: 100 })).data,
-  });
+  const tracksQuery = useTracksQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
 
-  const rubricsQuery = useQuery({
-    queryKey: ['coordinator-round-rubrics', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await rubricsApi.list({ eventId: activeEvent?.id, limit: 100 })).data,
-  });
+  const rubricsQuery = useRubricsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
 
-  const teamsQuery = useQuery({
-    queryKey: ['coordinator-round-teams', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await teamsApi.list({ eventId: activeEvent?.id, limit: 100 })).data,
-  });
+  const teamsQuery = useTeamsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
 
-  const judgesQuery = useQuery({
-    queryKey: ['coordinator-round-judges'],
-    queryFn: async () => (await usersApi.list({ page: 1, limit: 100 })).data,
-  });
+  const judgesQuery = useUsersQuery();
 
   const rounds = roundsQuery.data || [];
   const tracks = tracksQuery.data || [];
   const rubrics = rubricsQuery.data || [];
   const teams = teamsQuery.data || [];
-  const judges = (judgesQuery.data || []).filter(isJudgeUser);
+  const judges = (judgesQuery.data?.data || []).filter(isJudgeUser);
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateRoundRequest) => roundsApi.create(payload),
     onSuccess: (response) => {
       toast.success('Round created', { description: `${response.data.name} has been added.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-rounds'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
       setCreateOpen(false);
       setCreateForm(createEmptyRoundForm());
     },
@@ -96,7 +78,7 @@ export function useRoundsView() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateRoundRequest }) => roundsApi.update(id, payload),
     onSuccess: (response) => {
       toast.success('Round updated', { description: `${response.data.name} has been updated.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-rounds'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
       setEditOpen(false);
       setSelectedRound(response.data);
     },
@@ -109,7 +91,7 @@ export function useRoundsView() {
     mutationFn: (id: string) => roundsApi.delete(id),
     onSuccess: () => {
       toast.success('Round deleted');
-      queryClient.invalidateQueries({ queryKey: ['coordinator-rounds'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
       setDeleteOpen(false);
       setSelectedRound(null);
     },

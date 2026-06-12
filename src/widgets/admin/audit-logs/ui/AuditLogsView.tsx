@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ClipboardList, Loader2, Search } from 'lucide-react';
 
 import { auditApi } from '@/entities/audit/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -33,7 +34,7 @@ export function AuditLogsView() {
   const [page, setPage] = useState(1);
 
   const logsQuery = useQuery({
-    queryKey: ['audit-logs', actionFilter, resourceTypeFilter, page],
+    queryKey: queryKeys.auditLogs.list({ action: actionFilter || undefined, resourceType: resourceTypeFilter || undefined, page }),
     queryFn: async () =>
       auditApi.list({
         page,
@@ -44,7 +45,7 @@ export function AuditLogsView() {
   });
 
   const summaryQuery = useQuery({
-    queryKey: ['audit-logs-summary', actionFilter, resourceTypeFilter],
+    queryKey: queryKeys.auditLogs.summary({ action: actionFilter || undefined, resourceType: resourceTypeFilter || undefined }),
     queryFn: async () =>
       auditApi.getSummary({
         action: actionFilter || undefined,

@@ -289,6 +289,8 @@ export interface MediaHistoryFilter {
   eventId?: string;
   mediaType?: MediaType;
   status?: MediaStatus;
+  search?: string;
+  tags?: string;
   fromDate?: string;
   toDate?: string;
   week?: number;

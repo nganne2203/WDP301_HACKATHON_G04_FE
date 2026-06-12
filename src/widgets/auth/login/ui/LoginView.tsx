@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link, Navigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,8 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { useStore } from '@/entities/session/model/store';
-import { authApi } from '@/shared/api/auth';
 import { ApiError } from '@/shared/api/client';
+import { useLoginMutation } from '@/hooks/mutations/useAuthMutations';
 import { toast } from 'sonner';
 
 const loginSchema = z.object({
@@ -25,20 +25,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function Login() {
   const navigate = useNavigate();
-  const { setAuth, user } = useStore();
+  const user = useStore((state) => state.user);
+  const loginMutation = useLoginMutation();
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
-
-  // If already authenticated, redirect to the right dashboard
-  if (user) {
-    navigate(resolveHomePathForUser(user), { replace: true });
-    return null;
-  }
-
-  function handleForgotClose() {
-    setForgotOpen(false);
-    setForgotEmail('');
-  }
 
   const {
     register,
@@ -49,16 +39,24 @@ export function Login() {
     resolver: zodResolver(loginSchema),
   });
 
+  // If already authenticated, redirect to the right dashboard
+  if (user) {
+    return <Navigate to={resolveHomePathForUser(user)} replace />;
+  }
+
+  function handleForgotClose() {
+    setForgotOpen(false);
+    setForgotEmail('');
+  }
+
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const response = await authApi.login({
+      const response = await loginMutation.mutateAsync({
         email: data.email,
         password: data.password,
       });
 
-      const { user: authUser, tokens } = response.data;
-
-      setAuth(authUser, tokens.accessToken, tokens.refreshToken);
+      const { user: authUser } = response.data;
 
       toast.success('Login successful!', {
         description: `Welcome back, ${authUser.fullName}`,
@@ -155,9 +153,9 @@ export function Login() {
                 type="submit"
                 className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                 size="lg"
-                disabled={isSubmitting}
+                disabled={isSubmitting || loginMutation.isPending}
               >
-                {isSubmitting ? (
+                {isSubmitting || loginMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Signing in...

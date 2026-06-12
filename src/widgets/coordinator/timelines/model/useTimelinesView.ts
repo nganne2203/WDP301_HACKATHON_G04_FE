@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
-import { eventsApi, timelinesApi } from '@/shared/api';
+import { timelinesApi } from '@/shared/api';
+import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { CreateTimelineRequest, TimelineEvent, UpdateTimelineRequest } from '@/shared/api/types';
 
@@ -19,6 +21,7 @@ export function useTimelinesView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
   const [selectedEventId, setSelectedEventId] = useState('');
+  const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -26,10 +29,7 @@ export function useTimelinesView() {
   const [createForm, setCreateForm] = useState<TimelineFormState>(createEmptyTimelineForm());
   const [editForm, setEditForm] = useState<TimelineFormState>(createEmptyTimelineForm());
 
-  const eventsQuery = useQuery({
-    queryKey: ['coordinator-timeline-events'],
-    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
-  });
+  const eventsQuery = useEventsQuery();
 
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
@@ -38,18 +38,19 @@ export function useTimelinesView() {
   }, [events, selectedEventId, selectedEvent?.id]);
 
   const timelinesQuery = useQuery({
-    queryKey: ['coordinator-timelines', activeEvent?.id],
+    queryKey: queryKeys.timelines.list({ eventId: activeEvent?.id, page, limit: 10 }),
     enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await timelinesApi.list({ eventId: activeEvent?.id, page: 1, limit: 100 })).data,
+    queryFn: () => timelinesApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
   });
 
-  const timelines = timelinesQuery.data || [];
+  const timelines = timelinesQuery.data?.data || [];
+  const pagination = timelinesQuery.data?.pagination;
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateTimelineRequest) => timelinesApi.create(payload),
     onSuccess: (response) => {
       toast.success('Timeline created', { description: `${response.data.title} has been scheduled.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-timelines'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.timelines.lists() });
       setCreateOpen(false);
       setCreateForm(createEmptyTimelineForm());
     },
@@ -64,7 +65,7 @@ export function useTimelinesView() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateTimelineRequest }) => timelinesApi.update(id, payload),
     onSuccess: (response) => {
       toast.success('Timeline updated', { description: `${response.data.title} has been updated.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-timelines'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.timelines.lists() });
       setEditOpen(false);
       setSelectedTimeline(null);
     },
@@ -79,7 +80,7 @@ export function useTimelinesView() {
     mutationFn: (id: string) => timelinesApi.delete(id),
     onSuccess: () => {
       toast.success('Timeline deleted');
-      queryClient.invalidateQueries({ queryKey: ['coordinator-timelines'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.timelines.lists() });
       setDeleteOpen(false);
       setSelectedTimeline(null);
     },
@@ -142,7 +143,13 @@ export function useTimelinesView() {
     setDeleteOpen,
     setEditForm,
     setEditOpen,
-    setSelectedEventId,
+    setSelectedEventId: (eventId: string) => {
+      setSelectedEventId(eventId);
+      setPage(1);
+    },
+    page,
+    pagination,
+    setPage,
     setSelectedTimeline,
     timelines,
     timelinesQuery,

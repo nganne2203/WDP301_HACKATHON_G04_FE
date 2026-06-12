@@ -3,7 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
-import { eventsApi, timelinesApi, workshopsApi } from '@/shared/api';
+import { workshopsApi } from '@/shared/api';
+import { useEventsQuery, useTimelinesQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Workshop } from '@/shared/api/types';
 import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/workshops';
@@ -20,6 +22,7 @@ export function useWorkshopsView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
   const [selectedEventId, setSelectedEventId] = useState('');
+  const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -27,10 +30,7 @@ export function useWorkshopsView() {
   const [createForm, setCreateForm] = useState<WorkshopFormState>(createEmptyWorkshopForm());
   const [editForm, setEditForm] = useState<WorkshopFormState>(createEmptyWorkshopForm());
 
-  const eventsQuery = useQuery({
-    queryKey: ['coordinator-workshop-events'],
-    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
-  });
+  const eventsQuery = useEventsQuery();
 
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
@@ -39,30 +39,30 @@ export function useWorkshopsView() {
   }, [events, selectedEventId, selectedEvent?.id]);
 
   const workshopsQuery = useQuery({
-    queryKey: ['coordinator-workshops', activeEvent?.id],
+    queryKey: queryKeys.workshops.list({ eventId: activeEvent?.id, page, limit: 10 }),
     enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await workshopsApi.list({ eventId: activeEvent?.id, page: 1, limit: 100 })).data,
+    queryFn: () => workshopsApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
   });
 
-  const workshopTimelinesQuery = useQuery({
-    queryKey: ['coordinator-workshop-timelines', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await timelinesApi.list({
+  const workshopTimelinesQuery = useTimelinesQuery(
+    {
       eventId: activeEvent?.id,
       eventType: 'WORKSHOP',
       page: 1,
-      limit: 100,
-    })).data,
-  });
+      limit: 10,
+    },
+    { enabled: Boolean(activeEvent?.id) }
+  );
 
-  const workshops = workshopsQuery.data || [];
+  const workshops = workshopsQuery.data?.data || [];
+  const pagination = workshopsQuery.data?.pagination;
   const workshopTimelines = workshopTimelinesQuery.data || [];
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateWorkshopRequest) => workshopsApi.create(payload),
     onSuccess: (response) => {
       toast.success('Workshop created', { description: `${response.data.title} has been scheduled.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-workshops'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.workshops.lists() });
       setCreateOpen(false);
       setCreateForm(createEmptyWorkshopForm());
     },
@@ -77,7 +77,7 @@ export function useWorkshopsView() {
     mutationFn: ({ id, payload }: { id: string; payload: UpdateWorkshopRequest }) => workshopsApi.update(id, payload),
     onSuccess: (response) => {
       toast.success('Workshop updated', { description: `${response.data.title} has been updated.` });
-      queryClient.invalidateQueries({ queryKey: ['coordinator-workshops'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.workshops.lists() });
       setEditOpen(false);
       setSelectedWorkshop(null);
     },
@@ -92,7 +92,7 @@ export function useWorkshopsView() {
     mutationFn: (id: string) => workshopsApi.delete(id),
     onSuccess: () => {
       toast.success('Workshop deleted');
-      queryClient.invalidateQueries({ queryKey: ['coordinator-workshops'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.workshops.lists() });
       setDeleteOpen(false);
       setSelectedWorkshop(null);
     },
@@ -163,7 +163,13 @@ export function useWorkshopsView() {
     setDeleteOpen,
     setEditForm,
     setEditOpen,
-    setSelectedEventId,
+    setSelectedEventId: (eventId: string) => {
+      setSelectedEventId(eventId);
+      setPage(1);
+    },
+    page,
+    pagination,
+    setPage,
     setSelectedWorkshop,
     workshopTimelines,
     workshopTimelinesQuery,
