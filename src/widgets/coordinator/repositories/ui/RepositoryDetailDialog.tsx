@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Bot, Github, Loader2 } from 'lucide-react';
 
 import { repositoriesApi } from '@/entities/repository/api';
+import { queryKeys } from '@/lib/queryKeys';
 import type { Repository } from '@/shared/api/types';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -26,31 +27,31 @@ export function RepositoryDetailDialog({
   onClose: () => void;
 }) {
   const commitsQuery = useQuery({
-    queryKey: ['repository-commits', repository?.id],
+    queryKey: queryKeys.repositories.commits(repository?.id),
     enabled: open && Boolean(repository?.id),
     queryFn: async () => (await repositoriesApi.listCommits(repository!.id, 1, 10)).data,
   });
 
   const diffQuery = useQuery({
-    queryKey: ['repository-diffs', repository?.id],
+    queryKey: queryKeys.repositories.diffs(repository?.id),
     enabled: open && Boolean(repository?.id),
     queryFn: async () => (await repositoriesApi.listCommitDiffs(repository!.id, 1, 5)).data,
   });
 
   const analysisQuery = useQuery({
-    queryKey: ['repository-analysis', repository?.id],
+    queryKey: queryKeys.repositories.analysis(repository?.id),
     enabled: open && Boolean(repository?.id),
     queryFn: async () => (await repositoriesApi.listStaticAnalysis(repository!.id, 1, 5)).data,
   });
 
   const impactQuery = useQuery({
-    queryKey: ['repository-impact', repository?.id],
+    queryKey: queryKeys.repositories.impact(repository?.id),
     enabled: open && Boolean(repository?.id),
     queryFn: async () => (await repositoriesApi.listImpactDecisions(repository!.id, 1, 5)).data,
   });
 
   const reviewsQuery = useQuery({
-    queryKey: ['repository-ai-reviews', repository?.id],
+    queryKey: queryKeys.repositories.aiReviews(repository?.id),
     enabled: open && Boolean(repository?.id),
     queryFn: async () => (await repositoriesApi.listAiReviews(repository!.id, 1, 5)).data,
   });

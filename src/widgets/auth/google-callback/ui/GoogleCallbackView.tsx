@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { resolveHomePathForUser } from '@/entities/session/lib/navigation';
 import { useStore } from '@/entities/session/model/store';
 import { setTokens } from '@/shared/api/client';
 import { authApi } from '@/shared/api/auth';
+import { queryKeys } from '@/lib/queryKeys';
 import { toast } from 'sonner';
 
 /**
@@ -15,7 +17,8 @@ import { toast } from 'sonner';
 export function GoogleCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setAuth } = useStore();
+  const setAuth = useStore((state) => state.setAuth);
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -42,6 +45,7 @@ export function GoogleCallback() {
           const user = meResponse.data;
 
           setAuth(user, accessToken, refreshToken);
+          queryClient.setQueryData(queryKeys.auth.me(), user);
           setStatus('success');
           toast.success('Login successful!', {
             description: `Welcome, ${user.fullName}`,
@@ -62,7 +66,7 @@ export function GoogleCallback() {
     };
 
     handleCallback();
-  }, [searchParams, navigate, setAuth]);
+  }, [searchParams, navigate, queryClient, setAuth]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">

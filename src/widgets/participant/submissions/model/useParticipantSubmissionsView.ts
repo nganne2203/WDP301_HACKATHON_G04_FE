@@ -2,12 +2,11 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { eventsApi } from '@/entities/event/api';
-import { roundsApi } from '@/entities/round/api';
 import { submissionsApi } from '@/entities/submission/api';
-import { teamsApi } from '@/entities/team/api';
 import { useStore } from '@/entities/session/model/store';
 import type { Round, Submission } from '@/shared/api/types';
+import { useEventsQuery, useMyTeamQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 
 import {
   createSubmissionForm,
@@ -19,17 +18,14 @@ import {
 
 export function useParticipantSubmissionsView() {
   const queryClient = useQueryClient();
-  const { user } = useStore();
+  const user = useStore((state) => state.user);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [form, setForm] = useState<SubmissionFormState>(createSubmissionForm());
 
-  const eventsQuery = useQuery({
-    queryKey: ['participant-submission-events'],
-    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
-  });
+  const eventsQuery = useEventsQuery();
 
   const events = eventsQuery.data || [];
   const selectedEvent = useMemo(() => {
@@ -37,36 +33,23 @@ export function useParticipantSubmissionsView() {
     return events.find((event) => event.id === selectedEventId) || events[0];
   }, [events, selectedEventId]);
 
-  const teamQuery = useQuery({
-    queryKey: ['participant-submission-team', selectedEvent?.id],
-    enabled: Boolean(selectedEvent?.id),
-    retry: false,
-    queryFn: async () => {
-      try {
-        return (await teamsApi.getMyTeam(selectedEvent!.id)).data;
-      } catch (error) {
-        if (getSubmissionErrorMessage(error) && (error as any)?.statusCode === 404) return null;
-        throw error;
-      }
-    },
-  });
+  const teamQuery = useMyTeamQuery(selectedEvent?.id);
 
   const team = teamQuery.data;
 
-  const roundsQuery = useQuery({
-    queryKey: ['participant-submission-rounds', selectedEvent?.id],
-    enabled: Boolean(selectedEvent?.id),
-    queryFn: async () => (await roundsApi.list({ eventId: selectedEvent?.id, limit: 100 })).data,
-  });
+  const roundsQuery = useRoundsQuery(
+    { eventId: selectedEvent?.id, limit: 10 },
+    { enabled: Boolean(selectedEvent?.id) }
+  );
 
   const submissionsQuery = useQuery({
-    queryKey: ['participant-submissions', selectedEvent?.id, team?.id],
+    queryKey: queryKeys.submissions.list({ eventId: selectedEvent?.id, teamId: team?.id, limit: 10 }),
     enabled: Boolean(selectedEvent?.id && team?.id),
     queryFn: async () =>
       (await submissionsApi.list({
         eventId: selectedEvent?.id,
         teamId: team?.id,
-        limit: 100,
+        limit: 10,
       })).data,
   });
 
@@ -105,7 +88,7 @@ export function useParticipantSubmissionsView() {
       toast.success('Submission draft saved');
       setFormOpen(false);
       setSelectedRound(null);
-      await queryClient.invalidateQueries({ queryKey: ['participant-submissions'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.submissions.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Failed to save submission', { description: getSubmissionErrorMessage(error) });
@@ -143,7 +126,7 @@ export function useParticipantSubmissionsView() {
       setSubmitConfirmOpen(false);
       setFormOpen(false);
       setSelectedRound(null);
-      await queryClient.invalidateQueries({ queryKey: ['participant-submissions'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.submissions.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Failed to submit artifacts', { description: getSubmissionErrorMessage(error) });

@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { eventsApi } from '@/entities/event/api';
 import { mediaApi } from '@/entities/media/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { MediaItem, MediaType } from '@/shared/api/types';
 import { Button } from '@/shared/ui/button';
@@ -28,13 +29,13 @@ export function EventGallery() {
   }), [mediaType, search]);
 
   const { data: eventResponse } = useQuery({
-    queryKey: ['events', eventId],
+    queryKey: queryKeys.events.detail(eventId),
     queryFn: () => eventsApi.getById(eventId),
     enabled: Boolean(eventId),
   });
 
   const { data: galleryResponse, isLoading } = useQuery({
-    queryKey: ['media', 'gallery', eventId, filters],
+    queryKey: queryKeys.media.gallery(eventId, filters),
     queryFn: () => mediaApi.getEventGallery(eventId, filters),
     enabled: Boolean(eventId),
   });

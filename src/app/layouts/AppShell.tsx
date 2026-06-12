@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Sidebar } from '@/widgets/navigation/sidebar/ui/Sidebar';
 import { Topbar } from '@/widgets/navigation/topbar/ui/Topbar';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export const AppShell = memo(function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
@@ -11,4 +12,4 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
-}
+});

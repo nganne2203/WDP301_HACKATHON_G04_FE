@@ -1,9 +1,11 @@
+import { memo, useMemo } from 'react';
 import { Bell, LogOut, Menu, Search, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { getRoleLabel } from '@/entities/session/lib/navigation';
 import { useStore } from '@/entities/session/model/store';
+import { useLogoutMutation } from '@/hooks/mutations/useAuthMutations';
 import { Badge } from '@/shared/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import {
@@ -15,12 +17,16 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 
-export function Topbar() {
-  const { toggleSidebar, selectedEvent, user, appRole, logout } = useStore();
+export const Topbar = memo(function Topbar() {
+  const toggleSidebar = useStore((state) => state.toggleSidebar);
+  const selectedEvent = useStore((state) => state.selectedEvent);
+  const user = useStore((state) => state.user);
+  const appRole = useStore((state) => state.appRole);
+  const logoutMutation = useLogoutMutation();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
+    await logoutMutation.mutateAsync();
     navigate('/login', { replace: true });
   };
 
@@ -28,12 +34,16 @@ export function Topbar() {
   const displayEmail = user?.email || '';
   const displayRole = getRoleLabel(appRole);
 
-  const initials = displayName
-    ?.split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  const initials = useMemo(
+    () =>
+      displayName
+        ?.split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase(),
+    [displayName]
+  );
 
   return (
     <div className="h-16 border-b border-border bg-white flex items-center justify-between px-6">
@@ -105,4 +115,4 @@ export function Topbar() {
       </div>
     </div>
   );
-}
+});

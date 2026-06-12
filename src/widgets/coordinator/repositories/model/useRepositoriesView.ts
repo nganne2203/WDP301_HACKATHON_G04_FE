@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { eventsApi } from '@/entities/event/api';
 import { githubApi } from '@/entities/github/api';
 import { repositoriesApi } from '@/entities/repository/api';
-import { roundsApi } from '@/entities/round/api';
-import { teamsApi } from '@/entities/team/api';
+import { useEventsQuery, useRoundsQuery, useTeamsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import type { Repository, RevokeGitHubMembersResult } from '@/shared/api/types';
 
 import { getApiErrorMessage } from './repository-view.utils';
@@ -16,6 +15,7 @@ export const PERMISSIONS = ['pull', 'triage', 'push', 'maintain', 'admin'] as co
 export function useRepositoriesView() {
   const queryClient = useQueryClient();
   const [selectedEventId, setSelectedEventId] = useState('');
+  const [repositoriesPage, setRepositoriesPage] = useState(1);
   const [organizationName, setOrganizationName] = useState('');
   const [ownerUsername, setOwnerUsername] = useState('');
   const [githubToken, setGithubToken] = useState('');
@@ -41,10 +41,7 @@ export function useRepositoriesView() {
   const [confirmationText, setConfirmationText] = useState('');
   const [revokeResult, setRevokeResult] = useState<RevokeGitHubMembersResult | null>(null);
 
-  const eventsQuery = useQuery({
-    queryKey: ['github-config-events'],
-    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
-  });
+  const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
@@ -53,32 +50,25 @@ export function useRepositoriesView() {
   const activeEventId = activeEvent?.id || '';
 
   const configQuery = useQuery({
-    queryKey: ['github-config', activeEventId],
+    queryKey: queryKeys.github.config(activeEventId),
     enabled: Boolean(activeEventId),
     queryFn: async () => (await githubApi.getConfig(activeEventId)).data,
   });
 
-  const teamsQuery = useQuery({
-    queryKey: ['repository-teams', activeEventId],
-    enabled: Boolean(activeEventId),
-    queryFn: async () => (await teamsApi.list({ eventId: activeEventId, limit: 100 })).data,
-  });
+  const teamsQuery = useTeamsQuery({ eventId: activeEventId, limit: 10 }, { enabled: Boolean(activeEventId) });
 
-  const roundsQuery = useQuery({
-    queryKey: ['repository-rounds', activeEventId],
-    enabled: Boolean(activeEventId),
-    queryFn: async () => (await roundsApi.list({ eventId: activeEventId, limit: 100 })).data,
-  });
+  const roundsQuery = useRoundsQuery({ eventId: activeEventId, limit: 10 }, { enabled: Boolean(activeEventId) });
 
   const repositoriesQuery = useQuery({
-    queryKey: ['repositories', activeEventId],
+    queryKey: queryKeys.repositories.list({ eventId: activeEventId, page: repositoriesPage, limit: 10 }),
     enabled: Boolean(activeEventId),
-    queryFn: async () => (await repositoriesApi.list({ eventId: activeEventId, limit: 100 })).data,
+    queryFn: () => repositoriesApi.list({ eventId: activeEventId, page: repositoriesPage, limit: 10 }),
   });
 
   const teams = teamsQuery.data || [];
   const rounds = roundsQuery.data || [];
-  const repositories = repositoriesQuery.data || [];
+  const repositories = repositoriesQuery.data?.data || [];
+  const repositoriesPagination = repositoriesQuery.data?.pagination;
   const selectedRepositorySummary = repositories.find((repository) => repository.id === selectedRepositoryId) || null;
 
   useEffect(() => {
@@ -94,6 +84,7 @@ export function useRepositoriesView() {
     setSelectedRepositoryId('');
     setCollabRepoName('');
     setRevokeResult(null);
+    setRepositoriesPage(1);
   }, [activeEventId]);
 
   useEffect(() => {
@@ -124,7 +115,7 @@ export function useRepositoriesView() {
     onSuccess: async () => {
       setGithubToken('');
       toast.success('GitHub configuration saved');
-      await queryClient.invalidateQueries({ queryKey: ['github-config', activeEventId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.github.config(activeEventId) });
     },
     onError: (error) => toast.error('Could not save GitHub configuration', { description: getApiErrorMessage(error) }),
   });
@@ -163,7 +154,7 @@ export function useRepositoriesView() {
       setRepoDescription('');
       setRepoPrivate(true);
       setCollabRepoName(result.repoName);
-      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
     },
     onError: (error) => toast.error('Could not create repository', { description: getApiErrorMessage(error) }),
   });
@@ -181,7 +172,7 @@ export function useRepositoriesView() {
         description: `${result.username} has ${result.permission} access to ${result.repoName}.`,
       });
       setCollabUsername('');
-      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
     },
     onError: (error) => toast.error('Could not assign collaborator', { description: getApiErrorMessage(error) }),
   });
@@ -198,7 +189,7 @@ export function useRepositoriesView() {
         description: `${result.username} was removed from ${result.repoName}.`,
       });
       setCollabUsername('');
-      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
     },
     onError: (error) => toast.error('Could not revoke collaborator', { description: getApiErrorMessage(error) }),
   });
@@ -212,7 +203,7 @@ export function useRepositoriesView() {
       toast.success('Webhook registered', {
         description: `${result.repoName} is now pointing to ${result.callbackUrl}.`,
       });
-      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
     },
     onError: (error) => toast.error('Could not register webhook', { description: getApiErrorMessage(error) }),
   });
@@ -257,7 +248,7 @@ export function useRepositoriesView() {
     mutationFn: (repositoryId: string) => repositoriesApi.syncCommits(repositoryId),
     onSuccess: async () => {
       toast.success('Sync commits requested');
-      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
     },
     onError: (error) => toast.error('Could not sync commits', { description: getApiErrorMessage(error) }),
   });
@@ -298,7 +289,7 @@ export function useRepositoriesView() {
       setLinkOwner('');
       setLinkRepo('');
       setLinkBranch('main');
-      await queryClient.invalidateQueries({ queryKey: ['repositories', activeEventId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
     },
     onError: (error) => toast.error('Could not link repository', { description: getApiErrorMessage(error) }),
   });
@@ -347,6 +338,9 @@ export function useRepositoriesView() {
     teamsQuery,
     roundsQuery,
     repositoriesQuery,
+    repositoriesPage,
+    setRepositoriesPage,
+    repositoriesPagination,
     teams,
     rounds,
     repositories,

@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Bot, GitBranch, Loader2, Server, Users, Webhook } from 'lucide-react';
 
 import { operationsApi } from '@/entities/operations/api';
-import { eventsApi } from '@/entities/event/api';
+import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -64,24 +65,18 @@ function StatusBreakdownTable({ title, rows }: { title: string; rows: StatusCoun
 export function OperationsView() {
   const [selectedEventId, setSelectedEventId] = useState('');
 
-  const eventsQuery = useQuery({
-    queryKey: ['ops-events'],
-    queryFn: async () => eventsApi.list({ page: 1, limit: 100 }),
-  });
-  const eventsData = eventsQuery.data?.data as any;
-  const events: any[] = Array.isArray(eventsData)
-    ? eventsData
-    : eventsData?.events ?? eventsData?.data ?? [];
+  const eventsQuery = useEventsQuery();
+  const events = eventsQuery.data || [];
   const activeEventId = selectedEventId || events[0]?.id || events[0]?._id || '';
 
   const dashboardQuery = useQuery({
-    queryKey: ['ops-dashboard', activeEventId],
+    queryKey: queryKeys.operations.dashboard(activeEventId),
     enabled: Boolean(activeEventId),
     queryFn: async () => operationsApi.getDashboardMetrics({ eventId: activeEventId }),
   });
 
   const pipelineQuery = useQuery({
-    queryKey: ['ops-pipeline', activeEventId],
+    queryKey: queryKeys.operations.pipeline(activeEventId),
     enabled: Boolean(activeEventId),
     queryFn: async () => operationsApi.getPipelineSummary({ eventId: activeEventId }),
   });

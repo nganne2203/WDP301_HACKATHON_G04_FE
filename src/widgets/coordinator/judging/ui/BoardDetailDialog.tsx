@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { scoringApi } from '@/entities/score-sheet/api';
 import { submissionsApi } from '@/entities/submission/api';
+import { queryKeys } from '@/lib/queryKeys';
 import type { JudgingBoard } from '@/shared/api/types';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -42,15 +43,15 @@ export function BoardDetailDialog({
 }) {
   const queryClient = useQueryClient();
   const sheetsQuery = useQuery({
-    queryKey: ['scoring-sheets-board', roundId, board?.id],
+    queryKey: queryKeys.scoreSheets.list({ roundId, limit: 10 }),
     enabled: open && Boolean(board?.id),
-    queryFn: () => scoringApi.listSheets({ roundId, limit: 100 }),
+    queryFn: () => scoringApi.listSheets({ roundId, limit: 10 }),
   });
 
   const submissionsQuery = useQuery({
-    queryKey: ['judging-board-submissions', roundId],
+    queryKey: queryKeys.submissions.list({ roundId, limit: 10 }),
     enabled: open && Boolean(roundId),
-    queryFn: () => submissionsApi.list({ roundId, limit: 100 }),
+    queryFn: () => submissionsApi.list({ roundId, limit: 10 }),
   });
 
   const submissionStatusMutation = useMutation({
@@ -58,7 +59,7 @@ export function BoardDetailDialog({
       submissionsApi.updateStatus(submissionId, status),
     onSuccess: async (_, variables) => {
       toast.success(`Submission marked as ${variables.status.toLowerCase()}`);
-      await queryClient.invalidateQueries({ queryKey: ['judging-board-submissions', roundId] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.submissions.list({ roundId, limit: 10 }) });
     },
     onError: () => {
       toast.error('Failed to update submission status');
