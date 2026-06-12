@@ -7,16 +7,19 @@ import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Progress } from '@/shared/ui/progress';
+import { ListPagination } from '@/shared/ui/list-pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
 } from '@/shared/ui/sheet';
-import { eventsApi } from '@/entities/event/api';
 import { teamsApi } from '@/entities/team/api';
+import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import type { Team } from '@/shared/api/types';
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
@@ -96,14 +99,9 @@ function TeamDetail({ team }: { team: Team }) {
 
 export function Teams() {
   const [selectedEventId, setSelectedEventId] = useState('');
+  const [page, setPage] = useState(1);
 
-  const eventsQuery = useQuery({
-    queryKey: ['coordinator-team-events'],
-    queryFn: async () => {
-      const response = await eventsApi.list({ page: 1, limit: 100 });
-      return response.data;
-    },
-  });
+  const eventsQuery = useEventsQuery();
 
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
@@ -112,15 +110,13 @@ export function Teams() {
   }, [events, selectedEventId]);
 
   const teamsQuery = useQuery({
-    queryKey: ['coordinator-teams', activeEvent?.id],
+    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, page, limit: 10 }),
     enabled: Boolean(activeEvent?.id),
-    queryFn: async () => {
-      const response = await teamsApi.list({ eventId: activeEvent?.id, page: 1, limit: 100 });
-      return response.data;
-    },
+    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
   });
 
-  const teams = teamsQuery.data || [];
+  const teams = teamsQuery.data?.data || [];
+  const pagination = teamsQuery.data?.pagination;
   const confirmedTeams = teams.filter((team) => team.status === 'CONFIRMED' || team.status === 'ACTIVE').length;
   const maxTeams = activeEvent?.maxTeams || 30;
   const capacityPercent = maxTeams > 0 ? Math.min(Math.round((confirmedTeams / maxTeams) * 100), 100) : 0;
@@ -133,7 +129,14 @@ export function Teams() {
           <p className="text-sm text-muted-foreground">Monitor team confirmation, members, and invitations</p>
         </div>
         <div className="w-full md:w-80">
-          <Select value={activeEvent?.id || ''} onValueChange={setSelectedEventId} disabled={eventsQuery.isLoading}>
+            <Select
+              value={activeEvent?.id || ''}
+              onValueChange={(value) => {
+                setSelectedEventId(value);
+                setPage(1);
+              }}
+              disabled={eventsQuery.isLoading}
+            >
             <SelectTrigger>
               <SelectValue placeholder="Select event" />
             </SelectTrigger>
@@ -208,12 +211,16 @@ export function Teams() {
             <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>{team.name}</SheetTitle>
+                <SheetDescription>
+                  Review confirmed members, pending invitations, and team capacity for this team.
+                </SheetDescription>
               </SheetHeader>
               <TeamDetail team={team} />
             </SheetContent>
           </Sheet>
         ))}
       </div>
+      <ListPagination page={page} pagination={pagination} onPageChange={setPage} />
     </div>
   );
 }

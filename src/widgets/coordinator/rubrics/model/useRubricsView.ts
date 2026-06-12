@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { eventsApi } from '@/entities/event/api';
-import { roundsApi } from '@/entities/round/api';
 import { rubricsApi } from '@/entities/rubric/api';
 import { useStore } from '@/entities/session/model/store';
+import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import type {
   CreateCriterionRequest,
   CreateRubricRequest,
@@ -43,10 +43,7 @@ export function useRubricsView() {
   const [editForm, setEditForm] = useState<RubricFormState>(createRubricForm());
   const [criterionForm, setCriterionForm] = useState<CriterionFormState>(createCriterionForm());
 
-  const eventsQuery = useQuery({
-    queryKey: ['coordinator-rubric-events'],
-    queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
-  });
+  const eventsQuery = useEventsQuery();
 
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
@@ -58,20 +55,20 @@ export function useRubricsView() {
     );
   }, [events, selectedEventId, selectedEvent?.id]);
 
-  const roundsQuery = useQuery({
-    queryKey: ['coordinator-rubric-rounds', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: async () => (await roundsApi.list({ eventId: activeEvent?.id, limit: 100 })).data,
-  });
+  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
 
   const rubricsQuery = useQuery({
-    queryKey: ['coordinator-rubrics', activeEvent?.id, selectedRoundFilter],
+    queryKey: queryKeys.rubrics.list({
+      eventId: activeEvent?.id,
+      roundId: selectedRoundFilter === 'all' ? undefined : selectedRoundFilter,
+      limit: 10,
+    }),
     enabled: Boolean(activeEvent?.id),
     queryFn: async () =>
       (await rubricsApi.list({
         eventId: activeEvent?.id,
         roundId: selectedRoundFilter === 'all' ? undefined : selectedRoundFilter,
-        limit: 100,
+        limit: 10,
       })).data,
   });
 
@@ -84,7 +81,7 @@ export function useRubricsView() {
       toast.success('Rubric created', { description: `${response.data.title} has been created.` });
       setCreateOpen(false);
       setCreateForm(createRubricForm());
-      await queryClient.invalidateQueries({ queryKey: ['coordinator-rubrics'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rubrics.lists() });
     },
     onError: (error: unknown) => toast.error('Failed to create rubric', { description: getRubricErrorMessage(error) }),
   });
@@ -97,7 +94,7 @@ export function useRubricsView() {
         setSelectedRubric(response.data);
       }
       setEditOpen(false);
-      await queryClient.invalidateQueries({ queryKey: ['coordinator-rubrics'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rubrics.lists() });
     },
     onError: (error: unknown) => toast.error('Failed to update rubric', { description: getRubricErrorMessage(error) }),
   });
@@ -108,7 +105,7 @@ export function useRubricsView() {
       toast.success('Rubric deleted');
       setDeleteOpen(false);
       setSelectedRubric(null);
-      await queryClient.invalidateQueries({ queryKey: ['coordinator-rubrics'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rubrics.lists() });
     },
     onError: (error: unknown) => toast.error('Failed to delete rubric', { description: getRubricErrorMessage(error) }),
   });
@@ -120,7 +117,7 @@ export function useRubricsView() {
       toast.success('Criterion added');
       setSelectedRubric(response.data.rubric);
       setCriterionForm(createCriterionForm());
-      await queryClient.invalidateQueries({ queryKey: ['coordinator-rubrics'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rubrics.lists() });
     },
     onError: (error: unknown) => toast.error('Failed to add criterion', { description: getRubricErrorMessage(error) }),
   });
@@ -133,7 +130,7 @@ export function useRubricsView() {
       setSelectedRubric(response.data.rubric);
       setEditingCriterion(null);
       setCriterionForm(createCriterionForm());
-      await queryClient.invalidateQueries({ queryKey: ['coordinator-rubrics'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rubrics.lists() });
     },
     onError: (error: unknown) => toast.error('Failed to update criterion', { description: getRubricErrorMessage(error) }),
   });
@@ -146,7 +143,7 @@ export function useRubricsView() {
       setSelectedRubric(response.data.rubric);
       setEditingCriterion(null);
       setCriterionForm(createCriterionForm());
-      await queryClient.invalidateQueries({ queryKey: ['coordinator-rubrics'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rubrics.lists() });
     },
     onError: (error: unknown) => toast.error('Failed to delete criterion', { description: getRubricErrorMessage(error) }),
   });

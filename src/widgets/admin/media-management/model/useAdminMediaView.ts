@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { eventsApi } from '@/entities/event/api';
 import { mediaApi } from '@/entities/media/api';
 import { useStore } from '@/entities/session/model/store';
+import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import type { MediaItem } from '@/shared/api/types';
 
 import { buildAdminMediaFilters, getAdminMediaErrorMessage } from './admin-media.utils';
@@ -51,25 +52,21 @@ export function useAdminMediaView() {
     toDate: toDate || undefined,
   }), [eventId, fromDate, toDate]);
 
-  const eventsQuery = useQuery({
-    queryKey: ['events', 'admin-media'],
-    queryFn: () => eventsApi.list({ page: 1, limit: 100 }),
-    enabled: canManage,
-  });
+  const eventsQuery = useEventsQuery(undefined, { enabled: canManage });
 
   const mediaQuery = useQuery({
-    queryKey: ['media', 'admin', filters],
+    queryKey: queryKeys.media.admin(filters),
     queryFn: () => mediaApi.getAdminMedia(filters),
     enabled: canManage,
   });
 
   const statisticsQuery = useQuery({
-    queryKey: ['media', 'statistics', statisticsFilters],
+    queryKey: queryKeys.media.statistics(statisticsFilters),
     queryFn: () => mediaApi.getStatistics(statisticsFilters),
     enabled: canManage,
   });
 
-  const events = eventsQuery.data?.data || [];
+  const events = eventsQuery.data || [];
   const mediaItems = mediaQuery.data?.data || [];
   const pagination = mediaQuery.data?.pagination;
   const statistics = statisticsQuery.data?.data;
@@ -89,7 +86,7 @@ export function useAdminMediaView() {
     mutationFn: (mediaId: string) => mediaApi.approve(mediaId),
     onSuccess: async () => {
       toast.success('Media approved');
-      await queryClient.invalidateQueries({ queryKey: ['media'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.media.all });
     },
     onError: (error: unknown) => {
       toast.error('Approve failed', {
@@ -104,7 +101,7 @@ export function useAdminMediaView() {
       toast.success('Media rejected');
       setRejectMedia(null);
       setRejectReason('');
-      await queryClient.invalidateQueries({ queryKey: ['media'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.media.all });
     },
     onError: (error: unknown) => {
       toast.error('Reject failed', {
@@ -118,7 +115,7 @@ export function useAdminMediaView() {
     onSuccess: async () => {
       toast.success('Media deleted');
       setDeleteMedia(null);
-      await queryClient.invalidateQueries({ queryKey: ['media'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.media.all });
     },
     onError: (error: unknown) => {
       toast.error('Delete failed', {

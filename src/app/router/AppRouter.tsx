@@ -1,10 +1,11 @@
-import { Suspense, lazy, useEffect, type ReactNode } from 'react';
+import { Suspense, lazy, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { Loader2 } from 'lucide-react';
 import { AppShell } from '@/app/layouts/AppShell';
 import { resolveHomePathForRole } from '@/entities/session/lib/navigation';
 import { useStore } from '@/entities/session/model/store';
 import type { AppRole } from '@/entities/session/model/store';
+import { useAuthBootstrapQuery } from '@/hooks/queries/useAuthQueries';
 
 const Login = lazy(async () => ({ default: (await import('@/pages/Login')).Login }));
 const Register = lazy(async () => ({ default: (await import('@/pages/Register')).Register }));
@@ -72,7 +73,9 @@ function RouteLoader() {
 }
 
 function ProtectedRoute({ children, allowedRoles }: { children: ReactNode; allowedRoles?: AppRole[] }) {
-  const { user, appRole, isAuthLoading } = useStore();
+  const user = useStore((state) => state.user);
+  const appRole = useStore((state) => state.appRole);
+  const isAuthLoading = useStore((state) => state.isAuthLoading);
   const location = useLocation();
 
   if (isAuthLoading) return <AuthLoading />;
@@ -93,13 +96,10 @@ function ProtectedRoute({ children, allowedRoles }: { children: ReactNode; allow
 }
 
 function AuthInitializer({ children }: { children: ReactNode }) {
-  const { fetchCurrentUser, isAuthLoading } = useStore();
+  const isAuthLoading = useStore((state) => state.isAuthLoading);
+  const authQuery = useAuthBootstrapQuery();
 
-  useEffect(() => {
-    fetchCurrentUser();
-  }, [fetchCurrentUser]);
-
-  if (isAuthLoading) return <AuthLoading />;
+  if (isAuthLoading || authQuery.isPending) return <AuthLoading />;
 
   return <>{children}</>;
 }

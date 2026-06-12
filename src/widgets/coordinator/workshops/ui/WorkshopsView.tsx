@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { Label } from '@/shared/ui/label';
+import { ListPagination } from '@/shared/ui/list-pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
   Table,
@@ -210,6 +211,7 @@ export function Workshops() {
             ))}
           </TableBody>
         </Table>
+        <ListPagination page={view.page} pagination={view.pagination} onPageChange={view.setPage} />
       </Card>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>

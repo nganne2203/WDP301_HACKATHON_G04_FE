@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { usersApi } from '@/entities/user/api';
+import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { User } from '@/shared/api/types';
+import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 
 import type { ParticipantFilterType } from './participants-view.utils';
 
@@ -18,16 +20,29 @@ export function useParticipantsView() {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery.trim(), 300);
   const [activeFilter, setActiveFilter] = useState<ParticipantFilterType>('all');
+  const [page, setPage] = useState(1);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const statusFilter = activeFilter === 'all' ? undefined : activeFilter;
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearchQuery]);
 
   const usersQuery = useQuery({
-    queryKey: ['users', searchQuery],
+    queryKey: queryKeys.users.list({
+      page,
+      limit: 10,
+      status: statusFilter,
+      search: debouncedSearchQuery || undefined,
+    }),
     queryFn: () =>
       usersApi.list({
-        page: 1,
-        limit: 100,
-        search: searchQuery || undefined,
+        page,
+        limit: 10,
+        status: statusFilter,
+        search: debouncedSearchQuery || undefined,
       }),
   });
 
@@ -56,7 +71,7 @@ export function useParticipantsView() {
     mutationFn: (id: string) => usersApi.approve(id),
     onSuccess: async (response) => {
       showStatusToast(response.data, 'User approved');
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Failed to approve user', {
@@ -69,7 +84,7 @@ export function useParticipantsView() {
     mutationFn: (id: string) => usersApi.reject(id),
     onSuccess: async (response) => {
       showStatusToast(response.data, 'User rejected');
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Failed to reject user', {
@@ -82,7 +97,7 @@ export function useParticipantsView() {
     mutationFn: (id: string) => usersApi.suspend(id),
     onSuccess: async () => {
       toast.success('User suspended');
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
     },
     onError: (error: unknown) => {
       toast.error('Failed to suspend user', {
@@ -91,10 +106,7 @@ export function useParticipantsView() {
     },
   });
 
-  const filteredUsers = useMemo(() => {
-    if (activeFilter === 'all') return allUsers;
-    return allUsers.filter((user) => user.status === activeFilter);
-  }, [allUsers, activeFilter]);
+  const filteredUsers = allUsers;
 
   const allSelected = filteredUsers.length > 0 && selectedIds.length === filteredUsers.length;
   const someSelected = selectedIds.length > 0 && !allSelected;
@@ -135,7 +147,12 @@ export function useParticipantsView() {
     searchQuery,
     setSearchQuery,
     activeFilter,
-    setActiveFilter,
+    setActiveFilter: (filter: ParticipantFilterType) => {
+      setActiveFilter(filter);
+      setPage(1);
+    },
+    page,
+    setPage,
     filterSheetOpen,
     setFilterSheetOpen,
     usersQuery,

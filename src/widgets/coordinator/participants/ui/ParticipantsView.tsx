@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { Input } from '@/shared/ui/input';
+import { ListPagination } from '@/shared/ui/list-pagination';
 import {
   Table,
   TableBody,
@@ -225,6 +226,7 @@ export function Participants() {
               )}
             </TableBody>
           </Table>
+          <ListPagination page={view.page} pagination={view.pagination} onPageChange={view.setPage} />
         </Card>
       )}
 

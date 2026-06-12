@@ -4,13 +4,13 @@ import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
 import { ApiError } from '@/shared/api/client';
-import { eventsApi } from '@/entities/event/api';
 import { judgingBoardsApi } from '@/entities/judging-board/api';
 import { repositoriesApi } from '@/entities/repository/api';
-import { roundsApi } from '@/entities/round/api';
 import { rubricsApi } from '@/entities/rubric/api';
 import { scoringApi } from '@/entities/score-sheet/api';
 import { submissionsApi } from '@/entities/submission/api';
+import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { queryKeys } from '@/lib/queryKeys';
 import type { Criterion, JudgingBoard, Round, ScoreSheet } from '@/shared/api/types';
 
 export function getJudgeScoringErrorMessage(error: unknown) {
@@ -21,7 +21,7 @@ export function getJudgeScoringErrorMessage(error: unknown) {
 
 export function useJudgeScoringView() {
   const queryClient = useQueryClient();
-  const { user } = useStore();
+  const user = useStore((state) => state.user);
 
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedRoundId, setSelectedRoundId] = useState('');
@@ -31,25 +31,18 @@ export function useJudgeScoringView() {
   const [generalComment, setGeneralComment] = useState('');
   const [submitConfirm, setSubmitConfirm] = useState(false);
 
-  const eventsQuery = useQuery({
-    queryKey: ['judge-scoring-events'],
-    queryFn: () => eventsApi.list({ page: 1, limit: 100 }),
-  });
-  const events = eventsQuery.data?.data || [];
+  const eventsQuery = useEventsQuery();
+  const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => events.find((event) => event.id === selectedEventId) || events[0] || null, [events, selectedEventId]);
 
-  const roundsQuery = useQuery({
-    queryKey: ['judge-scoring-rounds', activeEvent?.id],
-    enabled: Boolean(activeEvent?.id),
-    queryFn: () => roundsApi.list({ eventId: activeEvent!.id, limit: 100 }),
-  });
-  const rounds: Round[] = roundsQuery.data?.data || [];
+  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
+  const rounds: Round[] = roundsQuery.data || [];
   const activeRound = useMemo(() => rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null, [rounds, selectedRoundId]);
 
   const boardQuery = useQuery({
-    queryKey: ['judge-board', activeRound?.id, user?.id],
+    queryKey: queryKeys.judging.boards(activeRound?.id),
     enabled: Boolean(activeRound?.id),
-    queryFn: () => judgingBoardsApi.list({ roundId: activeRound!.id, limit: 100 }),
+    queryFn: () => judgingBoardsApi.list({ roundId: activeRound!.id, limit: 10 }),
   });
   const myBoard: JudgingBoard | null = useMemo(() => {
     const boards = boardQuery.data?.data || [];
@@ -59,9 +52,9 @@ export function useJudgeScoringView() {
   const assignedTeams = myBoard?.teams || [];
 
   const submissionsQuery = useQuery({
-    queryKey: ['judge-submissions', activeRound?.id],
+    queryKey: queryKeys.submissions.list({ roundId: activeRound?.id, limit: 10 }),
     enabled: Boolean(activeRound?.id && assignedTeams.length > 0),
-    queryFn: () => submissionsApi.list({ roundId: activeRound!.id, limit: 100 }),
+    queryFn: () => submissionsApi.list({ roundId: activeRound!.id, limit: 10 }),
   });
   const submissions = submissionsQuery.data?.data || [];
   const submissionByTeam = useMemo(() => {
@@ -73,7 +66,7 @@ export function useJudgeScoringView() {
   }, [submissions]);
 
   const rubricQuery = useQuery({
-    queryKey: ['judge-rubric', activeRound?.rubricId],
+    queryKey: queryKeys.rubrics.detail(activeRound?.rubricId),
     enabled: Boolean(activeRound?.rubricId),
     queryFn: () => rubricsApi.getById(activeRound!.rubricId!),
   });
@@ -84,27 +77,27 @@ export function useJudgeScoringView() {
   const submission = selectedTeam ? submissionByTeam[selectedTeam.id] : null;
 
   const repositoryQuery = useQuery({
-    queryKey: ['judge-repository', submission?.repositoryId],
+    queryKey: queryKeys.repositories.detail(submission?.repositoryId),
     enabled: Boolean(submission?.repositoryId),
     queryFn: async () => (await repositoriesApi.getById(submission!.repositoryId!)).data,
   });
 
   const repositoryAnalysisQuery = useQuery({
-    queryKey: ['judge-repository-analysis', submission?.repositoryId],
+    queryKey: queryKeys.repositories.analysis(submission?.repositoryId),
     enabled: Boolean(submission?.repositoryId),
     queryFn: async () => (await repositoriesApi.listStaticAnalysis(submission!.repositoryId!, 1, 3)).data,
   });
 
   const repositoryAiQuery = useQuery({
-    queryKey: ['judge-repository-ai', submission?.repositoryId],
+    queryKey: queryKeys.repositories.aiReviews(submission?.repositoryId),
     enabled: Boolean(submission?.repositoryId),
     queryFn: async () => (await repositoriesApi.listAiReviews(submission!.repositoryId!, 1, 3)).data,
   });
 
   const sheetsQuery = useQuery({
-    queryKey: ['judge-sheets', activeRound?.id, user?.id],
+    queryKey: queryKeys.scoreSheets.list({ roundId: activeRound?.id, judgeId: user?.id, limit: 10 }),
     enabled: Boolean(activeRound?.id && user?.id),
-    queryFn: () => scoringApi.listSheets({ roundId: activeRound!.id, judgeId: user?.id, limit: 100 }),
+    queryFn: () => scoringApi.listSheets({ roundId: activeRound!.id, judgeId: user?.id, limit: 10 }),
   });
   const allSheets = sheetsQuery.data?.data || [];
   const existingSheet: ScoreSheet | null = allSheets.find((sheet) => sheet.teamId === selectedTeam?.id) || null;
@@ -162,7 +155,7 @@ export function useJudgeScoringView() {
     onSuccess: async (_, submit) => {
       toast.success(submit ? `Score sheet submitted for ${selectedTeam?.name}` : 'Draft saved');
       setSubmitConfirm(false);
-      await queryClient.invalidateQueries({ queryKey: ['judge-sheets'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.scoreSheets.lists() });
     },
     onError: (error) => {
       toast.error(getJudgeScoringErrorMessage(error));
