@@ -55,6 +55,8 @@ export const queryKeys = {
     all: ['workshops'] as const,
     lists: () => [...queryKeys.workshops.all, 'list'] as const,
     list: (query?: QueryParams) => [...queryKeys.workshops.lists(), params(query)] as const,
+    questions: (id?: string, query?: QueryParams) =>
+      [...queryKeys.workshops.all, 'questions', id, params(query)] as const,
   },
   submissions: {
     all: ['submissions'] as const,
