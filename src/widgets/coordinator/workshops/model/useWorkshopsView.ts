@@ -26,9 +26,14 @@ export function useWorkshopsView() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [questionsOpen, setQuestionsOpen] = useState(false);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
+  const [selectedQuestionsWorkshop, setSelectedQuestionsWorkshop] = useState<Workshop | null>(null);
+  const [questionContent, setQuestionContent] = useState('');
   const [createForm, setCreateForm] = useState<WorkshopFormState>(createEmptyWorkshopForm());
   const [editForm, setEditForm] = useState<WorkshopFormState>(createEmptyWorkshopForm());
+  const canCreateWorkshopQuestions = useStore((state) => state.hasPermission('WORKSHOP_QUESTION_CREATE'));
+  const canVoteWorkshopQuestions = useStore((state) => state.hasPermission('WORKSHOP_QUESTION_VOTE'));
 
   const eventsQuery = useEventsQuery();
 
@@ -57,6 +62,11 @@ export function useWorkshopsView() {
   const workshops = workshopsQuery.data?.data || [];
   const pagination = workshopsQuery.data?.pagination;
   const workshopTimelines = workshopTimelinesQuery.data || [];
+  const workshopQuestionsQuery = useQuery({
+    queryKey: queryKeys.workshops.questions(selectedQuestionsWorkshop?.id, { page: 1, limit: 50 }),
+    enabled: questionsOpen && Boolean(selectedQuestionsWorkshop?.id),
+    queryFn: () => workshopsApi.listQuestions(selectedQuestionsWorkshop!.id, { page: 1, limit: 50 }),
+  });
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateWorkshopRequest) => workshopsApi.create(payload),
@@ -103,6 +113,42 @@ export function useWorkshopsView() {
     },
   });
 
+  const voteQuestionMutation = useMutation({
+    mutationFn: (questionId: string) => workshopsApi.voteQuestion(questionId),
+    onSuccess: () => {
+      toast.success('Question vote recorded');
+      if (selectedQuestionsWorkshop?.id) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.workshops.questions(selectedQuestionsWorkshop.id, { page: 1, limit: 50 }),
+        });
+      }
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to vote question', {
+        description: error instanceof ApiError ? error.firstError : 'Unknown error',
+      });
+    },
+  });
+
+  const createQuestionMutation = useMutation({
+    mutationFn: ({ workshopId, content }: { workshopId: string; content: string }) =>
+      workshopsApi.createQuestion(workshopId, { content }),
+    onSuccess: () => {
+      toast.success('Question submitted');
+      setQuestionContent('');
+      if (selectedQuestionsWorkshop?.id) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.workshops.questions(selectedQuestionsWorkshop.id, { page: 1, limit: 50 }),
+        });
+      }
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to submit question', {
+        description: error instanceof ApiError ? error.firstError : 'Unknown error',
+      });
+    },
+  });
+
   const handleCreate = () => {
     if (!activeEvent?.id) return;
     if (!createForm.title.trim()) {
@@ -138,6 +184,24 @@ export function useWorkshopsView() {
     setEditOpen(true);
   };
 
+  const openQuestionsDialog = (workshop: Workshop) => {
+    setSelectedQuestionsWorkshop(workshop);
+    setQuestionContent('');
+    setQuestionsOpen(true);
+  };
+
+  const canSubmitWorkshopQuestion = selectedQuestionsWorkshop ? canSubmitQuestionForWorkshop(selectedQuestionsWorkshop) : false;
+
+  const handleCreateQuestion = () => {
+    const content = questionContent.trim();
+    if (!selectedQuestionsWorkshop || content.length < 2 || !canCreateWorkshopQuestions || !canSubmitWorkshopQuestion) return;
+
+    createQuestionMutation.mutate({
+      workshopId: selectedQuestionsWorkshop.id,
+      content,
+    });
+  };
+
   const liveCount = workshops.filter((workshop) => workshop.status === 'LIVE').length;
   const completedCount = workshops.filter((workshop) => workshop.status === 'COMPLETED').length;
 
@@ -154,15 +218,32 @@ export function useWorkshopsView() {
     events,
     eventsQuery,
     handleCreate,
+    handleCreateQuestion,
     handleUpdate,
     liveCount,
     openEditDialog,
+    openQuestionsDialog,
+    questionsOpen,
     selectedWorkshop,
+    selectedQuestionsWorkshop,
+    canCreateWorkshopQuestions,
+    canSubmitWorkshopQuestion,
+    canVoteWorkshopQuestions,
+    createQuestionMutation,
+    questionContent,
     setCreateForm,
     setCreateOpen,
     setDeleteOpen,
     setEditForm,
     setEditOpen,
+    setQuestionContent,
+    setQuestionsOpen: (open: boolean) => {
+      setQuestionsOpen(open);
+      if (!open) {
+        setSelectedQuestionsWorkshop(null);
+        setQuestionContent('');
+      }
+    },
     setSelectedEventId: (eventId: string) => {
       setSelectedEventId(eventId);
       setPage(1);
@@ -174,7 +255,15 @@ export function useWorkshopsView() {
     workshopTimelines,
     workshopTimelinesQuery,
     workshops,
+    workshopQuestions: workshopQuestionsQuery.data?.data || [],
+    workshopQuestionsQuery,
     workshopsQuery,
     updateMutation,
+    voteQuestionMutation,
   };
+}
+
+function canSubmitQuestionForWorkshop(workshop: Workshop) {
+  const endTime = new Date(workshop.endTime);
+  return ['SCHEDULED', 'LIVE'].includes(workshop.status) && !Number.isNaN(endTime.getTime()) && new Date() <= endTime;
 }
