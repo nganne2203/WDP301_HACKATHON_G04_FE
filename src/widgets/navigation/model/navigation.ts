@@ -73,6 +73,7 @@ const participantNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/participant' },
   { icon: UsersRound, label: 'My Team', href: '/participant/team' },
   { icon: Send, label: 'Submissions', href: '/participant/submissions' },
+  { icon: Trophy, label: 'Results', href: '/participant/results' },
   { icon: Images, label: 'Media', href: '/participant/media' },
 ];
 

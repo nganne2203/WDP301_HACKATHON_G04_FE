@@ -48,6 +48,9 @@ const ParticipantTeam = lazy(async () => ({
 const ParticipantSubmissions = lazy(async () => ({
   default: (await import('@/pages/participant/Submissions')).ParticipantSubmissions,
 }));
+const ParticipantResults = lazy(async () => ({
+  default: (await import('@/pages/participant/Results')).ParticipantResults,
+}));
 const ParticipantMedia = lazy(async () => ({
   default: (await import('@/pages/participant/Media')).ParticipantMedia,
 }));
@@ -276,6 +279,14 @@ export function AppRouter() {
             element={
               <ProtectedRoute allowedRoles={['participant', 'admin']}>
                 <ParticipantSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/participant/results"
+            element={
+              <ProtectedRoute allowedRoles={['participant', 'admin']}>
+                <ParticipantResults />
               </ProtectedRoute>
             }
           />

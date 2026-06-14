@@ -1,128 +1,102 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Button } from '@/shared/ui/button';
-import { Badge } from '@/shared/ui/badge';
-import { Input } from '@/shared/ui/input';
-import { Label } from '@/shared/ui/label';
-import {
-  CheckCircle2,
-  Circle,
-  Clock,
-  Users,
-  Github,
-  Upload,
-  Calendar,
-} from 'lucide-react';
-import { Progress } from '@/shared/ui/progress';
-import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/shared/ui/dialog';
-import { toast } from 'sonner';
+import { Link } from 'react-router';
+import { AlertCircle, Calendar, CheckCircle2, Circle, Clock, Github, Loader2, Send, Trophy, Users } from 'lucide-react';
 
-type UploadType = 'demo' | 'report' | 'slides' | null;
+import { useParticipantDashboardView } from '../model/useParticipantDashboardView';
+
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Label } from '@/shared/ui/label';
+import { Progress } from '@/shared/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+
+function formatDateTime(value?: string | null) {
+  if (!value) return 'Not scheduled';
+  return new Date(value).toLocaleString();
+}
 
 export function ParticipantDashboard() {
-  const navigate = useNavigate();
-  const [uploadType, setUploadType] = useState<UploadType>(null);
-  const [urlInput, setUrlInput] = useState('');
-  const [fileInput, setFileInput] = useState('');
-
-  const [submitted, setSubmitted] = useState({
-    demo: false,
-    report: false,
-    slides: false,
-  });
-
-  const [submittedValues, setSubmittedValues] = useState({
-    demo: '',
-    report: '',
-    slides: '',
-  });
-
-  const doneCount = 1 + Object.values(submitted).filter(Boolean).length; // repo always done
-  const progress = Math.round((doneCount / 4) * 100);
-
-  const uploadMeta: Record<NonNullable<UploadType>, { label: string; isUrl: boolean; placeholder: string }> = {
-    demo: { label: 'Demo URL', isUrl: true, placeholder: 'https://your-demo.vercel.app' },
-    report: { label: 'Project Report', isUrl: false, placeholder: 'report.pdf' },
-    slides: { label: 'Presentation Slides', isUrl: false, placeholder: 'slides.pptx' },
-  };
-
-  function handleOpenUpload(type: UploadType) {
-    setUploadType(type);
-    setUrlInput('');
-    setFileInput('');
-  }
-
-  function handleSubmitUpload() {
-    if (!uploadType) return;
-    const value = uploadMeta[uploadType].isUrl ? urlInput : fileInput;
-    if (!value.trim()) {
-      toast.error('Please enter a value before submitting.');
-      return;
-    }
-    setSubmitted((prev) => ({ ...prev, [uploadType]: true }));
-    setSubmittedValues((prev) => ({ ...prev, [uploadType]: value.trim() }));
-    toast.success(`${uploadMeta[uploadType].label} submitted successfully`);
-    setUploadType(null);
-  }
+  const view = useParticipantDashboardView();
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-semibold mb-1">My Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Track your hackathon journey and team progress
-        </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold mb-1">My Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Track your registration, team progress, submissions, and final results.</p>
+        </div>
+        <div className="w-full md:w-80">
+          <Label>Event</Label>
+          <Select
+            value={view.selectedEvent?.id || ''}
+            onValueChange={view.setSelectedEventId}
+            disabled={view.eventsQuery.isLoading}
+          >
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select event" />
+            </SelectTrigger>
+            <SelectContent>
+              {view.events.map((event) => (
+                <SelectItem key={event.id} value={event.id}>
+                  {event.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <Alert className="bg-blue-50 border-blue-200">
-        <Clock className="h-4 w-4 text-blue-600" />
-        <AlertTitle>Upcoming Deadline</AlertTitle>
-        <AlertDescription>
-          Final submission deadline is May 28, 2026 at 11:59 PM. Make sure to submit your project
-          repository, demo link, and presentation before the deadline.
-        </AlertDescription>
-      </Alert>
+      {view.eventsQuery.isLoading && (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertTitle>Loading events</AlertTitle>
+          <AlertDescription>Please wait while available events are loaded.</AlertDescription>
+        </Alert>
+      )}
+
+      {view.selectedEvent?.registrationEnd && (
+        <Alert className="bg-blue-50 border-blue-200">
+          <Clock className="h-4 w-4 text-blue-600" />
+          <AlertTitle>Registration window</AlertTitle>
+          <AlertDescription>
+            Registration closes at {formatDateTime(view.selectedEvent.registrationEnd)}.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Registration Status</CardTitle>
+            <CardTitle className="text-base">Participation Status</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 text-sm">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              {view.user?.status === 'APPROVED' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <AlertCircle className="w-5 h-5 text-amber-500" />}
               <div className="flex-1">
-                <p className="text-sm font-medium">Account Registered</p>
-                <p className="text-xs text-muted-foreground">Completed on May 1, 2026</p>
+                <p className="font-medium">Account Approval</p>
+                <p className="text-xs text-muted-foreground">{view.user?.status || 'Unknown'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              {view.participant ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-gray-300" />}
               <div className="flex-1">
-                <p className="text-sm font-medium">Team Joined</p>
-                <p className="text-xs text-muted-foreground">Code Wizards</p>
+                <p className="font-medium">Event Registration</p>
+                <p className="text-xs text-muted-foreground">{view.participant?.status || 'Not registered in this event yet'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              {view.participant?.checkInStatus === 'CHECKED_IN' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-gray-300" />}
               <div className="flex-1">
-                <p className="text-sm font-medium">Checked In</p>
-                <p className="text-xs text-muted-foreground">May 15, 2026</p>
+                <p className="font-medium">Check-in</p>
+                <p className="text-xs text-muted-foreground">{view.participant?.checkInStatus || 'Not checked in yet'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              {view.participant?.githubAccessStatus === 'GRANTED' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-gray-300" />}
               <div className="flex-1">
-                <p className="text-sm font-medium">GitHub Access</p>
-                <p className="text-xs text-muted-foreground">Access granted</p>
+                <p className="font-medium">GitHub Access</p>
+                <p className="text-xs text-muted-foreground">{view.participant?.githubAccessStatus || 'Not granted yet'}</p>
               </div>
             </div>
           </CardContent>
@@ -131,205 +105,180 @@ export function ParticipantDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">My Team</CardTitle>
+            <CardDescription>
+              {view.team ? 'Your current team for the selected event.' : 'Create or join a team to continue.'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold">Code Wizards</h3>
-                <Badge variant="default">Team Leader</Badge>
+            {view.teamQuery.isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading team...
               </div>
-              <p className="text-sm text-muted-foreground">Web Development Track</p>
+            ) : view.team ? (
+              <>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">{view.team.name}</h3>
+                    <Badge variant={view.team.leaderId === view.user?.id ? 'default' : 'secondary'}>
+                      {view.team.leaderId === view.user?.id ? 'Leader' : 'Member'}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{view.team.projectName || view.selectedEvent?.title}</p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span>{view.team.members.length} confirmed member(s)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Github className="w-4 h-4 text-muted-foreground" />
+                    <span>{view.participant?.githubAccessStatus || 'No repository access yet'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-muted-foreground" />
+                    <span>{view.teamRanking ? `Current rank: #${view.teamRanking.rank}` : 'Ranking not published yet'}</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <Alert>
+                <AlertTitle>No team yet</AlertTitle>
+                <AlertDescription>You need a team before you can submit deliverables.</AlertDescription>
+              </Alert>
+            )}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button asChild variant="outline" className="w-full min-w-0">
+                <Link to="/participant/team">Manage Team</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full min-w-0">
+                <Link to="/participant/results">View Results</Link>
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="w-4 h-4 text-muted-foreground" />
-                <span>3 Members</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Github className="w-4 h-4 text-muted-foreground" />
-                <a href="#" className="text-blue-600 hover:underline">
-                  seal-2026/code-wizards
-                </a>
-              </div>
-            </div>
-
-            <Button className="w-full" variant="outline" onClick={() => navigate('/participant/team')}>
-              Manage Team
-            </Button>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Event Timeline</CardTitle>
+          <CardTitle>Submission Status</CardTitle>
+          <CardDescription>
+            {view.rounds.length > 0
+              ? `${view.completedSubmissionCount} of ${view.rounds.length} round submission(s) completed`
+              : 'No rounds available yet.'}
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { date: 'May 1-10', title: 'Registration Period', status: 'completed' as const },
-              { date: 'May 11-14', title: 'Team Formation', status: 'completed' as const },
-              { date: 'May 15', title: 'Opening Ceremony & Check-in', status: 'completed' as const },
-              { date: 'May 16-27', title: 'Coding Period', status: 'active' as const },
-              { date: 'May 28', title: 'Final Submission', status: 'pending' as const },
-              { date: 'May 29-30', title: 'Preliminary Judging', status: 'pending' as const },
-              { date: 'May 31', title: 'Final Round & Awards', status: 'pending' as const },
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-4">
-                {item.status === 'completed' ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5" />
-                ) : item.status === 'active' ? (
-                  <div className="w-5 h-5 rounded-full border-2 border-blue-600 bg-blue-100 mt-0.5" />
-                ) : (
-                  <Circle className="w-5 h-5 text-gray-300 mt-0.5" />
-                )}
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm">{item.title}</p>
-                    {item.status === 'active' && (
-                      <Badge variant="default" className="text-xs">In Progress</Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <Calendar className="w-3 h-3" />
-                    {item.date}
-                  </p>
-                </div>
-              </div>
-            ))}
+        <CardContent className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-muted-foreground">Submission Progress</span>
+              <span className="font-medium">{view.submissionProgress}%</span>
+            </div>
+            <Progress value={view.submissionProgress} />
           </div>
+
+          {view.rounds.length > 0 ? (
+            <div className="space-y-3">
+              {view.rounds.map((round) => {
+                const submission = view.submissions.find((item) => item.roundId === round.id) || null;
+                return (
+                  <div key={round.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                    <div>
+                      <p className="font-medium">{round.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Deadline: {formatDateTime(round.submissionDeadline)}
+                      </p>
+                    </div>
+                    <Badge variant={submission?.status && submission.status !== 'DRAFT' ? 'default' : 'outline'}>
+                      {submission?.status || 'NOT STARTED'}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <Alert>
+              <AlertTitle>No active rounds</AlertTitle>
+              <AlertDescription>The coordinator has not published any round for this event yet.</AlertDescription>
+            </Alert>
+          )}
+
+          <Button asChild className="w-full md:w-auto">
+            <Link to="/participant/submissions">
+              <Send className="w-4 h-4 mr-2" />
+              Manage Submissions
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Submission Status</CardTitle>
+          <CardTitle>Event Timeline</CardTitle>
+          <CardDescription>Important milestones for the selected event.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Repository — always done */}
-            <div className="p-4 border rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Repository Link</span>
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
-              </div>
-              <a href="#" className="text-sm text-blue-600 hover:underline">
-                github.com/seal-2026/code-wizards
-              </a>
+        <CardContent>
+          {view.timelinesQuery.isLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading timeline...
             </div>
-
-            {/* Demo URL */}
-            <div className="p-4 border rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Demo URL</span>
-                {submitted.demo
-                  ? <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  : <Circle className="w-5 h-5 text-gray-300" />}
-              </div>
-              {submitted.demo ? (
-                <a href="#" className="text-sm text-blue-600 hover:underline truncate block">
-                  {submittedValues.demo}
-                </a>
-              ) : (
-                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => handleOpenUpload('demo')}>
-                  <Upload className="w-3 h-3 mr-1" />
-                  Upload Demo Link
-                </Button>
-              )}
+          ) : view.timelineItems.length === 0 ? (
+            <Alert>
+              <AlertTitle>No timeline items</AlertTitle>
+              <AlertDescription>The event timeline has not been configured yet.</AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-4">
+              {view.timelineItems.map((item) => (
+                <div key={item.id} className="flex items-start gap-4">
+                  {item.status === 'COMPLETED' ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5" />
+                  ) : item.status === 'ONGOING' ? (
+                    <div className="w-5 h-5 rounded-full border-2 border-blue-600 bg-blue-100 mt-0.5" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-gray-300 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{item.title}</p>
+                      <Badge variant="outline">{item.eventType}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <Calendar className="w-3 h-3" />
+                      {formatDateTime(item.startTime)}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-
-            {/* Project Report */}
-            <div className="p-4 border rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Project Report</span>
-                {submitted.report
-                  ? <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  : <Circle className="w-5 h-5 text-gray-300" />}
-              </div>
-              {submitted.report ? (
-                <span className="text-sm text-muted-foreground">{submittedValues.report}</span>
-              ) : (
-                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => handleOpenUpload('report')}>
-                  <Upload className="w-3 h-3 mr-1" />
-                  Upload Report
-                </Button>
-              )}
-            </div>
-
-            {/* Presentation Slides */}
-            <div className="p-4 border rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Presentation Slides</span>
-                {submitted.slides
-                  ? <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  : <Circle className="w-5 h-5 text-gray-300" />}
-              </div>
-              {submitted.slides ? (
-                <span className="text-sm text-muted-foreground">{submittedValues.slides}</span>
-              ) : (
-                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => handleOpenUpload('slides')}>
-                  <Upload className="w-3 h-3 mr-1" />
-                  Upload Slides
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-muted-foreground">Submission Progress</span>
-              <span className="font-medium">{progress}%</span>
-            </div>
-            <Progress value={progress} />
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Upload Dialog */}
-      <Dialog open={!!uploadType} onOpenChange={() => setUploadType(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              {uploadType ? uploadMeta[uploadType].label : ''}
-            </DialogTitle>
-            <DialogDescription>
-              {uploadType && uploadMeta[uploadType].isUrl
-                ? 'Enter the URL for your live demo.'
-                : 'Enter the filename or paste a link to your file.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 mt-1">
+      {(view.teamRanking || view.isFinalist) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Result Snapshot</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <Label className="text-sm">
-                {uploadType && uploadMeta[uploadType].isUrl ? 'URL' : 'File name / link'}
-              </Label>
-              {uploadType && uploadMeta[uploadType].isUrl ? (
-                <Input
-                  className="mt-1"
-                  placeholder={uploadType ? uploadMeta[uploadType].placeholder : ''}
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                />
-              ) : (
-                <Input
-                  className="mt-1"
-                  placeholder={uploadType ? uploadMeta[uploadType].placeholder : ''}
-                  value={fileInput}
-                  onChange={(e) => setFileInput(e.target.value)}
-                />
-              )}
+              <p className="font-medium">
+                {view.teamRanking ? `${view.team?.name || 'Your team'} is ranked #${view.teamRanking.rank}` : 'No ranking yet'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {view.teamRanking ? `Score: ${view.teamRanking.score.toFixed(2)}` : 'Waiting for ranking generation.'}
+              </p>
             </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-3">
-            <Button variant="outline" onClick={() => setUploadType(null)}>Cancel</Button>
-            <Button onClick={handleSubmitUpload}>
-              <Upload className="w-4 h-4 mr-2" />
-              Submit
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            <div className="flex items-center gap-2">
+              {view.isFinalist && <Badge>Finalist</Badge>}
+              <Button asChild variant="outline">
+                <Link to="/participant/results">Open Full Results</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
