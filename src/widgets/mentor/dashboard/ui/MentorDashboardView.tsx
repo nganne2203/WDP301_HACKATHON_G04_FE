@@ -21,6 +21,7 @@ function formatDateTime(value?: string | null) {
 
 export function MentorDashboardView() {
   const user = useStore((state) => state.user);
+  const appRole = useStore((state) => state.appRole);
   const [selectedEventId, setSelectedEventId] = useState('');
 
   const eventsQuery = useEventsQuery();
@@ -48,13 +49,18 @@ export function MentorDashboardView() {
   const latestWorkshops = [...workshops]
     .sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime())
     .slice(0, 3);
+  const isSpeaker = appRole === 'speaker';
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Mentor Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Track your mentoring sessions and get a quick event snapshot.</p>
+          <h1 className="text-2xl font-semibold mb-1">{isSpeaker ? 'Speaker Dashboard' : 'Mentor Dashboard'}</h1>
+          <p className="text-sm text-muted-foreground">
+            {isSpeaker
+              ? 'Track your workshop schedule and event context.'
+              : 'Track your mentoring sessions and get a quick event snapshot.'}
+          </p>
         </div>
         <div className="w-full md:w-80">
           <Label>Event</Label>
@@ -78,7 +84,7 @@ export function MentorDashboardView() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Presentation className="w-4 h-4" />
-              My Workshops
+              {isSpeaker ? 'My Sessions' : 'My Workshops'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -86,18 +92,20 @@ export function MentorDashboardView() {
             <p className="text-sm text-muted-foreground mt-1">{activeWorkshops.length} active or upcoming</p>
           </CardContent>
         </Card>
+        {!isSpeaker && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <UsersRound className="w-4 h-4" />
-              Event Teams
+              Assigned Teams
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold">{confirmedTeams.length}</p>
-            <p className="text-sm text-muted-foreground mt-1">Confirmed or active teams in this event</p>
+            <p className="text-sm text-muted-foreground mt-1">Confirmed or active teams in your mentoring scope</p>
           </CardContent>
         </Card>
+        )}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -114,19 +122,21 @@ export function MentorDashboardView() {
 
       <Alert>
         <BookOpen className="h-4 w-4" />
-        <AlertTitle>Mentor assignment scope</AlertTitle>
+        <AlertTitle>{isSpeaker ? 'Speaker scope' : 'Mentor assignment scope'}</AlertTitle>
         <AlertDescription>
-          This dashboard therefore shows your workshops accurately and an event-level team snapshot as supporting context.
+          {isSpeaker
+            ? 'This dashboard focuses on workshops where you are the presenter. Team assignment is not part of the speaker role in the current API surface.'
+            : 'This dashboard shows your workshops and the teams seeded into your mentoring scope for the selected event.'}
         </AlertDescription>
       </Alert>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className={`grid grid-cols-1 gap-6 ${isSpeaker ? 'lg:grid-cols-1' : 'lg:grid-cols-[1.2fr_0.8fr]'}`}>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle>Upcoming Sessions</CardTitle>
-            <Button asChild variant="outline" size="sm">
+            {!isSpeaker && <Button asChild variant="outline" size="sm">
               <Link to="/mentor/teams">Open Team View</Link>
-            </Button>
+            </Button>}
           </CardHeader>
           <CardContent className="space-y-3">
             {workshopsQuery.isLoading ? (
@@ -136,8 +146,12 @@ export function MentorDashboardView() {
               </div>
             ) : latestWorkshops.length === 0 ? (
               <Alert>
-                <AlertTitle>No mentoring workshops</AlertTitle>
-                <AlertDescription>No workshops are assigned to you for the selected event.</AlertDescription>
+                <AlertTitle>{isSpeaker ? 'No speaking sessions' : 'No mentoring workshops'}</AlertTitle>
+                <AlertDescription>
+                  {isSpeaker
+                    ? 'No workshops are assigned to you as presenter for the selected event.'
+                    : 'No workshops are assigned to you for the selected event.'}
+                </AlertDescription>
               </Alert>
             ) : (
               latestWorkshops.map((workshop) => (
@@ -154,7 +168,7 @@ export function MentorDashboardView() {
                     <div className="mt-2 flex items-center gap-2 text-sm text-blue-700">
                       <Github className="w-4 h-4" />
                       <a href={workshop.meetLink} target="_blank" rel="noreferrer" className="underline">
-                        Open mentoring link
+                        {isSpeaker ? 'Open session link' : 'Open mentoring link'}
                       </a>
                     </div>
                   )}
@@ -164,6 +178,7 @@ export function MentorDashboardView() {
           </CardContent>
         </Card>
 
+        {!isSpeaker && (
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -182,6 +197,7 @@ export function MentorDashboardView() {
             </p>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Github, Loader2, Users, UsersRound } from 'lucide-react';
 
 import { teamsApi } from '@/entities/team/api';
+import { useStore } from '@/entities/session/model/store';
 import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
@@ -19,6 +20,8 @@ function initials(value?: string) {
 
 export function MentorTeams() {
   const [selectedEventId, setSelectedEventId] = useState('');
+  const appRole = useStore((state) => state.appRole);
+  const isSpeaker = appRole === 'speaker';
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -38,8 +41,12 @@ export function MentorTeams() {
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Teams Overview</h1>
-          <p className="text-sm text-muted-foreground">Event teams visible to mentors in the current frontend scope.</p>
+          <h1 className="text-2xl font-semibold mb-1">My Assigned Teams</h1>
+          <p className="text-sm text-muted-foreground">
+            {isSpeaker
+              ? 'Speaker accounts do not have team assignment management in the current scope.'
+              : 'Teams assigned to you in the seeded mentor scope.'}
+          </p>
         </div>
         <div className="w-full md:w-80">
           <Label>Event</Label>
@@ -60,9 +67,11 @@ export function MentorTeams() {
 
       <Alert>
         <UsersRound className="h-4 w-4" />
-        <AlertTitle>Current limitation</AlertTitle>
+        <AlertTitle>{isSpeaker ? 'Speaker scope' : 'Mentor scope'}</AlertTitle>
         <AlertDescription>
-          This page currently shows event teams, not mentor-specific assignments, because the backend does not yet expose mentor-to-team mapping.
+          {isSpeaker
+            ? 'This route remains available for shared navigation, but speakers are centered around workshops rather than team assignment.'
+            : 'This seeded environment now includes mentor-to-team assignments so you can review teams that belong to your mentoring scope.'}
         </AlertDescription>
       </Alert>
 
@@ -75,7 +84,11 @@ export function MentorTeams() {
       ) : teams.length === 0 ? (
         <Alert>
           <AlertTitle>No teams found</AlertTitle>
-          <AlertDescription>No teams are available for the selected event yet.</AlertDescription>
+          <AlertDescription>
+            {isSpeaker
+              ? 'No team assignment data is available for speaker accounts.'
+              : 'No teams are assigned to you for the selected event yet.'}
+          </AlertDescription>
         </Alert>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -112,6 +125,15 @@ export function MentorTeams() {
                   <Github className="w-4 h-4" />
                   <span>{team.projectName || 'No project name yet'}</span>
                 </div>
+                {!isSpeaker && team.assignedMentors && team.assignedMentors.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {team.assignedMentors.map((mentor) => (
+                      <Badge key={mentor.id} variant="outline">
+                        {mentor.fullName || mentor.email}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

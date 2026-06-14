@@ -354,7 +354,7 @@ export function AppRouter() {
           <Route
             path="/mentor"
             element={
-              <ProtectedRoute allowedRoles={['mentor', 'admin']}>
+              <ProtectedRoute allowedRoles={['mentor', 'speaker', 'admin']}>
                 <MentorDashboard />
               </ProtectedRoute>
             }
