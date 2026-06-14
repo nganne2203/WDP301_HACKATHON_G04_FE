@@ -73,6 +73,7 @@ const participantNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/participant' },
   { icon: UsersRound, label: 'My Team', href: '/participant/team' },
   { icon: Send, label: 'Submissions', href: '/participant/submissions' },
+  { icon: Trophy, label: 'Results', href: '/participant/results' },
   { icon: Images, label: 'Media', href: '/participant/media' },
 ];
 
@@ -81,10 +82,15 @@ const mentorNavigation: NavigationItem[] = [
   { icon: UsersRound, label: 'My Teams', href: '/mentor/teams' },
 ];
 
+const speakerNavigation: NavigationItem[] = [
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/mentor' },
+];
+
 export function getNavigationItems(role: AppRole | null | undefined) {
   if (role === 'admin') return adminNavigation;
   if (role === 'coordinator') return coordinatorNavigation;
   if (role === 'judge') return judgeNavigation;
   if (role === 'mentor') return mentorNavigation;
+  if (role === 'speaker') return speakerNavigation;
   return participantNavigation;
 }
