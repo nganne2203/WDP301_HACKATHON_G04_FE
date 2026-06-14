@@ -1,6 +1,7 @@
-import { Loader2, MoreVertical, Plus, Presentation } from 'lucide-react';
+import { Loader2, MessageSquare, MoreVertical, Plus, Presentation, RefreshCw, Send, ThumbsUp } from 'lucide-react';
 
 import { ApiError } from '@/shared/api/client';
+import type { WorkshopQuestion } from '@/shared/api/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,9 +21,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
-import { Label } from '@/shared/ui/label';
 import { ListPagination } from '@/shared/ui/list-pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import { Textarea } from '@/shared/ui/textarea';
 import {
   Table,
   TableBody,
@@ -124,14 +125,15 @@ export function Workshops() {
               <TableHead>Presenter</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Time</TableHead>
-              <TableHead>Questions</TableHead>
+              <TableHead>Workshop Questionnaire</TableHead>
+              <TableHead>Speaker Q&A</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(view.eventsQuery.isLoading || view.workshopsQuery.isLoading) && (
               <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading workshops...
@@ -142,7 +144,7 @@ export function Workshops() {
 
             {!view.eventsQuery.isLoading && !view.workshopsQuery.isLoading && view.workshops.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                   No workshops found for this event.
                 </TableCell>
               </TableRow>
@@ -181,8 +183,14 @@ export function Workshops() {
                       ))}
                     </ul>
                   ) : (
-                    <span className="text-sm text-muted-foreground italic">No questions</span>
+                    <span className="text-sm text-muted-foreground italic">No questionnaire prepared</span>
                   )}
+                </TableCell>
+                <TableCell>
+                  <Button variant="outline" size="sm" onClick={() => view.openQuestionsDialog(workshop)}>
+                    <MessageSquare className="h-4 w-4" />
+                    View questions
+                  </Button>
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
@@ -192,6 +200,9 @@ export function Workshops() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => view.openQuestionsDialog(workshop)}>
+                        View speaker questions
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => view.openEditDialog(workshop)}>
                         Edit workshop
                       </DropdownMenuItem>
@@ -251,6 +262,141 @@ export function Workshops() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={view.questionsOpen} onOpenChange={view.setQuestionsOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Questions for Speaker</DialogTitle>
+            <DialogDescription>
+              Participant-submitted questions for {view.selectedQuestionsWorkshop?.title || 'this workshop'}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-md border bg-muted/30 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Workshop Questionnaire</p>
+              {view.selectedQuestionsWorkshop?.questionnaire?.length ? (
+                <ul className="mt-2 space-y-1">
+                  {view.selectedQuestionsWorkshop.questionnaire.map((question, index) => (
+                    <li key={`${question}-${index}`} className="text-sm text-muted-foreground">
+                      {index + 1}. {question}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">No questionnaire has been prepared for this workshop.</p>
+              )}
+            </div>
+
+            <div className="rounded-md border p-4">
+              <p className="text-sm font-semibold">Submit a Question</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                This creates a participant question for the speaker, not a workshop questionnaire item.
+              </p>
+              <Textarea
+                className="mt-3 min-h-24"
+                disabled={!view.canCreateWorkshopQuestions || !view.canSubmitWorkshopQuestion || view.createQuestionMutation.isPending}
+                maxLength={1000}
+                onChange={(event) => view.setQuestionContent(event.target.value)}
+                placeholder="Ask the speaker a question"
+                value={view.questionContent}
+              />
+              {!view.canCreateWorkshopQuestions && (
+                <p className="mt-2 text-xs text-muted-foreground">You do not have permission to submit workshop questions.</p>
+              )}
+              {view.canCreateWorkshopQuestions && !view.canSubmitWorkshopQuestion && (
+                <p className="mt-2 text-xs text-muted-foreground">Questions can be submitted before or during the workshop.</p>
+              )}
+              <Button
+                className="mt-3"
+                disabled={
+                  view.questionContent.trim().length < 2 ||
+                  !view.canCreateWorkshopQuestions ||
+                  !view.canSubmitWorkshopQuestion ||
+                  view.createQuestionMutation.isPending
+                }
+                onClick={view.handleCreateQuestion}
+              >
+                {view.createQuestionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Submit question
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Participant Questions</p>
+                <p className="text-xs text-muted-foreground">Questions submitted separately for the speaker.</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => view.workshopQuestionsQuery.refetch()} disabled={view.workshopQuestionsQuery.isFetching}>
+                {view.workshopQuestionsQuery.isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Refresh
+              </Button>
+            </div>
+
+            {view.workshopQuestionsQuery.isLoading && (
+              <div className="flex items-center justify-center gap-2 rounded-md border py-10 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading participant questions...
+              </div>
+            )}
+
+            {view.workshopQuestionsQuery.error && (
+              <WorkshopInlineError
+                message={view.workshopQuestionsQuery.error instanceof ApiError ? view.workshopQuestionsQuery.error.firstError : 'Failed to load participant questions'}
+              />
+            )}
+
+            {!view.workshopQuestionsQuery.isLoading && !view.workshopQuestionsQuery.error && view.workshopQuestions.length === 0 && (
+              <div className="rounded-md border py-10 text-center text-sm text-muted-foreground">
+                No participant questions have been submitted yet.
+              </div>
+            )}
+
+            {!view.workshopQuestionsQuery.isLoading && !view.workshopQuestionsQuery.error && view.workshopQuestions.length > 0 && (
+              <div className="space-y-3">
+                {view.workshopQuestions.map((question) => (
+                  <WorkshopQuestionItem
+                    key={question.id}
+                    canVote={view.canVoteWorkshopQuestions}
+                    isVoting={view.voteQuestionMutation.isPending && view.voteQuestionMutation.variables === question.id}
+                    onVote={() => view.voteQuestionMutation.mutate(question.id)}
+                    question={question}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function WorkshopQuestionItem({
+  canVote,
+  isVoting,
+  onVote,
+  question,
+}: {
+  canVote: boolean;
+  isVoting: boolean;
+  onVote: () => void;
+  question: WorkshopQuestion;
+}) {
+  return (
+    <div className="rounded-md border p-4">
+      <p className="text-sm font-medium leading-relaxed">{question.content}</p>
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <span>{question.author?.fullName || question.author?.email || 'Anonymous participant'}</span>
+        <span>{formatDateTime(question.createdAt)}</span>
+      </div>
+      <Button className="mt-3" variant="outline" size="sm" onClick={onVote} disabled={!canVote || isVoting}>
+        {isVoting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
+        {question.voteCount} votes
+      </Button>
+      {!canVote && (
+        <p className="mt-2 text-xs text-muted-foreground">You do not have permission to vote workshop questions.</p>
+      )}
     </div>
   );
 }
