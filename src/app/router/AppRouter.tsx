@@ -54,6 +54,9 @@ const ParticipantResults = lazy(async () => ({
 const ParticipantMedia = lazy(async () => ({
   default: (await import('@/pages/participant/Media')).ParticipantMedia,
 }));
+const MentorDashboard = lazy(async () => ({
+  default: (await import('@/pages/mentor/Dashboard')).MentorDashboard,
+}));
 const MentorTeams = lazy(async () => ({ default: (await import('@/pages/mentor/Teams')).MentorTeams }));
 
 function AuthLoading() {
@@ -352,7 +355,7 @@ export function AppRouter() {
             path="/mentor"
             element={
               <ProtectedRoute allowedRoles={['mentor', 'admin']}>
-                <ParticipantDashboard />
+                <MentorDashboard />
               </ProtectedRoute>
             }
           />
