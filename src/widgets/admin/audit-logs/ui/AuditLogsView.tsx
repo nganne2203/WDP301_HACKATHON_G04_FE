@@ -184,14 +184,21 @@ export function AuditLogsView() {
     limit: filters.limit || 20,
   }), [filters]);
 
+  const summaryQueryParams = useMemo(() => {
+    const { page, limit, ...summaryFilters } = query;
+    void page;
+    void limit;
+    return summaryFilters;
+  }, [query]);
+
   const logsQuery = useQuery({
     queryKey: queryKeys.auditLogs.list(query),
     queryFn: async () => auditApi.list(query),
   });
 
   const summaryQuery = useQuery({
-    queryKey: queryKeys.auditLogs.summary(query),
-    queryFn: async () => auditApi.getSummary(query),
+    queryKey: queryKeys.auditLogs.summary(summaryQueryParams),
+    queryFn: async () => auditApi.getSummary(summaryQueryParams),
   });
 
   const logs = Array.isArray(logsQuery.data?.data) ? logsQuery.data.data : [];
@@ -396,7 +403,7 @@ export function AuditLogsView() {
                     <TableCell>
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{getActorName(log)}</p>
-                        <p className="text-xs text-muted-foreground">{log.userRole || log.userId || ''}</p>
+                        {/* <p className="text-xs text-muted-foreground">{log.userRole || log.userId || ''}</p> */}
                       </div>
                     </TableCell>
                     <TableCell>
