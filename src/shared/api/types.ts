@@ -33,14 +33,69 @@ export interface Pagination {
 export interface Permission {
   id: string;
   code: string;
+  name?: string;
   description?: string;
+  module?: string;
+  isActive?: boolean;
 }
 
 export interface Role {
   id: string;
   name: string;
+  code?: string;
   description?: string;
   permissions?: Permission[];
+  permissionCount?: number;
+  isSystemRole?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PermissionGroup {
+  module: string;
+  permissions: Permission[];
+}
+
+export interface ListPermissionsQuery {
+  page?: number;
+  limit?: number;
+  module?: string;
+  isActive?: boolean;
+}
+
+export interface UpdatePermissionRequest {
+  name?: string;
+  description?: string | null;
+  module?: string;
+  isActive?: boolean;
+}
+
+export interface ListRolesQuery {
+  page?: number;
+  limit?: number;
+  isActive?: boolean;
+  isSystemRole?: boolean;
+}
+
+export interface CreateRoleRequest {
+  name: string;
+  code?: string;
+  description?: string | null;
+  permissions?: string[];
+}
+
+export interface UpdateRoleRequest {
+  name?: string;
+  code?: string;
+  description?: string | null;
+  isActive?: boolean;
+}
+
+export interface RolePermissionsResult {
+  roleId: string;
+  roleName: string;
+  permissions: Permission[];
 }
 
 export interface GoogleAuth {
@@ -1621,31 +1676,55 @@ export interface PublishResultsResult {
 // ============================================================
 export interface AuditLog {
   id: string;
+  auditId?: string;
   userId: string | null;
-  user: { id: string; fullName?: string; email?: string } | null;
+  user: { id: string; fullName?: string | null; email?: string | null; status?: string | null } | null;
+  username?: string | null;
+  userRole?: string | null;
   action: string;
+  entityType?: string | null;
+  entityId?: string | null;
   resourceType: string | null;
   resourceId: string | null;
+  oldValue?: Record<string, unknown> | null;
+  newValue?: Record<string, unknown> | null;
+  description?: string | null;
   metadata: Record<string, unknown> | null;
   ipAddress: string | null;
   userAgent: string | null;
+  requestId?: string | null;
+  sessionId?: string | null;
+  result?: 'SUCCESS' | 'FAILURE' | string | null;
+  errorMessage?: string | null;
+  sourceModule?: string | null;
   createdAt: string;
 }
 
 export interface AuditLogSummary {
-  totalLogs: number;
-  byAction: Array<{ action: string; count: number }>;
-  byResourceType: Array<{ resourceType: string; count: number }>;
-  byUser: Array<{ userId: string; fullName?: string; email?: string; count: number }>;
+  totalItems?: number;
+  totalLogs?: number;
+  actionBreakdown?: Array<{ action: string; count: number }>;
+  resourceBreakdown?: Array<{ resourceType: string; count: number }>;
+  resultBreakdown?: Array<{ result: string; count: number }>;
+  roleBreakdown?: Array<{ userRole: string; count: number }>;
+  recentAuditLogs?: AuditLog[];
+  byAction?: Array<{ action: string; count: number }>;
+  byResourceType?: Array<{ resourceType: string; count: number }>;
+  byUser?: Array<{ userId: string; fullName?: string; email?: string; count: number }>;
 }
 
 export interface ListAuditLogsQuery {
   page?: number;
   limit?: number;
   userId?: string;
+  username?: string;
+  userRole?: string;
   action?: string;
   resourceType?: string;
   resourceId?: string;
+  result?: 'SUCCESS' | 'FAILURE' | '';
+  sourceModule?: string;
+  search?: string;
   from?: string;
   to?: string;
 }
