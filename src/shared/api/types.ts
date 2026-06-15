@@ -33,14 +33,69 @@ export interface Pagination {
 export interface Permission {
   id: string;
   code: string;
+  name?: string;
   description?: string;
+  module?: string;
+  isActive?: boolean;
 }
 
 export interface Role {
   id: string;
   name: string;
+  code?: string;
   description?: string;
   permissions?: Permission[];
+  permissionCount?: number;
+  isSystemRole?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PermissionGroup {
+  module: string;
+  permissions: Permission[];
+}
+
+export interface ListPermissionsQuery {
+  page?: number;
+  limit?: number;
+  module?: string;
+  isActive?: boolean;
+}
+
+export interface UpdatePermissionRequest {
+  name?: string;
+  description?: string | null;
+  module?: string;
+  isActive?: boolean;
+}
+
+export interface ListRolesQuery {
+  page?: number;
+  limit?: number;
+  isActive?: boolean;
+  isSystemRole?: boolean;
+}
+
+export interface CreateRoleRequest {
+  name: string;
+  code?: string;
+  description?: string | null;
+  permissions?: string[];
+}
+
+export interface UpdateRoleRequest {
+  name?: string;
+  code?: string;
+  description?: string | null;
+  isActive?: boolean;
+}
+
+export interface RolePermissionsResult {
+  roleId: string;
+  roleName: string;
+  permissions: Permission[];
 }
 
 export interface GoogleAuth {
@@ -1620,7 +1675,7 @@ export interface PublishResultsResult {
 export interface AuditLog {
   id: string;
   userId: string | null;
-  user: { id: string; fullName?: string; email?: string } | null;
+  user: { id: string; fullName?: string | null; email?: string | null; status?: string | null } | null;
   action: string;
   resourceType: string | null;
   resourceId: string | null;

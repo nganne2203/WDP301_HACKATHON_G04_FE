@@ -4,6 +4,7 @@ import { ClipboardList, Loader2, Search } from 'lucide-react';
 
 import { auditApi } from '@/entities/audit/api';
 import { queryKeys } from '@/lib/queryKeys';
+import type { AuditLog } from '@/shared/api/types';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -26,6 +27,10 @@ function getActionColor(action: string): string {
     if (action.toUpperCase().includes(key)) return ACTION_COLORS[key];
   }
   return 'bg-gray-100 text-gray-800';
+}
+
+function getActorName(log: AuditLog) {
+  return log.user?.fullName || log.user?.email || (log.userId ? 'Unknown user' : 'System');
 }
 
 export function AuditLogsView() {
@@ -53,10 +58,8 @@ export function AuditLogsView() {
       }),
   });
 
-  // BE returns { auditLogs, pagination } inside .data
-  const responseData = logsQuery.data?.data as any;
-  const logs: any[] = responseData?.auditLogs || responseData || [];
-  const pagination = responseData?.pagination || logsQuery.data?.pagination || null;
+  const logs = Array.isArray(logsQuery.data?.data) ? logsQuery.data.data : [];
+  const pagination = logsQuery.data?.pagination || null;
 
   // BE returns { totalItems, actionBreakdown, resourceBreakdown }
   const summary = summaryQuery.data?.data as any;
@@ -179,19 +182,20 @@ export function AuditLogsView() {
                   <TableHead>User</TableHead>
                   <TableHead>Action</TableHead>
                   <TableHead>Resource</TableHead>
-                  <TableHead>IP</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {logs.map((log: any) => (
-                  <TableRow key={log.id ?? log._id}>
+                {logs.map((log) => (
+                  <TableRow key={log.id}>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {log.createdAt ? new Date(log.createdAt).toLocaleString() : '–'}
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <p className="text-sm font-medium">{log.user?.fullName ?? log.userId ?? '–'}</p>
-                        <p className="text-xs text-muted-foreground">{log.user?.email ?? ''}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{getActorName(log)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {log.user?.email && log.user.fullName ? log.user.email : log.userId || ''}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -209,7 +213,6 @@ export function AuditLogsView() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{log.ipAddress ?? '–'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
