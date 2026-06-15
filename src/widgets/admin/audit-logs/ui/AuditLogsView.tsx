@@ -45,6 +45,71 @@ const RESULT_OPTIONS = [
   { label: 'Failure', value: 'FAILURE' },
 ] as const;
 
+const DEFAULT_ACTION_OPTIONS = [
+  'AUTH_REGISTER_SUCCESS',
+  'AUTH_REGISTER_FAILED',
+  'AUTH_LOGIN_SUCCESS',
+  'AUTH_LOGIN_FAILED',
+  'AUTH_GOOGLE_LOGIN_STARTED',
+  'AUTH_GOOGLE_LOGIN_SUCCESS',
+  'AUTH_GOOGLE_LOGIN_FAILED',
+  'AUTH_TOKEN_REFRESHED',
+  'AUTH_TOKEN_REFRESH_FAILED',
+  'AUTH_PASSWORD_CHANGED',
+  'AUTH_PASSWORD_CHANGE_FAILED',
+  'AUTH_LOGOUT',
+  'USER_CREATED',
+  'USER_UPDATED',
+  'USER_STATUS_CHANGED',
+  'USER_ROLE_CHANGED',
+  'USER_DELETED',
+  'ROLE_CREATED',
+  'ROLE_UPDATED',
+  'ROLE_DELETED',
+  'ROLE_PERMISSION_CHANGED',
+  'PERMISSION_UPDATED',
+  'TEAM_CREATED',
+  'TEAM_UPDATED',
+  'TEAM_STATUS_CHANGED',
+  'TEAM_MEMBER_INVITED',
+  'TEAM_MEMBER_REMOVED',
+  'TEAM_INVITATION_ACCEPTED',
+  'TEAM_INVITATION_DECLINED',
+  'TEAM_INVITATION_CANCELLED',
+  'EVENT_CREATED',
+  'EVENT_UPDATED',
+  'EVENT_DELETED',
+  'ROUND_CREATED',
+  'ROUND_UPDATED',
+  'ROUND_DELETED',
+  'RUBRIC_CREATED',
+  'RUBRIC_UPDATED',
+  'RUBRIC_DELETED',
+  'SUBMISSION_CREATED',
+  'SUBMISSION_UPDATED',
+  'SUBMISSION_SUBMITTED',
+  'SUBMISSION_STATUS_CHANGED',
+  'SCORE_SHEET_CREATED',
+  'SCORE_SHEET_UPDATED',
+  'SCORE_SHEET_SUBMITTED',
+  'SCORE_SHEET_SUBMITTED_AND_LOCKED',
+  'RANKING_GENERATED',
+  'FINALISTS_SELECTED',
+  'RESULTS_PUBLISHED',
+  'AI_REVIEW_REQUESTED',
+  'AI_REVIEW_COMPLETED',
+  'AI_REVIEW_FAILED',
+  'FILE_UPLOADED',
+  'FILE_DOWNLOADED',
+  'FILE_DELETED',
+  'SETTINGS_UPDATED',
+  'SECURITY_UNAUTHORIZED_ACCESS',
+  'SECURITY_PERMISSION_DENIED',
+  'SECURITY_RATE_LIMITED',
+  'API_MUTATION_FAILED',
+  'API_MUTATION_COMPLETED',
+] as const;
+
 function getActionColor(action: string): string {
   for (const key of Object.keys(ACTION_COLORS)) {
     if (action.toUpperCase().includes(key)) return ACTION_COLORS[key];
@@ -64,6 +129,10 @@ function stringify(value: unknown) {
   if (value === null || value === undefined) return '-';
   if (typeof value === 'string') return value;
   return JSON.stringify(value, null, 2);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function JsonBlock({ value }: { value: unknown }) {
@@ -207,6 +276,15 @@ export function AuditLogsView() {
   const totalItems = summary?.totalItems ?? summary?.totalLogs ?? 0;
   const actionBreakdown = summary?.actionBreakdown ?? summary?.byAction ?? [];
   const resultBreakdown = summary?.resultBreakdown ?? [];
+  const actionOptions = useMemo(
+    () => Array.from(new Set([
+      ...DEFAULT_ACTION_OPTIONS,
+      ...actionBreakdown.map((item) => item.action).filter(isNonEmptyString),
+      ...logs.map((log) => log.action).filter(isNonEmptyString),
+      filters.action,
+    ].filter(isNonEmptyString))).sort(),
+    [actionBreakdown, filters.action, logs],
+  );
 
   const updateFilter = (key: keyof ListAuditLogsQuery, value: string) => {
     setFilters((current) => ({ ...current, [key]: value, page: 1 }));
@@ -313,7 +391,17 @@ export function AuditLogsView() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="action-filter">Action</Label>
-              <Input id="action-filter" placeholder="AUTH_LOGIN_FAILED" value={filters.action || ''} onChange={(event) => updateFilter('action', event.target.value)} />
+              <Select value={filters.action || 'all'} onValueChange={(value) => updateFilter('action', value === 'all' ? '' : value)}>
+                <SelectTrigger id="action-filter">
+                  <SelectValue placeholder="All actions" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  <SelectItem value="all">All actions</SelectItem>
+                  {actionOptions.map((action) => (
+                    <SelectItem key={action} value={action}>{action}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-filter">User</Label>
