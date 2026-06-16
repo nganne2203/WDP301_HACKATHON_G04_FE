@@ -1346,6 +1346,45 @@ export interface AutoAssignRequest {
   roundId: string;
 }
 
+export interface JudgingBoardRandomizationPreviewBoard {
+  boardNumber: number;
+  boardLabel: string;
+  name: string;
+  maxTeams: number;
+  judgeIds: string[];
+  teamIds: string[];
+  teams: Array<{
+    id: string;
+    name: string;
+    chapterName?: string | null;
+    projectName?: string | null;
+    status: string;
+    trackId?: string | null;
+    boardNumber?: number | null;
+    placementSlot?: number | null;
+  }>;
+}
+
+export interface JudgingBoardRandomizationPreview {
+  event: { id: string; title: string } | null;
+  round: { id: string; name: string; roundType: RoundType; status: RoundStatus } | null;
+  boardCount: number;
+  maxTeamsPerBoard: number;
+  eligibleTeamCount: number;
+  ineligibleTeamCount: number;
+  boards: JudgingBoardRandomizationPreviewBoard[];
+}
+
+export interface ConfirmJudgingBoardRandomizationRequest {
+  eventId: string;
+  roundId: string;
+  boards: Array<{
+    boardNumber: number;
+    name: string;
+    teamIds: string[];
+  }>;
+}
+
 export interface UpdateJudgingBoardRequest {
   eventId?: string;
   roundId?: string;
