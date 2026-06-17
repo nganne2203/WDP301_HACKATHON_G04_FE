@@ -325,18 +325,18 @@ export function useRepositoriesView() {
       return (await githubApi.bulkGrantAccess({ eventId: activeEventId })).data;
     },
     onSuccess: (result) => {
-      toast.success('Cấp quyền hàng loạt thành công', {
-        description: `Đã cấp quyền cho ${result.success.length} collaborator. Thất bại: ${result.failed.length}.`,
+      toast.success('Bulk collaborator access granted', {
+        description: `Successfully granted access for ${result.success.length} collaborators. Failed: ${result.failed.length}.`,
       });
       if (result.failed.length > 0) {
         result.failed.forEach((fail: any) => {
-          toast.error(`Lỗi cấp quyền cho ${fail.username || 'thành viên'}`, {
+          toast.error(`Could not grant access for ${fail.username || 'member'}`, {
             description: fail.error,
           });
         });
       }
     },
-    onError: (error) => toast.error('Không thể cấp quyền hàng loạt', { description: getApiErrorMessage(error) }),
+    onError: (error) => toast.error('Could not grant bulk access', { description: getApiErrorMessage(error) }),
   });
 
   const bulkRevokeAccessMutation = useMutation({
@@ -345,18 +345,18 @@ export function useRepositoriesView() {
       return (await githubApi.bulkRevokeAccess({ eventId: activeEventId })).data;
     },
     onSuccess: (result) => {
-      toast.success('Thu hồi quyền hàng loạt thành công', {
-        description: `Đã thu hồi quyền cho ${result.success.length} collaborator. Thất bại: ${result.failed.length}.`,
+      toast.success('Bulk collaborator access revoked', {
+        description: `Successfully revoked access for ${result.success.length} collaborators. Failed: ${result.failed.length}.`,
       });
       if (result.failed.length > 0) {
         result.failed.forEach((fail: any) => {
-          toast.error(`Lỗi thu hồi quyền cho ${fail.username || 'thành viên'}`, {
+          toast.error(`Could not revoke access for ${fail.username || 'member'}`, {
             description: fail.error,
           });
         });
       }
     },
-    onError: (error) => toast.error('Không thể thu hồi quyền hàng loạt', { description: getApiErrorMessage(error) }),
+    onError: (error) => toast.error('Could not revoke bulk access', { description: getApiErrorMessage(error) }),
   });
 
   return {

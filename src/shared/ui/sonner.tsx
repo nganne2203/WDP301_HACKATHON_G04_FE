@@ -11,6 +11,17 @@ const Toaster = ({ ...props }: ComponentProps<typeof Sonner>) => {
     <Sonner
       theme={theme as "light" | "dark" | "system"}
       className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            "group toast group-[.toaster]:bg-popover group-[.toaster]:text-popover-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          description: "group-[.toast]:text-zinc-600 dark:group-[.toast]:text-zinc-400 font-medium",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+        },
+      }}
       style={
         {
           "--normal-bg": "var(--popover)",

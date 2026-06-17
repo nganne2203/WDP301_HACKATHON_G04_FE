@@ -201,7 +201,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
             Bulk Repository Operations
           </CardTitle>
           <CardDescription>
-            Thực hiện tạo repository hàng loạt (không tự động gán thành viên), cấp quyền hàng loạt hoặc thu hồi quyền hàng loạt cho tất cả các đội thi trong sự kiện.
+            Create repositories in bulk (without assigning members), grant access in bulk, or revoke access in bulk for all teams in the event.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -209,9 +209,9 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
             <div className="space-y-2 max-w-sm">
               <Label>Round</Label>
               <Select value={view.selectedRoundId} onValueChange={view.setSelectedRoundId}>
-                <SelectTrigger><SelectValue placeholder="Chọn vòng thi (tùy chọn)" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select round (optional)" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Không gán vòng thi</SelectItem>
+                  <SelectItem value="none">No round</SelectItem>
                   {view.rounds.map((round) => (
                     <SelectItem key={round.id} value={round.id}>{round.name}</SelectItem>
                   ))}
@@ -229,7 +229,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                 ) : (
                   <Github className="mr-2 h-4 w-4" />
                 )}
-                Tạo hàng loạt Repo
+                Bulk Create Repos
               </Button>
 
               <Button
@@ -243,7 +243,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                 ) : (
                   <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
                 )}
-                Cấp quyền hàng loạt
+                Bulk Grant Access
               </Button>
 
               <Button
@@ -257,7 +257,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                 ) : (
                   <Github className="mr-2 h-4 w-4 text-red-600" />
                 )}
-                Thu hồi quyền hàng loạt
+                Bulk Revoke Access
               </Button>
             </div>
           </div>
