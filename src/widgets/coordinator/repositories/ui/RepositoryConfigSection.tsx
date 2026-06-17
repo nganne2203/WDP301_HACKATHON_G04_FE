@@ -198,15 +198,15 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-blue-600" />
-            Bulk Create Repositories
+            Bulk Repository Operations
           </CardTitle>
           <CardDescription>
-            Tự động tạo và thiết lập GitHub Repositories hàng loạt cho tất cả các đội thi đã được xác nhận (CONFIRMED/ACTIVE) chưa có Repo trong sự kiện.
+            Thực hiện tạo repository hàng loạt (không tự động gán thành viên), cấp quyền hàng loạt hoặc thu hồi quyền hàng loạt cho tất cả các đội thi trong sự kiện.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="space-y-2 max-w-sm">
               <Label>Round</Label>
               <Select value={view.selectedRoundId} onValueChange={view.setSelectedRoundId}>
                 <SelectTrigger><SelectValue placeholder="Chọn vòng thi (tùy chọn)" /></SelectTrigger>
@@ -218,7 +218,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
+            <div className="flex flex-wrap gap-3 pt-2">
               <Button
                 onClick={() => view.bulkCreateRepositoriesMutation.mutate()}
                 disabled={view.bulkCreateRepositoriesMutation.isPending || !view.activeEventId}
@@ -230,6 +230,34 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                   <Github className="mr-2 h-4 w-4" />
                 )}
                 Tạo hàng loạt Repo
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => view.bulkGrantAccessMutation.mutate()}
+                disabled={view.bulkGrantAccessMutation.isPending || !view.activeEventId}
+                className="w-full sm:w-auto border-green-200 hover:bg-green-50 text-green-700"
+              >
+                {view.bulkGrantAccessMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
+                )}
+                Cấp quyền hàng loạt
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => view.bulkRevokeAccessMutation.mutate()}
+                disabled={view.bulkRevokeAccessMutation.isPending || !view.activeEventId}
+                className="w-full sm:w-auto border-red-200 hover:bg-red-50 text-red-700"
+              >
+                {view.bulkRevokeAccessMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Github className="mr-2 h-4 w-4 text-red-600" />
+                )}
+                Thu hồi quyền hàng loạt
               </Button>
             </div>
           </div>

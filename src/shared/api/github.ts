@@ -58,4 +58,10 @@ export const githubApi = {
 
   bulkCreateRepositories: (data: BulkCreateGitHubRepositoriesRequest) =>
     api.post<BulkCreateGitHubRepositoriesResult>('/github/repositories/bulk', data),
+
+  bulkGrantAccess: (data: { eventId: string }) =>
+    api.post<any>('/github/collaborators/bulk-grant', data),
+
+  bulkRevokeAccess: (data: { eventId: string }) =>
+    api.post<any>('/github/collaborators/bulk-revoke', data),
 };

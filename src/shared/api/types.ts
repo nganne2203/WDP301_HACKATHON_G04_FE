@@ -614,6 +614,7 @@ export interface CreateGitHubRepositoryResult {
 export interface BulkCreateGitHubRepositoriesRequest {
   eventId: string;
   roundId: string | null;
+  assignCollaborators?: boolean;
 }
 
 export interface BulkCreateGitHubRepositoriesResult {

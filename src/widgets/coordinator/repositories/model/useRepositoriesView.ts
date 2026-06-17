@@ -300,6 +300,7 @@ export function useRepositoriesView() {
       return (await githubApi.bulkCreateRepositories({
         eventId: activeEventId,
         roundId: selectedRoundId === 'none' ? null : selectedRoundId,
+        assignCollaborators: false,
       })).data;
     },
     onSuccess: async (result) => {
@@ -316,6 +317,46 @@ export function useRepositoriesView() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
     },
     onError: (error) => toast.error('Could not create bulk repositories', { description: getApiErrorMessage(error) }),
+  });
+
+  const bulkGrantAccessMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      return (await githubApi.bulkGrantAccess({ eventId: activeEventId })).data;
+    },
+    onSuccess: (result) => {
+      toast.success('Cấp quyền hàng loạt thành công', {
+        description: `Đã cấp quyền cho ${result.success.length} collaborator. Thất bại: ${result.failed.length}.`,
+      });
+      if (result.failed.length > 0) {
+        result.failed.forEach((fail: any) => {
+          toast.error(`Lỗi cấp quyền cho ${fail.username || 'thành viên'}`, {
+            description: fail.error,
+          });
+        });
+      }
+    },
+    onError: (error) => toast.error('Không thể cấp quyền hàng loạt', { description: getApiErrorMessage(error) }),
+  });
+
+  const bulkRevokeAccessMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      return (await githubApi.bulkRevokeAccess({ eventId: activeEventId })).data;
+    },
+    onSuccess: (result) => {
+      toast.success('Thu hồi quyền hàng loạt thành công', {
+        description: `Đã thu hồi quyền cho ${result.success.length} collaborator. Thất bại: ${result.failed.length}.`,
+      });
+      if (result.failed.length > 0) {
+        result.failed.forEach((fail: any) => {
+          toast.error(`Lỗi thu hồi quyền cho ${fail.username || 'thành viên'}`, {
+            description: fail.error,
+          });
+        });
+      }
+    },
+    onError: (error) => toast.error('Không thể thu hồi quyền hàng loạt', { description: getApiErrorMessage(error) }),
   });
 
   return {
@@ -383,6 +424,8 @@ export function useRepositoriesView() {
     triggerPerPushReviewMutation,
     linkRepositoryMutation,
     bulkCreateRepositoriesMutation,
+    bulkGrantAccessMutation,
+    bulkRevokeAccessMutation,
     linkOwner,
     setLinkOwner,
     linkRepo,
