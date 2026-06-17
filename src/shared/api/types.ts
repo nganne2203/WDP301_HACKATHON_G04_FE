@@ -609,6 +609,27 @@ export interface CreateGitHubRepositoryResult {
   webhookRegistration?: RegisterGitHubWebhookResult | null;
 }
 
+export interface BulkCreateGitHubRepositoriesRequest {
+  eventId: string;
+  roundId: string | null;
+}
+
+export interface BulkCreateGitHubRepositoriesResult {
+  totalTeamsChecked: number;
+  totalReposCreated: number;
+  success: Array<{
+    teamId: string;
+    teamName: string;
+    repoName: string;
+    htmlUrl?: string;
+  }>;
+  failed: Array<{
+    teamId: string;
+    teamName: string;
+    error: string;
+  }>;
+}
+
 export interface AssignGitHubCollaboratorRequest {
   eventId: string;
   permission: 'pull' | 'triage' | 'push' | 'maintain' | 'admin';

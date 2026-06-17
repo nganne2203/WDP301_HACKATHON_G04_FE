@@ -294,6 +294,30 @@ export function useRepositoriesView() {
     onError: (error) => toast.error('Could not link repository', { description: getApiErrorMessage(error) }),
   });
 
+  const bulkCreateRepositoriesMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      return (await githubApi.bulkCreateRepositories({
+        eventId: activeEventId,
+        roundId: selectedRoundId === 'none' ? null : selectedRoundId,
+      })).data;
+    },
+    onSuccess: async (result) => {
+      toast.success('Bulk repository creation completed', {
+        description: `Created ${result.totalReposCreated} repositories successfully. Success: ${result.success.length}, Failed: ${result.failed.length}.`,
+      });
+      if (result.failed.length > 0) {
+        result.failed.forEach((fail) => {
+          toast.error(`Failed to create repository for team ${fail.teamName}`, {
+            description: fail.error,
+          });
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
+    },
+    onError: (error) => toast.error('Could not create bulk repositories', { description: getApiErrorMessage(error) }),
+  });
+
   return {
     selectedEventId,
     setSelectedEventId,
@@ -358,6 +382,7 @@ export function useRepositoriesView() {
     triggerAiReviewMutation,
     triggerPerPushReviewMutation,
     linkRepositoryMutation,
+    bulkCreateRepositoriesMutation,
     linkOwner,
     setLinkOwner,
     linkRepo,

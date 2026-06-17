@@ -193,6 +193,48 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
           </Button>
         </CardContent>
       </Card>
+
+      <Card className="border-blue-200 bg-blue-50/10">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5 text-blue-600" />
+            Bulk Create Repositories
+          </CardTitle>
+          <CardDescription>
+            Tự động tạo và thiết lập GitHub Repositories hàng loạt cho tất cả các đội thi đã được xác nhận (CONFIRMED/ACTIVE) chưa có Repo trong sự kiện.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Round</Label>
+              <Select value={view.selectedRoundId} onValueChange={view.setSelectedRoundId}>
+                <SelectTrigger><SelectValue placeholder="Chọn vòng thi (tùy chọn)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Không gán vòng thi</SelectItem>
+                  {view.rounds.map((round) => (
+                    <SelectItem key={round.id} value={round.id}>{round.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button
+                onClick={() => view.bulkCreateRepositoriesMutation.mutate()}
+                disabled={view.bulkCreateRepositoriesMutation.isPending || !view.activeEventId}
+                className="w-full sm:w-auto"
+              >
+                {view.bulkCreateRepositoriesMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Github className="mr-2 h-4 w-4" />
+                )}
+                Tạo hàng loạt Repo
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 }
