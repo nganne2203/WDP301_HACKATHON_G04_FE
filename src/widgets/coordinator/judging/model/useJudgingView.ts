@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { judgingBoardsApi } from '@/entities/judging-board/api';
 import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
-import type { JudgingBoard, Round } from '@/shared/api/types';
+import type { JudgingBoard, JudgingBoardRandomizationPreview, Round } from '@/shared/api/types';
 
 export function statusVariant(status: string) {
   if (status === 'SCORING') return 'default' as const;
@@ -18,9 +18,11 @@ export function useJudgingView() {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedRoundId, setSelectedRoundId] = useState('');
   const [selectedBoard, setSelectedBoard] = useState<JudgingBoard | null>(null);
-  const [showAutoAssignConfirm, setShowAutoAssignConfirm] = useState(false);
+  const [showRandomizeConfirm, setShowRandomizeConfirm] = useState(false);
   const [assignedBoards, setAssignedBoards] = useState<JudgingBoard[]>([]);
   const [showAssignedResult, setShowAssignedResult] = useState(false);
+  const [randomizationPreview, setRandomizationPreview] = useState<JudgingBoardRandomizationPreview | null>(null);
+  const [showRandomizationPreview, setShowRandomizationPreview] = useState(false);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -45,18 +47,45 @@ export function useJudgingView() {
   const totalTeams = boards.reduce((sum, board) => sum + board.teams.length, 0);
   const totalJudges = new Set(boards.flatMap((board) => board.judgeIds)).size;
 
-  const autoAssignMutation = useMutation({
-    mutationFn: () => judgingBoardsApi.autoAssign({ eventId: activeEvent!.id, roundId: activeRound!.id }),
+  const randomizePreviewMutation = useMutation({
+    mutationFn: () => judgingBoardsApi.randomizePreview({ eventId: activeEvent!.id, roundId: activeRound!.id }),
     onSuccess: (response) => {
-      const created = response.data || [];
-      setAssignedBoards(created);
-      setShowAutoAssignConfirm(false);
-      setShowAssignedResult(true);
-      queryClient.invalidateQueries({ queryKey: queryKeys.judging.all });
-      toast.success(`Auto-assigned teams across ${created.length} judging boards`);
+      setRandomizationPreview(response.data);
+      setShowRandomizeConfirm(false);
+      setShowRandomizationPreview(true);
+      toast.success(`Created a board assignment preview for ${response.data.eligibleTeamCount} eligible teams`);
     },
     onError: () => {
-      toast.error('Failed to auto-assign teams');
+      toast.error('Unable to randomize judging boards');
+    },
+  });
+
+  const confirmRandomizationMutation = useMutation({
+    mutationFn: () => {
+      if (!activeEvent || !activeRound || !randomizationPreview) {
+        throw new Error('Missing data required to confirm board assignment');
+      }
+
+      return judgingBoardsApi.confirmRandomization({
+        eventId: activeEvent.id,
+        roundId: activeRound.id,
+        boards: randomizationPreview.boards.map((board) => ({
+          boardNumber: board.boardNumber,
+          name: board.name,
+          teamIds: board.teamIds,
+        })),
+      });
+    },
+    onSuccess: (response) => {
+      const created = response.data.boards || [];
+      setAssignedBoards(created);
+      setShowRandomizationPreview(false);
+      setShowAssignedResult(true);
+      queryClient.invalidateQueries({ queryKey: queryKeys.judging.all });
+      toast.success(`Confirmed team lineup for ${created.length} judging boards`);
+    },
+    onError: () => {
+      toast.error('Unable to confirm board lineup');
     },
   });
 
@@ -67,11 +96,14 @@ export function useJudgingView() {
     setSelectedRoundId,
     selectedBoard,
     setSelectedBoard,
-    showAutoAssignConfirm,
-    setShowAutoAssignConfirm,
+    showRandomizeConfirm,
+    setShowRandomizeConfirm,
     assignedBoards,
     showAssignedResult,
     setShowAssignedResult,
+    randomizationPreview,
+    showRandomizationPreview,
+    setShowRandomizationPreview,
     eventsQuery,
     events,
     activeEvent,
@@ -82,6 +114,7 @@ export function useJudgingView() {
     boards,
     totalTeams,
     totalJudges,
-    autoAssignMutation,
+    randomizePreviewMutation,
+    confirmRandomizationMutation,
   };
 }

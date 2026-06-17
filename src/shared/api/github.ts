@@ -15,6 +15,8 @@ import type {
   RevokeGitHubMembersResult,
   SaveGitHubConfigRequest,
   TestGitHubConnectionResult,
+  BulkCreateGitHubRepositoriesRequest,
+  BulkCreateGitHubRepositoriesResult,
 } from './types';
 
 export const githubApi = {
@@ -53,4 +55,13 @@ export const githubApi = {
 
   revokeMembers: (data: RevokeGitHubMembersRequest) =>
     api.post<RevokeGitHubMembersResult>('/github/organization/revoke-members', data),
+
+  bulkCreateRepositories: (data: BulkCreateGitHubRepositoriesRequest) =>
+    api.post<BulkCreateGitHubRepositoriesResult>('/github/repositories/bulk', data),
+
+  bulkGrantAccess: (data: { eventId: string }) =>
+    api.post<any>('/github/collaborators/bulk-grant', data),
+
+  bulkRevokeAccess: (data: { eventId: string }) =>
+    api.post<any>('/github/collaborators/bulk-revoke', data),
 };

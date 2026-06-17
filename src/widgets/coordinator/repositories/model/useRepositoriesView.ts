@@ -294,6 +294,71 @@ export function useRepositoriesView() {
     onError: (error) => toast.error('Could not link repository', { description: getApiErrorMessage(error) }),
   });
 
+  const bulkCreateRepositoriesMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      return (await githubApi.bulkCreateRepositories({
+        eventId: activeEventId,
+        roundId: selectedRoundId === 'none' ? null : selectedRoundId,
+        assignCollaborators: false,
+      })).data;
+    },
+    onSuccess: async (result) => {
+      toast.success('Bulk repository creation completed', {
+        description: `Created ${result.totalReposCreated} repositories successfully. Success: ${result.success.length}, Failed: ${result.failed.length}.`,
+      });
+      if (result.failed.length > 0) {
+        result.failed.forEach((fail) => {
+          toast.error(`Failed to create repository for team ${fail.teamName}`, {
+            description: fail.error,
+          });
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: queryKeys.repositories.lists() });
+    },
+    onError: (error) => toast.error('Could not create bulk repositories', { description: getApiErrorMessage(error) }),
+  });
+
+  const bulkGrantAccessMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      return (await githubApi.bulkGrantAccess({ eventId: activeEventId })).data;
+    },
+    onSuccess: (result) => {
+      toast.success('Bulk collaborator access granted', {
+        description: `Successfully granted access for ${result.success.length} collaborators. Failed: ${result.failed.length}.`,
+      });
+      if (result.failed.length > 0) {
+        result.failed.forEach((fail: any) => {
+          toast.error(`Could not grant access for ${fail.username || 'member'}`, {
+            description: fail.error,
+          });
+        });
+      }
+    },
+    onError: (error) => toast.error('Could not grant bulk access', { description: getApiErrorMessage(error) }),
+  });
+
+  const bulkRevokeAccessMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeEventId) throw new Error('Please select an event first.');
+      return (await githubApi.bulkRevokeAccess({ eventId: activeEventId })).data;
+    },
+    onSuccess: (result) => {
+      toast.success('Bulk collaborator access revoked', {
+        description: `Successfully revoked access for ${result.success.length} collaborators. Failed: ${result.failed.length}.`,
+      });
+      if (result.failed.length > 0) {
+        result.failed.forEach((fail: any) => {
+          toast.error(`Could not revoke access for ${fail.username || 'member'}`, {
+            description: fail.error,
+          });
+        });
+      }
+    },
+    onError: (error) => toast.error('Could not revoke bulk access', { description: getApiErrorMessage(error) }),
+  });
+
   return {
     selectedEventId,
     setSelectedEventId,
@@ -358,6 +423,9 @@ export function useRepositoriesView() {
     triggerAiReviewMutation,
     triggerPerPushReviewMutation,
     linkRepositoryMutation,
+    bulkCreateRepositoriesMutation,
+    bulkGrantAccessMutation,
+    bulkRevokeAccessMutation,
     linkOwner,
     setLinkOwner,
     linkRepo,
