@@ -22,7 +22,7 @@ export function MemberInviteFields({
   return (
     <div className="space-y-3">
       {rows.map((row, index) => (
-        <div key={row.id} className="grid grid-cols-1 gap-2 items-end md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem]">
+        <div key={row.id} className="grid grid-cols-1 gap-2 items-end md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.5rem]">
           <div className="space-y-2">
             <Label htmlFor={`member-name-${row.id}`}>{index === 0 ? 'Member name' : 'Name'}</Label>
             <Input
@@ -41,6 +41,16 @@ export function MemberInviteFields({
               value={row.email}
               onChange={(event) => updateMemberRow(setRows, row.id, 'email', event.target.value)}
               placeholder="member@example.com"
+              disabled={disabled}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`member-github-${row.id}`}>{index === 0 ? 'GitHub username' : 'GitHub username'}</Label>
+            <Input
+              id={`member-github-${row.id}`}
+              value={row.githubUsername}
+              onChange={(event) => updateMemberRow(setRows, row.id, 'githubUsername', event.target.value)}
+              placeholder="octocat"
               disabled={disabled}
             />
           </div>

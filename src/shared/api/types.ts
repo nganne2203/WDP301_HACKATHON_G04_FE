@@ -179,6 +179,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   fullName: string;
+  githubUsername: string;
   studentType: 'FPT' | 'EXTERNAL';
   studentId: string;
   schoolName?: string;
@@ -521,6 +522,7 @@ export interface CreateTeamRequest {
 export interface TeamInviteMember {
   fullName: string;
   email: string;
+  githubUsername: string;
 }
 
 export interface InviteMembersRequest {
