@@ -37,6 +37,7 @@ const Results = lazy(async () => ({ default: (await import('@/pages/coordinator/
 const AdminMedia = lazy(async () => ({ default: (await import('@/pages/admin/Media')).AdminMedia }));
 const AdminAuditLogs = lazy(async () => ({ default: (await import('@/pages/admin/AuditLogs')).AdminAuditLogs }));
 const AdminOperations = lazy(async () => ({ default: (await import('@/pages/admin/Operations')).AdminOperations }));
+const AdminRbac = lazy(async () => ({ default: (await import('@/pages/admin/Rbac')).AdminRbac }));
 const JudgeScoring = lazy(async () => ({ default: (await import('@/pages/judge/Scoring')).JudgeScoring }));
 const AdminSettings = lazy(async () => ({ default: (await import('@/pages/admin/Settings')).Settings }));
 const ParticipantDashboard = lazy(async () => ({
@@ -48,8 +49,14 @@ const ParticipantTeam = lazy(async () => ({
 const ParticipantSubmissions = lazy(async () => ({
   default: (await import('@/pages/participant/Submissions')).ParticipantSubmissions,
 }));
+const ParticipantResults = lazy(async () => ({
+  default: (await import('@/pages/participant/Results')).ParticipantResults,
+}));
 const ParticipantMedia = lazy(async () => ({
   default: (await import('@/pages/participant/Media')).ParticipantMedia,
+}));
+const MentorDashboard = lazy(async () => ({
+  default: (await import('@/pages/mentor/Dashboard')).MentorDashboard,
 }));
 const MentorTeams = lazy(async () => ({ default: (await import('@/pages/mentor/Teams')).MentorTeams }));
 
@@ -280,6 +287,14 @@ export function AppRouter() {
             }
           />
           <Route
+            path="/participant/results"
+            element={
+              <ProtectedRoute allowedRoles={['participant', 'admin']}>
+                <ParticipantResults />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/participant/media"
             element={
               <ProtectedRoute allowedRoles={['participant', 'admin']}>
@@ -329,6 +344,14 @@ export function AppRouter() {
             }
           />
           <Route
+            path="/admin/rbac"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminRbac />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/operations"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
@@ -340,8 +363,8 @@ export function AppRouter() {
           <Route
             path="/mentor"
             element={
-              <ProtectedRoute allowedRoles={['mentor', 'admin']}>
-                <ParticipantDashboard />
+              <ProtectedRoute allowedRoles={['mentor', 'speaker', 'admin']}>
+                <MentorDashboard />
               </ProtectedRoute>
             }
           />

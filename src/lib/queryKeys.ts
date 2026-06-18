@@ -55,6 +55,8 @@ export const queryKeys = {
     all: ['workshops'] as const,
     lists: () => [...queryKeys.workshops.all, 'list'] as const,
     list: (query?: QueryParams) => [...queryKeys.workshops.lists(), params(query)] as const,
+    questions: (id?: string, query?: QueryParams) =>
+      [...queryKeys.workshops.all, 'questions', id, params(query)] as const,
   },
   submissions: {
     all: ['submissions'] as const,
@@ -93,6 +95,19 @@ export const queryKeys = {
     all: ['operations'] as const,
     dashboard: (eventId?: string) => [...queryKeys.operations.all, 'dashboard', eventId] as const,
     pipeline: (eventId?: string) => [...queryKeys.operations.all, 'pipeline', eventId] as const,
+  },
+  roles: {
+    all: ['roles'] as const,
+    lists: () => [...queryKeys.roles.all, 'list'] as const,
+    list: (query?: QueryParams) => [...queryKeys.roles.lists(), params(query)] as const,
+    detail: (id?: string) => [...queryKeys.roles.all, 'detail', id] as const,
+    permissions: (id?: string) => [...queryKeys.roles.all, 'permissions', id] as const,
+  },
+  permissions: {
+    all: ['permissions'] as const,
+    lists: () => [...queryKeys.permissions.all, 'list'] as const,
+    list: (query?: QueryParams) => [...queryKeys.permissions.lists(), params(query)] as const,
+    grouped: () => [...queryKeys.permissions.all, 'grouped'] as const,
   },
   rankings: {
     all: ['rankings'] as const,
