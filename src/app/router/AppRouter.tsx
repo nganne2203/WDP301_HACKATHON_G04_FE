@@ -37,6 +37,7 @@ const Results = lazy(async () => ({ default: (await import('@/pages/coordinator/
 const AdminMedia = lazy(async () => ({ default: (await import('@/pages/admin/Media')).AdminMedia }));
 const AdminAuditLogs = lazy(async () => ({ default: (await import('@/pages/admin/AuditLogs')).AdminAuditLogs }));
 const AdminOperations = lazy(async () => ({ default: (await import('@/pages/admin/Operations')).AdminOperations }));
+const AdminRbac = lazy(async () => ({ default: (await import('@/pages/admin/Rbac')).AdminRbac }));
 const JudgeScoring = lazy(async () => ({ default: (await import('@/pages/judge/Scoring')).JudgeScoring }));
 const AdminSettings = lazy(async () => ({ default: (await import('@/pages/admin/Settings')).Settings }));
 const ParticipantDashboard = lazy(async () => ({
@@ -339,6 +340,14 @@ export function AppRouter() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminAuditLogs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/rbac"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminRbac />
               </ProtectedRoute>
             }
           />

@@ -193,6 +193,76 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
           </Button>
         </CardContent>
       </Card>
+
+      <Card className="border-blue-200 bg-blue-50/10">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5 text-blue-600" />
+            Bulk Repository Operations
+          </CardTitle>
+          <CardDescription>
+            Create repositories in bulk (without assigning members), grant access in bulk, or revoke access in bulk for all teams in the event.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-4">
+            <div className="space-y-2 max-w-sm">
+              <Label>Round</Label>
+              <Select value={view.selectedRoundId} onValueChange={view.setSelectedRoundId}>
+                <SelectTrigger><SelectValue placeholder="Select round (optional)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No round</SelectItem>
+                  {view.rounds.map((round) => (
+                    <SelectItem key={round.id} value={round.id}>{round.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button
+                onClick={() => view.bulkCreateRepositoriesMutation.mutate()}
+                disabled={view.bulkCreateRepositoriesMutation.isPending || !view.activeEventId}
+                className="w-full sm:w-auto"
+              >
+                {view.bulkCreateRepositoriesMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Github className="mr-2 h-4 w-4" />
+                )}
+                Bulk Create Repos
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => view.bulkGrantAccessMutation.mutate()}
+                disabled={view.bulkGrantAccessMutation.isPending || !view.activeEventId}
+                className="w-full sm:w-auto border-green-200 hover:bg-green-50 text-green-700"
+              >
+                {view.bulkGrantAccessMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
+                )}
+                Bulk Grant Access
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => view.bulkRevokeAccessMutation.mutate()}
+                disabled={view.bulkRevokeAccessMutation.isPending || !view.activeEventId}
+                className="w-full sm:w-auto border-red-200 hover:bg-red-50 text-red-700"
+              >
+                {view.bulkRevokeAccessMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Github className="mr-2 h-4 w-4 text-red-600" />
+                )}
+                Bulk Revoke Access
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </>
   );
 }

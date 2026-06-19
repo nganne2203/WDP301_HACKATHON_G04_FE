@@ -81,7 +81,7 @@ export function OperationsView() {
     queryFn: async () => operationsApi.getPipelineSummary({ eventId: activeEventId }),
   });
 
-  // BE: { scope, metrics: { participants, teams, submissions, repositories, pendingAiReviews, failedJobs }, queue }
+  // BE: { scope, metrics: { participants, teams, submissions, repositories, pendingAiReviews, failedAiReviews, retryPendingAiReviews, manualRedispatchRequiredAiReviews, failedJobs }, queue }
   const dashboardPayload = dashboardQuery.data?.data as any;
   const m = dashboardPayload?.metrics;
   const queue = dashboardPayload?.queue;
@@ -149,7 +149,11 @@ export function OperationsView() {
               icon={Bot}
               label="Pending AI Reviews"
               value={m.pendingAiReviews ?? '–'}
-              sub={m.fallbackAiReviews ? `${m.fallbackAiReviews} fallback` : undefined}
+              sub={[
+                m.retryPendingAiReviews ? `${m.retryPendingAiReviews} retry pending` : null,
+                m.manualRedispatchRequiredAiReviews ? `${m.manualRedispatchRequiredAiReviews} manual` : null,
+                m.failedAiReviews ? `${m.failedAiReviews} failed` : null,
+              ].filter(Boolean).join(' | ') || undefined}
             />
             <MetricCard
               icon={Server}
