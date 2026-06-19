@@ -16,7 +16,7 @@ import { useState } from 'react';
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Họ và tên phải có ít nhất 2 ký tự').max(120),
   email: z.string().email('Vui lòng nhập email hợp lệ'),
-  githubUsername: z.string()
+  githubUsername: z.string().trim()
     .min(1, 'Vui lòng nhập GitHub username')
     .max(39, 'GitHub username không được vượt quá 39 ký tự')
     .regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/, 'GitHub username không hợp lệ (chỉ gồm chữ, số và dấu gạch ngang)'),

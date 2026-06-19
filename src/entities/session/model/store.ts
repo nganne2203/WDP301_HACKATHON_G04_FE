@@ -136,6 +136,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  githubUsername?: string | null;
   avatar?: string;
   role: UserRole;
 }
