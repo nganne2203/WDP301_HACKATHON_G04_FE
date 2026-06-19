@@ -179,6 +179,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   fullName: string;
+  githubUsername: string;
   studentType: 'FPT' | 'EXTERNAL';
   studentId: string;
   schoolName?: string;
@@ -521,6 +522,7 @@ export interface CreateTeamRequest {
 export interface TeamInviteMember {
   fullName: string;
   email: string;
+  githubUsername: string;
 }
 
 export interface InviteMembersRequest {
@@ -607,6 +609,28 @@ export interface CreateGitHubRepositoryResult {
   cloneUrl?: string;
   visibility?: string;
   webhookRegistration?: RegisterGitHubWebhookResult | null;
+}
+
+export interface BulkCreateGitHubRepositoriesRequest {
+  eventId: string;
+  roundId: string | null;
+  assignCollaborators?: boolean;
+}
+
+export interface BulkCreateGitHubRepositoriesResult {
+  totalTeamsChecked: number;
+  totalReposCreated: number;
+  success: Array<{
+    teamId: string;
+    teamName: string;
+    repoName: string;
+    htmlUrl?: string;
+  }>;
+  failed: Array<{
+    teamId: string;
+    teamName: string;
+    error: string;
+  }>;
 }
 
 export interface AssignGitHubCollaboratorRequest {
@@ -1344,6 +1368,45 @@ export interface CreateJudgingBoardRequest {
 export interface AutoAssignRequest {
   eventId: string;
   roundId: string;
+}
+
+export interface JudgingBoardRandomizationPreviewBoard {
+  boardNumber: number;
+  boardLabel: string;
+  name: string;
+  maxTeams: number;
+  judgeIds: string[];
+  teamIds: string[];
+  teams: Array<{
+    id: string;
+    name: string;
+    chapterName?: string | null;
+    projectName?: string | null;
+    status: string;
+    trackId?: string | null;
+    boardNumber?: number | null;
+    placementSlot?: number | null;
+  }>;
+}
+
+export interface JudgingBoardRandomizationPreview {
+  event: { id: string; title: string } | null;
+  round: { id: string; name: string; roundType: RoundType; status: RoundStatus } | null;
+  boardCount: number;
+  maxTeamsPerBoard: number;
+  eligibleTeamCount: number;
+  ineligibleTeamCount: number;
+  boards: JudgingBoardRandomizationPreviewBoard[];
+}
+
+export interface ConfirmJudgingBoardRandomizationRequest {
+  eventId: string;
+  roundId: string;
+  boards: Array<{
+    boardNumber: number;
+    name: string;
+    teamIds: string[];
+  }>;
 }
 
 export interface UpdateJudgingBoardRequest {

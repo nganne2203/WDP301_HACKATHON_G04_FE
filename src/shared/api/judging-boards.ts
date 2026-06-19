@@ -4,6 +4,8 @@ import type {
   CreateJudgingBoardRequest,
   UpdateJudgingBoardRequest,
   AutoAssignRequest,
+  ConfirmJudgingBoardRandomizationRequest,
+  JudgingBoardRandomizationPreview,
   ListJudgingBoardsQuery,
 } from './types';
 
@@ -16,6 +18,12 @@ export const judgingBoardsApi = {
 
   create: (data: CreateJudgingBoardRequest) =>
     api.post<JudgingBoard>('/judging-boards', data),
+
+  randomizePreview: (data: AutoAssignRequest) =>
+    api.post<JudgingBoardRandomizationPreview>('/judging-boards/randomize-preview', data),
+
+  confirmRandomization: (data: ConfirmJudgingBoardRandomizationRequest) =>
+    api.post<{ boards: JudgingBoard[]; boardCount: number; confirmedTeamCount: number }>('/judging-boards/confirm-randomization', data),
 
   autoAssign: (data: AutoAssignRequest) =>
     api.post<JudgingBoard[]>('/judging-boards/auto-assign', data),

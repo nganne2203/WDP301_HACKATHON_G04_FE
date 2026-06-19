@@ -10,6 +10,7 @@ export function createMemberRow(): MemberInviteRow {
     id: Math.random().toString(36).slice(2),
     fullName: '',
     email: '',
+    githubUsername: '',
   };
 }
 
@@ -18,12 +19,13 @@ export function normalizeMemberRows(rows: MemberInviteRow[], leaderEmail?: strin
     .map((row) => ({
       fullName: row.fullName.trim(),
       email: row.email.trim().toLowerCase(),
+      githubUsername: row.githubUsername.trim()
     }))
-    .filter((row) => row.fullName || row.email);
+    .filter((row) => row.fullName || row.email || row.githubUsername);
 
-  const invalidRow = members.find((member) => !member.fullName || !member.email);
+  const invalidRow = members.find((member) => !member.fullName || !member.email || !member.githubUsername);
   if (invalidRow) {
-    throw new Error('Each invited member must include both name and email.');
+    throw new Error('Each invited member must include name, email, and GitHub username.');
   }
 
   const normalizedLeaderEmail = leaderEmail?.trim().toLowerCase();
@@ -71,7 +73,7 @@ export function statusBadgeVariant(status: string): BadgeVariant {
 export function updateMemberRow(
   setRows: Dispatch<SetStateAction<MemberInviteRow[]>>,
   id: string,
-  field: 'fullName' | 'email',
+  field: 'fullName' | 'email' | 'githubUsername',
   value: string
 ) {
   setRows((current) => current.map((row) => (row.id === id ? { ...row, [field]: value } : row)));

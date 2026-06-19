@@ -2,7 +2,7 @@ import { useNavigate, Link } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Award, Mail, Lock, User, Loader2, GraduationCap, IdCard } from 'lucide-react';
+import { Award, Mail, Lock, User, Loader2, GraduationCap, IdCard, Github } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
@@ -16,6 +16,10 @@ import { useState } from 'react';
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Họ và tên phải có ít nhất 2 ký tự').max(120),
   email: z.string().email('Vui lòng nhập email hợp lệ'),
+  githubUsername: z.string()
+    .min(1, 'Vui lòng nhập GitHub username')
+    .max(39, 'GitHub username không được vượt quá 39 ký tự')
+    .regex(/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/, 'GitHub username không hợp lệ (chỉ gồm chữ, số và dấu gạch ngang)'),
   password: z.string()
     .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
     .max(128),
@@ -63,6 +67,7 @@ export function Register() {
         email: data.email,
         password: data.password,
         fullName: data.fullName,
+        githubUsername: data.githubUsername,
         studentType: data.studentType,
         studentId: data.studentId,
         schoolName: data.studentType === 'EXTERNAL' ? data.schoolName : undefined,
@@ -146,6 +151,23 @@ export function Register() {
                 </div>
                 {errors.email && (
                   <p className="text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="githubUsername">GitHub Username</Label>
+                <div className="relative">
+                  <Github className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="githubUsername"
+                    type="text"
+                    placeholder="Username trên GitHub"
+                    className="pl-9"
+                    {...register('githubUsername')}
+                  />
+                </div>
+                {errors.githubUsername && (
+                  <p className="text-sm text-red-600">{errors.githubUsername.message}</p>
                 )}
               </div>
 
