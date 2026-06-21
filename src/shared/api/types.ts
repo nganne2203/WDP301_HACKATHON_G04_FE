@@ -201,6 +201,7 @@ export interface ChangePasswordRequest {
 export type EventStatus =
   | 'DRAFT'
   | 'OPEN_REGISTRATION'
+  | 'REGISTRATION_CLOSED'
   | 'ONGOING'
   | 'SCORING'
   | 'COMPLETED'
@@ -223,6 +224,8 @@ export interface Event {
   theme?: string | null;
   registrationStart?: string | null;
   registrationEnd?: string | null;
+  registrationClosedAt?: string | null;
+  registrationCloseReason?: 'CAPACITY_REACHED' | 'REGISTRATION_ENDED' | 'MANUALLY_CLOSED' | null;
   startDate?: string | null;
   endDate?: string | null;
   maxTeams?: number;
@@ -442,6 +445,8 @@ export interface TeamEventSummary {
   status: EventStatus;
   registrationStart?: string | null;
   registrationEnd?: string | null;
+  registrationClosedAt?: string | null;
+  registrationCloseReason?: 'CAPACITY_REACHED' | 'REGISTRATION_ENDED' | 'MANUALLY_CLOSED' | null;
   minTeamMembers?: number;
   maxTeamMembers?: number;
   maxTeams?: number;

@@ -4,6 +4,7 @@ import type { CreateEventRequest, Event, EventStatus } from '@/shared/api/types'
 export const eventStatusOptions: { value: EventStatus; label: string }[] = [
   { value: 'DRAFT', label: 'Draft' },
   { value: 'OPEN_REGISTRATION', label: 'Open Registration' },
+  { value: 'REGISTRATION_CLOSED', label: 'Registration Closed' },
   { value: 'ONGOING', label: 'Ongoing' },
   { value: 'SCORING', label: 'Scoring' },
   { value: 'COMPLETED', label: 'Completed' },

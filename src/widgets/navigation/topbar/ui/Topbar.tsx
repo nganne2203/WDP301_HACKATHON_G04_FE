@@ -8,6 +8,7 @@ import { useStore } from '@/entities/session/model/store';
 import { useLogoutMutation } from '@/hooks/mutations/useAuthMutations';
 import { Badge } from '@/shared/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import type { EventStatus } from '@/shared/api/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
+
+const eventStatusMeta: Record<EventStatus, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+  DRAFT: { label: 'Draft', variant: 'secondary' },
+  OPEN_REGISTRATION: { label: 'Open Registration', variant: 'default' },
+  REGISTRATION_CLOSED: { label: 'Registration Closed', variant: 'secondary' },
+  ONGOING: { label: 'Ongoing', variant: 'default' },
+  SCORING: { label: 'Scoring', variant: 'outline' },
+  COMPLETED: { label: 'Completed', variant: 'outline' },
+  ARCHIVED: { label: 'Archived', variant: 'secondary' },
+};
 
 export const Topbar = memo(function Topbar() {
   const toggleSidebar = useStore((state) => state.toggleSidebar);
@@ -33,6 +44,7 @@ export const Topbar = memo(function Topbar() {
   const displayName = user?.fullName || 'User';
   const displayEmail = user?.email || '';
   const displayRole = getRoleLabel(appRole);
+  const selectedEventStatus = selectedEvent ? eventStatusMeta[selectedEvent.status as EventStatus] : null;
 
   const initials = useMemo(
     () =>
@@ -58,8 +70,8 @@ export const Topbar = memo(function Topbar() {
               <h2 className="text-sm font-semibold">{selectedEvent.title}</h2>
               <p className="text-xs text-muted-foreground">{selectedEvent.semester}</p>
             </div>
-            <Badge variant={selectedEvent.status === 'ONGOING' || selectedEvent.status === 'ongoing' ? 'default' : 'secondary'}>
-              {selectedEvent.status.replace('_', ' ')}
+            <Badge variant={selectedEventStatus?.variant || 'secondary'}>
+              {selectedEventStatus?.label || selectedEvent.status.replaceAll('_', ' ')}
             </Badge>
           </div>
         )}
