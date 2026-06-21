@@ -40,15 +40,28 @@ function statusBadgeVariant(status: string): BadgeVariant {
   return 'secondary';
 }
 
+function getConfirmedMemberCount(team: Team) {
+  const activeParticipants = team.participants.filter((participant) => participant.status === 'ACTIVE');
+  return activeParticipants.length || team.members.length;
+}
+
+function getTotalMemberCount(team: Team) {
+  return team.participants.length || team.members.length;
+}
+
 function TeamDetail({ team }: { team: Team }) {
+  const confirmedMemberCount = getConfirmedMemberCount(team);
+  const totalMemberCount = getTotalMemberCount(team);
+
   return (
-    <div className="space-y-6 mt-6">
+    <div className="mt-6 space-y-6 px-1 pb-6">
       <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 border rounded-md">
+        <div className="rounded-md border p-4">
           <p className="text-xs text-muted-foreground">Confirmed members</p>
-          <p className="text-lg font-semibold">{team.members.length}</p>
+          <p className="text-lg font-semibold">{confirmedMemberCount}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{totalMemberCount} total member(s)</p>
         </div>
-        <div className="p-3 border rounded-md">
+        <div className="rounded-md border p-4">
           <p className="text-xs text-muted-foreground">Pending invites</p>
           <p className="text-lg font-semibold">
             {team.invitations.filter((invitation) => invitation.status === 'PENDING').length}
@@ -60,7 +73,7 @@ function TeamDetail({ team }: { team: Team }) {
         <h3 className="text-sm font-medium mb-3">Members</h3>
         <div className="space-y-2">
           {team.participants.map((participant) => (
-            <div key={participant.id} className="flex items-center gap-3 p-3 border rounded-md">
+            <div key={participant.id} className="flex items-center gap-3 rounded-md border px-4 py-3">
               <Avatar className="w-9 h-9">
                 <AvatarFallback className="bg-blue-100 text-blue-700 text-sm">
                   {getInitials(participant.user?.fullName || participant.user?.email)}
@@ -70,6 +83,7 @@ function TeamDetail({ team }: { team: Team }) {
                 <p className="text-sm font-medium truncate">{participant.user?.fullName || participant.user?.email}</p>
                 <p className="text-xs text-muted-foreground truncate">{participant.user?.email}</p>
               </div>
+              <Badge variant={statusBadgeVariant(participant.status)}>{participant.status}</Badge>
               {participant.teamRole === 'LEADER' && <Crown className="w-4 h-4 text-yellow-500" />}
             </div>
           ))}
@@ -80,10 +94,10 @@ function TeamDetail({ team }: { team: Team }) {
         <h3 className="text-sm font-medium mb-3">Invitations</h3>
         <div className="space-y-2">
           {team.invitations.length === 0 && (
-            <p className="text-sm text-muted-foreground">No invitations recorded.</p>
+            <p className="rounded-md border border-dashed px-4 py-3 text-sm text-muted-foreground">No invitations recorded.</p>
           )}
           {team.invitations.map((invitation) => (
-            <div key={invitation.id} className="flex items-center justify-between gap-3 p-3 border rounded-md">
+            <div key={invitation.id} className="flex items-center justify-between gap-3 rounded-md border px-4 py-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{invitation.invitedEmail}</p>
                 <p className="text-xs text-muted-foreground">Expires {new Date(invitation.expiresAt).toLocaleString()}</p>
@@ -196,20 +210,20 @@ export function Teams() {
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="w-4 h-4 text-muted-foreground" />
-                    <span>{team.members.length} confirmed member(s)</span>
+                    <span>{getConfirmedMemberCount(team)} confirmed of {getTotalMemberCount(team)} member(s)</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <span>{team.invitations.filter((invitation) => invitation.status === 'PENDING').length} pending invite(s)</span>
                   </div>
                   <div className="pt-2">
-                    <Progress value={Math.min((team.members.length / (team.event?.minTeamMembers || 3)) * 100, 100)} />
+                    <Progress value={Math.min((getConfirmedMemberCount(team) / (team.event?.minTeamMembers || 3)) * 100, 100)} />
                   </div>
                 </CardContent>
               </Card>
             </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-              <SheetHeader>
+            <SheetContent className="w-full overflow-y-auto px-6 sm:max-w-xl">
+              <SheetHeader className="pr-8">
                 <SheetTitle>{team.name}</SheetTitle>
                 <SheetDescription>
                   Review confirmed members, pending invitations, and team capacity for this team.

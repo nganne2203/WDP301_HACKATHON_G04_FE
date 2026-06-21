@@ -28,9 +28,13 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
           {view.config?.enabled ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Github className="h-4 w-4" />}
           <AlertTitle>{view.config?.enabled ? 'GitHub integration enabled' : 'GitHub integration disabled'}</AlertTitle>
           <AlertDescription>
-            Organization: <strong>{view.config?.organizationName || 'Not configured'}</strong>
-            {' '}• Token: <strong>{view.config?.hasToken ? 'Configured' : 'Missing'}</strong>
-            {' '}• Event: <strong>{view.activeEvent?.title || 'No event selected'}</strong>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+              <span>Organization: <strong>{view.config?.organizationName || 'Not configured'}</strong></span>
+              <span className="text-muted-foreground/60">•</span>
+              <span>Token: <strong>{view.config?.hasToken ? 'Configured' : 'Missing'}</strong></span>
+              <span className="text-muted-foreground/60">•</span>
+              <span>Event: <strong>{view.activeEvent?.title || 'No event selected'}</strong></span>
+            </div>
           </AlertDescription>
         </Alert>
       )}

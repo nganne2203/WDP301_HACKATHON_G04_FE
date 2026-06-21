@@ -30,7 +30,7 @@ export const repositoriesApi = {
     api.patch<Repository>(`/repositories/${id}`, data),
 
   listCommits: (id: string, page = 1, limit = 20) =>
-    api.get<RepositoryCommit[]>(`/repositories/${id}/commits`, {
+    api.get<{ repository: Repository | null; commits: RepositoryCommit[] }>(`/repositories/${id}/commits`, {
       params: { page, limit },
     }),
 
