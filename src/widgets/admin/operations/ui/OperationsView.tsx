@@ -8,7 +8,6 @@ import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import type { StatusCount } from '@/shared/api/types';
@@ -100,21 +99,18 @@ export function OperationsView() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold mb-1 flex items-center gap-2">
-          <Server className="h-6 w-6" />
-          Operations Console
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Repository pipeline health, AI review status, and job monitoring.
-        </p>
-      </div>
-
-      {/* Event selector */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="max-w-sm space-y-2">
-            <Label>Event scope</Label>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold mb-1 flex items-center gap-2">
+            <Server className="h-6 w-6" />
+            Operations Console
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Repository pipeline health, AI review status, and job monitoring.
+          </p>
+        </div>
+        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+          <div className="w-full sm:w-80">
             {eventsQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading events…</p>
             ) : (
@@ -130,8 +126,8 @@ export function OperationsView() {
               </Select>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Dashboard metrics */}
       {dashboardQuery.isLoading ? (
