@@ -3,7 +3,7 @@ import { useNavigate, Link, Navigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Award, Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2 } from 'lucide-react';
 import { ForgotPasswordDialog } from '@/features/auth/forgot-password/ui/ForgotPasswordDialog';
 import { GoogleLoginButton } from '@/features/auth/google-login/ui/GoogleLoginButton';
 import { resolveHomePathForUser } from '@/entities/session/lib/navigation';
@@ -88,8 +88,12 @@ export function Login() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center mb-4 shadow-lg">
-            <Award className="w-10 h-10 text-white" />
+          <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-[1.6rem] bg-black shadow-[0_18px_38px_rgba(0,0,0,0.24)]">
+            <img
+              src="/assets/Logo1.png"
+              alt="SEAL logo"
+              className="h-[4.5rem] w-[4.5rem] scale-150 object-contain"
+            />
           </div>
           <h1 className="text-3xl font-semibold text-gray-900">Welcome to SEAL</h1>
           <p className="text-gray-600 text-center mt-2">
