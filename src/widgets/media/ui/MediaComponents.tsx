@@ -1,9 +1,11 @@
 import {
+  Check,
   Download,
   Eye,
   FileText,
   ImageIcon,
   Loader2,
+  X,
   Trash2,
   Video,
   XCircle,
@@ -22,6 +24,7 @@ import {
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Textarea } from '@/shared/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -254,23 +257,43 @@ export function MediaHistoryTable({
               <TableCell>{formatDate(media.uploadedAt)}</TableCell>
               <TableCell>
                 <div className="flex justify-end gap-2">
-                  <Button size="icon" variant="outline" onClick={() => onView(media)}>
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button size="icon" variant="outline" onClick={() => onView(media)}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent sideOffset={6}>View media</TooltipContent>
+                  </Tooltip>
                   {onApprove && media.status !== 'APPROVED' && (
-                    <Button size="sm" variant="outline" onClick={() => onApprove(media)}>
-                      Approve
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="outline" onClick={() => onApprove(media)}>
+                          <Check className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent sideOffset={6}>Approve</TooltipContent>
+                    </Tooltip>
                   )}
                   {onReject && media.status !== 'REJECTED' && (
-                    <Button size="sm" variant="outline" onClick={() => onReject(media)}>
-                      Reject
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="outline" onClick={() => onReject(media)}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent sideOffset={6}>Reject</TooltipContent>
+                    </Tooltip>
                   )}
                   {onDelete && (
-                    <Button size="icon" variant="outline" onClick={() => onDelete(media)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="outline" onClick={() => onDelete(media)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent sideOffset={6}>Delete media</TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
               </TableCell>

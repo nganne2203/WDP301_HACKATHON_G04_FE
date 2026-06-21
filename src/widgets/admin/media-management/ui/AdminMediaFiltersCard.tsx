@@ -18,20 +18,10 @@ export function AdminMediaFiltersCard({
   setMediaType,
   status,
   setStatus,
-  uploadedBy,
-  setUploadedBy,
-  teamId,
-  setTeamId,
   fromDate,
   setFromDate,
   toDate,
   setToDate,
-  year,
-  setYear,
-  week,
-  setWeek,
-  month,
-  setMonth,
   mediaLoading,
   mediaItems,
   onView,
@@ -55,20 +45,10 @@ export function AdminMediaFiltersCard({
   setMediaType: (value: string) => void;
   status: string;
   setStatus: (value: string) => void;
-  uploadedBy: string;
-  setUploadedBy: (value: string) => void;
-  teamId: string;
-  setTeamId: (value: string) => void;
   fromDate: string;
   setFromDate: (value: string) => void;
   toDate: string;
   setToDate: (value: string) => void;
-  year: string;
-  setYear: (value: string) => void;
-  week: string;
-  setWeek: (value: string) => void;
-  month: string;
-  setMonth: (value: string) => void;
   mediaLoading: boolean;
   mediaItems: MediaItem[];
   onView: (media: MediaItem) => void;
@@ -107,7 +87,7 @@ export function AdminMediaFiltersCard({
           <CardDescription>Filter and moderate all event media.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
             <Select value={eventId} onValueChange={(value) => { setEventId(value); resetPage(); }}>
               <SelectTrigger><SelectValue placeholder="Event" /></SelectTrigger>
               <SelectContent>
@@ -131,13 +111,8 @@ export function AdminMediaFiltersCard({
                 {mediaStatuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Input placeholder="Uploader ID" value={uploadedBy} onChange={(event) => { setUploadedBy(event.target.value); resetPage(); }} />
-            <Input placeholder="Team ID" value={teamId} onChange={(event) => { setTeamId(event.target.value); resetPage(); }} />
             <Input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); resetPage(); }} />
             <Input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); resetPage(); }} />
-            <Input type="number" placeholder="Year" value={year} onChange={(event) => { setYear(event.target.value); resetPage(); }} />
-            <Input type="number" min={1} max={53} placeholder="Week" value={week} onChange={(event) => { setWeek(event.target.value); resetPage(); }} />
-            <Input type="number" min={1} max={12} placeholder="Month" value={month} onChange={(event) => { setMonth(event.target.value); resetPage(); }} />
           </div>
 
           {mediaLoading ? (
