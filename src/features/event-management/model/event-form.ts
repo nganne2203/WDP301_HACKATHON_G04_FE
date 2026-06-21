@@ -17,6 +17,21 @@ export const eventFormSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   status: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.startDate || !data.endDate) return;
+
+  const start = new Date(data.startDate);
+  const end = new Date(data.endDate);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+
+  if (end < start) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['endDate'],
+      message: 'End date cannot be earlier than start date',
+    });
+  }
 });
 
 export type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -68,4 +83,12 @@ export function formatEventDate(dateStr?: string | null) {
 
 export function mapEventStatus(status: EventStatus) {
   return status.toLowerCase();
+}
+
+export function getTodayDateInputValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
