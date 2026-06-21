@@ -1012,7 +1012,7 @@ export interface ListTracksQuery {
 // Participant Types
 // ============================================================
 
-export type ParticipantStatus = 'INVITED' | 'REGISTERED' | 'ACTIVE' | 'WITHDRAWN';
+export type ParticipantStatus = 'INVITED' | 'ACTIVE' | 'WITHDRAWN';
 export type CheckInStatus = 'NOT_CHECKED_IN' | 'CHECKED_IN';
 export type GitHubAccessStatus = 'NOT_GRANTED' | 'GRANTED' | 'REVOKED';
 export type EligibilityStatus = 'PENDING' | 'ELIGIBLE' | 'INELIGIBLE';
