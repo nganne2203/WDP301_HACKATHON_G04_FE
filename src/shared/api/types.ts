@@ -1052,11 +1052,20 @@ export interface Participant {
   eligibilityStatus: EligibilityStatus;
   attendedActivities: AttendedActivity[];
   checkInStatus: CheckInStatus;
+  checkedInAt?: string | null;
+  checkedInBy?: string | null;
   githubAccessStatus: GitHubAccessStatus;
   status: ParticipantStatus;
   joinedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CheckInQr {
+  eventId: string;
+  qrCodeDataUrl: string;
+  qrPayload: string;
+  expiresAt: string;
 }
 
 export interface CreateParticipantRequest {
