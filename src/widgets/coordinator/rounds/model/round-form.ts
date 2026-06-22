@@ -55,6 +55,52 @@ function normalizeText(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+export function getCurrentDateTimeLocalInputValue() {
+  const now = new Date();
+  const timezoneOffset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 16);
+}
+
+function toComparableDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function validateRoundSchedule(form: RoundFormState) {
+  const now = toComparableDate(getCurrentDateTimeLocalInputValue());
+  const timeFields = [
+    { key: 'startTime', label: 'Start time', value: form.startTime },
+    { key: 'endTime', label: 'End time', value: form.endTime },
+    { key: 'submissionDeadline', label: 'Submission deadline', value: form.submissionDeadline },
+    { key: 'publishTime', label: 'Publish time', value: form.publishTime },
+  ] as const;
+
+  for (const field of timeFields) {
+    if (!field.value) continue;
+    const parsed = toComparableDate(field.value);
+    if (!parsed) continue;
+    if (now && parsed < now) {
+      throw new ApiError({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: `${field.label} cannot be in the past`,
+        errors: [`${field.label} cannot be in the past`],
+      }, 400);
+    }
+  }
+
+  const start = toComparableDate(form.startTime);
+  const end = toComparableDate(form.endTime);
+  if (start && end && end < start) {
+    throw new ApiError({
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: 'End time cannot be earlier than start time',
+      errors: ['End time cannot be earlier than start time'],
+    }, 400);
+  }
+}
+
 export function formatDateTimeInput(value?: string | null) {
   if (!value) return '';
   const date = new Date(value);
@@ -88,6 +134,8 @@ export function mapRoundToForm(round: Round): RoundFormState {
 }
 
 export function buildCreateRoundPayload(form: RoundFormState, eventId: string): CreateRoundRequest {
+  validateRoundSchedule(form);
+
   return {
     eventId,
     name: form.name.trim(),
@@ -109,6 +157,8 @@ export function buildCreateRoundPayload(form: RoundFormState, eventId: string): 
 }
 
 export function buildUpdateRoundPayload(form: RoundFormState): UpdateRoundRequest {
+  validateRoundSchedule(form);
+
   return {
     name: form.name.trim(),
     roundType: form.roundType,

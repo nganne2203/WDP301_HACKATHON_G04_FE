@@ -127,6 +127,7 @@ export interface User {
   avatarUrl?: string | null;
   phone?: string | null;
   bio?: string | null;
+  githubUsername?: string | null;
   studentType?: 'FPT' | 'EXTERNAL' | null;
   studentId?: string | null;
   schoolName?: string | null;
@@ -201,6 +202,7 @@ export interface ChangePasswordRequest {
 export type EventStatus =
   | 'DRAFT'
   | 'OPEN_REGISTRATION'
+  | 'REGISTRATION_CLOSED'
   | 'ONGOING'
   | 'SCORING'
   | 'COMPLETED'
@@ -223,6 +225,8 @@ export interface Event {
   theme?: string | null;
   registrationStart?: string | null;
   registrationEnd?: string | null;
+  registrationClosedAt?: string | null;
+  registrationCloseReason?: 'CAPACITY_REACHED' | 'REGISTRATION_ENDED' | 'MANUALLY_CLOSED' | null;
   startDate?: string | null;
   endDate?: string | null;
   maxTeams?: number;
@@ -432,6 +436,7 @@ export interface TeamUserSummary {
   id: string;
   email: string;
   fullName?: string;
+  githubUsername?: string | null;
   status?: UserStatus;
   mustChangePassword?: boolean;
 }
@@ -442,6 +447,8 @@ export interface TeamEventSummary {
   status: EventStatus;
   registrationStart?: string | null;
   registrationEnd?: string | null;
+  registrationClosedAt?: string | null;
+  registrationCloseReason?: 'CAPACITY_REACHED' | 'REGISTRATION_ENDED' | 'MANUALLY_CLOSED' | null;
   minTeamMembers?: number;
   maxTeamMembers?: number;
   maxTeams?: number;
@@ -931,6 +938,7 @@ export interface CreateUserRequest {
   avatarUrl?: string;
   phone?: string;
   bio?: string;
+  githubUsername?: string;
   studentType?: 'FPT' | 'EXTERNAL';
   studentId?: string;
   schoolName?: string;
@@ -941,6 +949,7 @@ export interface UpdateProfileRequest {
   avatarUrl?: string | null;
   phone?: string | null;
   bio?: string | null;
+  githubUsername?: string | null;
 }
 
 export interface UpdateUserStatusRequest {
@@ -1007,7 +1016,7 @@ export interface ListTracksQuery {
 // Participant Types
 // ============================================================
 
-export type ParticipantStatus = 'INVITED' | 'REGISTERED' | 'ACTIVE' | 'WITHDRAWN';
+export type ParticipantStatus = 'INVITED' | 'ACTIVE' | 'WITHDRAWN';
 export type CheckInStatus = 'NOT_CHECKED_IN' | 'CHECKED_IN';
 export type GitHubAccessStatus = 'NOT_GRANTED' | 'GRANTED' | 'REVOKED';
 export type EligibilityStatus = 'PENDING' | 'ELIGIBLE' | 'INELIGIBLE';
@@ -1019,6 +1028,7 @@ export interface ParticipantUserSummary {
   fullName?: string;
   email?: string;
   avatarUrl?: string | null;
+  githubUsername?: string | null;
   studentId?: string | null;
   studentType?: 'FPT' | 'EXTERNAL' | null;
   schoolName?: string | null;
@@ -1144,6 +1154,7 @@ export interface UserSummary {
   id: string;
   fullName?: string;
   email?: string;
+  githubUsername?: string | null;
 }
 
 export interface EventSummary {

@@ -1,6 +1,6 @@
 import type { UseFormReturn } from 'react-hook-form';
 
-import { eventStatusOptions, type EventFormValues } from '@/features/event-management/model/event-form';
+import { eventStatusOptions, getTodayDateInputValue, type EventFormValues } from '@/features/event-management/model/event-form';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -15,6 +15,7 @@ export function EventForm({
   pendingLabel,
   onCancel,
   prefix,
+  allowPastDates = false,
 }: {
   form: UseFormReturn<EventFormValues>;
   onSubmit: (data: EventFormValues) => void;
@@ -23,7 +24,13 @@ export function EventForm({
   pendingLabel: string;
   onCancel: () => void;
   prefix: string;
+  allowPastDates?: boolean;
 }) {
+  const today = getTodayDateInputValue();
+  const startDate = form.watch('startDate');
+  const minStartDate = allowPastDates ? undefined : today;
+  const minEndDate = startDate || minStartDate;
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
       <div className="grid grid-cols-2 gap-4">
@@ -53,11 +60,17 @@ export function EventForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor={`${prefix}-startDate`}>Start Date</Label>
-          <Input id={`${prefix}-startDate`} type="date" {...form.register('startDate')} />
+          <Input id={`${prefix}-startDate`} type="date" min={minStartDate} {...form.register('startDate')} />
+          {form.formState.errors.startDate && (
+            <p className="text-sm text-red-600">{form.formState.errors.startDate.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${prefix}-endDate`}>End Date</Label>
-          <Input id={`${prefix}-endDate`} type="date" {...form.register('endDate')} />
+          <Input id={`${prefix}-endDate`} type="date" min={minEndDate} {...form.register('endDate')} />
+          {form.formState.errors.endDate && (
+            <p className="text-sm text-red-600">{form.formState.errors.endDate.message}</p>
+          )}
         </div>
       </div>
 

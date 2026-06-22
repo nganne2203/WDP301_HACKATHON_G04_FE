@@ -58,7 +58,7 @@ export function RepositoryDetailDialog({
 
   if (!repository) return null;
 
-  const commits = commitsQuery.data || [];
+  const commits = commitsQuery.data?.commits || [];
   const diffs = diffQuery.data || [];
   const analyses = analysisQuery.data || [];
   const impacts = impactQuery.data || [];
@@ -66,14 +66,14 @@ export function RepositoryDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Github className="w-5 h-5" />
             {repository.repositoryFullName}
           </DialogTitle>
           <DialogDescription>
-            Theo dõi webhook, commit evidence, phân tích tĩnh và AI review của repository này.
+            Monitor webhook status, commit evidence, static analysis, and AI reviews for this repository.
           </DialogDescription>
         </DialogHeader>
 
@@ -81,11 +81,11 @@ export function RepositoryDetailDialog({
           <div className="rounded-lg border p-3">
             <p className="text-sm text-muted-foreground">Team</p>
             <p className="font-medium">{repository.team?.name || '-'}</p>
-            <p className="text-xs text-muted-foreground">{repository.team?.projectName || 'Chưa có project name'}</p>
+            <p className="text-xs text-muted-foreground">{repository.team?.projectName || 'No project name'}</p>
           </div>
           <div className="rounded-lg border p-3">
             <p className="text-sm text-muted-foreground">Round</p>
-            <p className="font-medium">{repository.round?.name || 'Chưa gắn round'}</p>
+            <p className="font-medium">{repository.round?.name || 'No round assigned'}</p>
             <p className="text-xs text-muted-foreground">{repository.defaultBranch}</p>
           </div>
           <div className="rounded-lg border p-3">
@@ -111,17 +111,18 @@ export function RepositoryDetailDialog({
             <TabsTrigger value="ai">AI Reviews</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="commits" className="space-y-3 pt-3">
+          <div className="min-h-[350px]">
+            <TabsContent value="commits" className="space-y-3 pt-3">
             {commitsQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Đang tải commit evidence</AlertTitle>
-                <AlertDescription>Đang đọc danh sách commit mới nhất từ backend.</AlertDescription>
+                <AlertTitle>Loading commit evidence</AlertTitle>
+                <AlertDescription>Fetching the latest commits from the backend.</AlertDescription>
               </Alert>
             ) : commits.length === 0 ? (
               <Alert>
-                <AlertTitle>Chưa có commit evidence</AlertTitle>
-                <AlertDescription>Repository này chưa sync commit về hệ thống.</AlertDescription>
+                <AlertTitle>No commit evidence available</AlertTitle>
+                <AlertDescription>This repository has not synced commits to the system yet.</AlertDescription>
               </Alert>
             ) : (
               commits.map((commit) => (
@@ -133,7 +134,7 @@ export function RepositoryDetailDialog({
                   <p className="text-sm text-muted-foreground">
                     {commit.authorName || commit.authorUsername || 'Unknown'} • {formatDate(commit.timestamp)}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">
                     +{commit.linesAdded} / -{commit.linesRemoved} • {commit.filesChanged} files
                   </p>
                 </div>
@@ -145,13 +146,13 @@ export function RepositoryDetailDialog({
             {diffQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Đang tải diff evidence</AlertTitle>
-                <AlertDescription>Backend đang trả về các diff mới nhất của repository.</AlertDescription>
+                <AlertTitle>Loading diff evidence</AlertTitle>
+                <AlertDescription>The backend is fetching the latest diffs for this repository.</AlertDescription>
               </Alert>
             ) : diffs.length === 0 ? (
               <Alert>
-                <AlertTitle>Chưa có diff evidence</AlertTitle>
-                <AlertDescription>Hãy sync commits hoặc đợi webhook xử lý thêm.</AlertDescription>
+                <AlertTitle>No diff evidence available</AlertTitle>
+                <AlertDescription>Please sync commits or wait for webhooks to process.</AlertDescription>
               </Alert>
             ) : (
               diffs.map((diff) => (
@@ -181,13 +182,13 @@ export function RepositoryDetailDialog({
             {analysisQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Đang tải static analysis</AlertTitle>
-                <AlertDescription>Đang đọc kết quả phân tích tĩnh gần nhất.</AlertDescription>
+                <AlertTitle>Loading static analysis</AlertTitle>
+                <AlertDescription>Fetching the latest static analysis results.</AlertDescription>
               </Alert>
             ) : analyses.length === 0 ? (
               <Alert>
-                <AlertTitle>Chưa có static analysis</AlertTitle>
-                <AlertDescription>Chưa có bản ghi phân tích nào cho repository này.</AlertDescription>
+                <AlertTitle>No static analysis results</AlertTitle>
+                <AlertDescription>No analysis records found for this repository.</AlertDescription>
               </Alert>
             ) : (
               analyses.map((item) => (
@@ -209,13 +210,13 @@ export function RepositoryDetailDialog({
             {impactQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Đang tải impact decisions</AlertTitle>
-                <AlertDescription>Đang đọc đánh giá mức độ ảnh hưởng của các commit.</AlertDescription>
+                <AlertTitle>Loading impact decisions</AlertTitle>
+                <AlertDescription>Fetching commit impact evaluations.</AlertDescription>
               </Alert>
             ) : impacts.length === 0 ? (
               <Alert>
-                <AlertTitle>Chưa có impact decision</AlertTitle>
-                <AlertDescription>Chưa có dữ liệu impact cho repository này.</AlertDescription>
+                <AlertTitle>No impact decisions</AlertTitle>
+                <AlertDescription>No impact data found for this repository.</AlertDescription>
               </Alert>
             ) : (
               impacts.map((item) => (
@@ -229,7 +230,7 @@ export function RepositoryDetailDialog({
                   <p className="text-sm text-muted-foreground">
                     Decision: {item.decision} • Score: {item.impactScore}
                   </p>
-                  <p className="text-xs text-muted-foreground">{item.reasons.join(', ') || 'Không có reasons'}</p>
+                  <p className="text-xs text-muted-foreground">{item.reasons.join(', ') || 'No reasons provided'}</p>
                 </div>
               ))
             )}
@@ -239,13 +240,13 @@ export function RepositoryDetailDialog({
             {reviewsQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Đang tải AI reviews</AlertTitle>
-                <AlertDescription>Đang đọc lịch sử AI audit của repository.</AlertDescription>
+                <AlertTitle>Loading AI reviews</AlertTitle>
+                <AlertDescription>Fetching the repository's AI audit history.</AlertDescription>
               </Alert>
             ) : aiReviews.length === 0 ? (
               <Alert>
-                <AlertTitle>Chưa có AI review</AlertTitle>
-                <AlertDescription>Repository này chưa có per-push hoặc aggregate audit.</AlertDescription>
+                <AlertTitle>No AI reviews</AlertTitle>
+                <AlertDescription>This repository does not have any per-push or aggregate audits yet.</AlertDescription>
               </Alert>
             ) : (
               aiReviews.map((review) => (
@@ -256,7 +257,7 @@ export function RepositoryDetailDialog({
                       {review.status}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{review.summary || 'Chưa có summary.'}</p>
+                  <p className="text-sm text-muted-foreground">{review.summary || 'No summary available.'}</p>
                   <p className="text-xs text-muted-foreground">
                     {review.modelName || 'Unknown model'} • {formatDate(review.completedAt || review.requestedAt)}
                   </p>
@@ -264,7 +265,8 @@ export function RepositoryDetailDialog({
               ))
             )}
           </TabsContent>
-        </Tabs>
+        </div>
+      </Tabs>
       </DialogContent>
     </Dialog>
   );
