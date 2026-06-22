@@ -66,6 +66,7 @@ export function Events() {
               pendingLabel="Creating..."
               onCancel={() => view.openCreateDialog(false)}
               prefix="create"
+              allowPastDates={false}
             />
           </DialogContent>
         </Dialog>
@@ -176,6 +177,7 @@ export function Events() {
               pendingLabel="Saving..."
               onCancel={() => view.setEditOpen(false)}
               prefix="edit"
+              allowPastDates
             />
           )}
         </DialogContent>

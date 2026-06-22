@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/shared/ui/textarea';
 
 import {
+  getCurrentDateTimeLocalInputValue,
   roundStatusOptions,
   roundTypeOptions,
   toggleId,
@@ -30,6 +31,8 @@ export function RoundForm({
   teams: Team[];
   judges: User[];
 }) {
+  const now = getCurrentDateTimeLocalInputValue();
+
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -98,10 +101,34 @@ export function RoundForm({
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <DateTimeField id="round-start" label="Start Time" value={form.startTime} onChange={(value) => onChange((current) => ({ ...current, startTime: value }))} />
-        <DateTimeField id="round-end" label="End Time" value={form.endTime} onChange={(value) => onChange((current) => ({ ...current, endTime: value }))} />
-        <DateTimeField id="round-deadline" label="Submission Deadline" value={form.submissionDeadline} onChange={(value) => onChange((current) => ({ ...current, submissionDeadline: value }))} />
-        <DateTimeField id="round-publish" label="Publish Time" value={form.publishTime} onChange={(value) => onChange((current) => ({ ...current, publishTime: value }))} />
+        <DateTimeField
+          id="round-start"
+          label="Start Time"
+          value={form.startTime}
+          min={now}
+          onChange={(value) => onChange((current) => ({ ...current, startTime: value }))}
+        />
+        <DateTimeField
+          id="round-end"
+          label="End Time"
+          value={form.endTime}
+          min={form.startTime || now}
+          onChange={(value) => onChange((current) => ({ ...current, endTime: value }))}
+        />
+        <DateTimeField
+          id="round-deadline"
+          label="Submission Deadline"
+          value={form.submissionDeadline}
+          min={now}
+          onChange={(value) => onChange((current) => ({ ...current, submissionDeadline: value }))}
+        />
+        <DateTimeField
+          id="round-publish"
+          label="Publish Time"
+          value={form.publishTime}
+          min={form.endTime || now}
+          onChange={(value) => onChange((current) => ({ ...current, publishTime: value }))}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -149,17 +176,19 @@ function DateTimeField({
   id,
   label,
   value,
+  min,
   onChange,
 }: {
   id: string;
   label: string;
   value: string;
+  min?: string;
   onChange: (value: string) => void;
 }) {
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type="datetime-local" value={value} onChange={(event) => onChange(event.target.value)} />
+      <Input id={id} type="datetime-local" value={value} min={min} onChange={(event) => onChange(event.target.value)} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { cn } from '@/shared/lib/cn';
 type Status =
   | 'draft'
   | 'open_registration'
+  | 'registration_closed'
   | 'ongoing'
   | 'scoring'
   | 'completed'
@@ -22,6 +23,7 @@ type Status =
 const statusConfig: Record<Status, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   draft: { label: 'Draft', variant: 'secondary' },
   open_registration: { label: 'Open Registration', variant: 'default' },
+  registration_closed: { label: 'Registration Closed', variant: 'secondary' },
   ongoing: { label: 'Ongoing', variant: 'default' },
   scoring: { label: 'Scoring', variant: 'default' },
   completed: { label: 'Completed', variant: 'outline' },

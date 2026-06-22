@@ -97,7 +97,7 @@ export function BoardDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="w-full sm:max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{board.name} - Details</DialogTitle>
           <DialogDescription>
@@ -142,8 +142,8 @@ export function BoardDetailDialog({
               <Trophy className="w-4 h-4" />
               Assigned Teams ({board.teams.length})
             </h3>
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="min-w-full text-sm">
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="text-left px-3 py-2 font-medium text-muted-foreground">#</th>

@@ -1,7 +1,3 @@
-import { Github } from 'lucide-react';
-
-import { Card, CardContent } from '@/shared/ui/card';
-import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 
 import { useRepositoriesView } from '../model/useRepositoriesView';
@@ -16,17 +12,15 @@ export function Repositories() {
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="mb-1 text-2xl font-semibold">Repository Management</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage GitHub configuration, repository linkage, collaborator access, and evidence pipeline per event.
-        </p>
-      </div>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="w-full space-y-2 md:w-96">
-            <Label>Event</Label>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="mb-1 text-2xl font-semibold">Repository Management</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage GitHub configuration, repository linkage, collaborator access, and evidence pipeline per event.
+          </p>
+        </div>
+        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+          <div className="w-full sm:w-80">
             <Select value={view.activeEventId} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
               <SelectTrigger>
                 <SelectValue placeholder="Select event" />
@@ -40,8 +34,8 @@ export function Repositories() {
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <RepositoryConfigSection view={view} />
       <LinkedRepositoriesCard view={view} />

@@ -16,7 +16,7 @@ function CommitsTab({ repositoryId }: { repositoryId: string }) {
     queryFn: async () => (await repositoriesApi.listCommits(repositoryId, 1, 20)).data,
     enabled: Boolean(repositoryId),
   });
-  const commits = commitsQuery.data || [];
+  const commits = commitsQuery.data?.commits || [];
 
   if (commitsQuery.isLoading) return <p className="text-sm text-muted-foreground py-2">Loading commits…</p>;
   if (!commits.length) return <p className="text-sm text-muted-foreground py-2">No commits recorded.</p>;
@@ -81,7 +81,7 @@ function AiReviewsTab({ repositoryId }: { repositoryId: string }) {
     queryFn: async () => (await repositoriesApi.listAiReviews(repositoryId, 1, 5)).data,
     enabled: Boolean(repositoryId),
   });
-  const reviews = aiQuery.data || [];
+  const reviews = aiQuery.data?.aiReviews || [];
 
   if (aiQuery.isLoading) return <p className="text-sm text-muted-foreground py-2">Loading AI reviews…</p>;
   if (!reviews.length) return <p className="text-sm text-muted-foreground py-2">No AI reviews available.</p>;
@@ -125,7 +125,7 @@ export function RepositoryEvidenceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GitCommitHorizontal className="h-5 w-5" />
