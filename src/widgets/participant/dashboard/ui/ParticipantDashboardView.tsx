@@ -1,7 +1,8 @@
 import { Link } from 'react-router';
-import { AlertCircle, Calendar, CheckCircle2, Circle, Clock, Github, Loader2, Send, Trophy, Users, QrCode } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle2, Circle, Clock, Github, Loader2, Send, Trophy, Users } from 'lucide-react';
 
 import { useParticipantDashboardView } from '../model/useParticipantDashboardView';
+import { ParticipantCheckInScannerDialog } from './ParticipantCheckInScannerDialog';
 
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -10,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Label } from '@/shared/ui/label';
 import { Progress } from '@/shared/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog';
 
 function formatDateTime(value?: string | null) {
   if (!value) return 'Not scheduled';
@@ -94,33 +94,7 @@ export function ParticipantDashboard() {
                   <p className="text-xs text-muted-foreground">{view.participant?.checkInStatus || 'Not checked in yet'}</p>
                 </div>
                 {view.participant && view.participant.checkInStatus !== 'CHECKED_IN' && (
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="h-8 flex items-center gap-1.5">
-                        <QrCode className="w-4 h-4" />
-                        Show QR
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-xs text-center">
-                      <DialogHeader>
-                        <DialogTitle>My Check-in QR Code</DialogTitle>
-                      </DialogHeader>
-                      <div className="flex flex-col items-center justify-center p-4 gap-4">
-                        <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center p-4 w-48 h-48 border">
-                          <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                              `${window.location.origin}/coordinator/checkin?participantId=${view.participant.id}`
-                            )}`}
-                            alt="My Check-in QR"
-                            className="w-full h-full object-contain bg-white rounded p-1"
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Show this QR code to the coordinator at the registration desk to check in.
-                        </p>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <ParticipantCheckInScannerDialog />
                 )}
               </div>
             </div>
