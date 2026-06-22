@@ -77,7 +77,7 @@ export function Rounds() {
                 Create Round
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Round</DialogTitle>
                 <DialogDescription>Set up a new round for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
@@ -217,7 +217,7 @@ export function Rounds() {
       </Card>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Round</DialogTitle>
             <DialogDescription>Update round metadata, assigned teams, and assigned judges.</DialogDescription>

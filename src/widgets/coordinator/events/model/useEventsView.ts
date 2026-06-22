@@ -11,6 +11,7 @@ import { ApiError } from '@/shared/api/client';
 import type { CreateEventRequest, Event } from '@/shared/api/types';
 import {
   eventFormSchema,
+  getTodayDateInputValue,
   parseInviteEmails,
   toCreateEventRequest,
   toEditEventFormValues,
@@ -118,6 +119,24 @@ export function useEventsView() {
   });
 
   const handleCreate = (data: EventFormValues) => {
+    const today = getTodayDateInputValue();
+
+    if (data.startDate && data.startDate < today) {
+      createForm.setError('startDate', {
+        type: 'validate',
+        message: 'Start date cannot be in the past',
+      });
+      return;
+    }
+
+    if (data.endDate && data.endDate < today) {
+      createForm.setError('endDate', {
+        type: 'validate',
+        message: 'End date cannot be in the past',
+      });
+      return;
+    }
+
     createMutation.mutate(toCreateEventRequest(data));
   };
 

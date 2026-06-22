@@ -114,6 +114,7 @@ export function Participants() {
                 </TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>GitHub</TableHead>
                 <TableHead>Roles</TableHead>
                 <TableHead>Student Info</TableHead>
                 <TableHead>Status</TableHead>
@@ -123,7 +124,7 @@ export function Participants() {
             <TableBody>
               {view.filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No users found.
                   </TableCell>
                 </TableRow>
@@ -153,6 +154,9 @@ export function Participants() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {user.githubUsername || <span className="italic">-</span>}
+                    </TableCell>
                     <TableCell className="text-sm">{getParticipantRoleLabels(user)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {user.studentId ? (

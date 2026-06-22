@@ -263,7 +263,7 @@ export function CoordinatorDashboard() {
             disabled={!ongoingEvent || eventsQuery.isLoading}
             onClick={handleSelectOngoingEvent}
           >
-            Event đang diễn ra
+            Ongoing Event
           </Button>
         </div>
       </div>

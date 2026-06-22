@@ -136,6 +136,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  githubUsername?: string | null;
   avatar?: string;
   role: UserRole;
 }
@@ -145,7 +146,7 @@ export interface Event {
   id: string;
   title: string;
   semester: string;
-  status: 'draft' | 'open_registration' | 'ongoing' | 'scoring' | 'completed' | 'archived';
+  status: 'draft' | 'open_registration' | 'registration_closed' | 'ongoing' | 'scoring' | 'completed' | 'archived';
   startDate: string;
   endDate: string;
   maxTeams: number;

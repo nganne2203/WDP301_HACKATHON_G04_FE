@@ -85,7 +85,7 @@ export function Results() {
       {/* Event + Round selector */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label>Event</Label>
               {view.eventsQuery.isLoading ? (
@@ -116,11 +116,12 @@ export function Results() {
                 </Select>
               )}
             </div>
-            <div className="flex flex-col justify-end gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:col-span-2 sm:grid-cols-2 lg:col-span-2 lg:content-end">
               <Button
                 variant="outline"
                 onClick={() => view.generateRankingsMutation.mutate()}
                 disabled={view.generateRankingsMutation.isPending || !view.activeEventId || !view.activeRoundId}
+                className="w-full"
               >
                 {view.generateRankingsMutation.isPending
                   ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -132,6 +133,7 @@ export function Results() {
                 variant="outline"
                 onClick={() => view.selectFinalistsMutation.mutate()}
                 disabled={view.selectFinalistsMutation.isPending || view.rankings.length === 0}
+                className="w-full"
               >
                 {view.selectFinalistsMutation.isPending
                   ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
