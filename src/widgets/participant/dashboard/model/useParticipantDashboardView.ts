@@ -24,17 +24,13 @@ export function useParticipantDashboardView() {
   const team = teamQuery.data;
 
   const participantQuery = useQuery({
-    queryKey: queryKeys.participants.list({ eventId: selectedEvent?.id, userId: user?.id, limit: 1 }),
+    queryKey: [...queryKeys.participants.all, 'me', selectedEvent?.id],
     enabled: Boolean(selectedEvent?.id && user?.id),
-    queryFn: async () =>
-      (await participantsApi.list({
-        eventId: selectedEvent?.id,
-        userId: user?.id,
-        limit: 1,
-      })).data,
+    queryFn: async () => (await participantsApi.getMine(selectedEvent!.id)).data,
+    retry: false,
   });
 
-  const participant = participantQuery.data?.[0] || null;
+  const participant = participantQuery.data || null;
 
   const roundsQuery = useRoundsQuery({ eventId: selectedEvent?.id, limit: 20 }, { enabled: Boolean(selectedEvent?.id) });
   const rounds = roundsQuery.data || [];
