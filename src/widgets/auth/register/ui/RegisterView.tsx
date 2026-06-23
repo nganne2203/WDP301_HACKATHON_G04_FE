@@ -2,7 +2,7 @@ import { useNavigate, Link } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, User, Loader2, GraduationCap, IdCard, Github } from 'lucide-react';
+import { Mail, Lock, User, Loader2, GraduationCap, IdCard, Github, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
@@ -47,6 +47,8 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export function Register() {
   const navigate = useNavigate();
   const [studentType, setStudentType] = useState<'FPT' | 'EXTERNAL'>('FPT');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
@@ -246,11 +248,22 @@ export function Register() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="Tạo mật khẩu mạnh"
-                    className="pl-9"
+                    className="pl-9 pr-10"
                     {...register('password')}
                   />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-sm text-red-600">{errors.password.message}</p>
@@ -263,11 +276,22 @@ export function Register() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="Nhập lại mật khẩu"
-                    className="pl-9"
+                    className="pl-9 pr-10"
                     {...register('confirmPassword')}
                   />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
                 {errors.confirmPassword && (
                   <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>

@@ -3,7 +3,7 @@ import { useNavigate, Link, Navigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { ForgotPasswordDialog } from '@/features/auth/forgot-password/ui/ForgotPasswordDialog';
 import { GoogleLoginButton } from '@/features/auth/google-login/ui/GoogleLoginButton';
 import { resolveHomePathForUser } from '@/entities/session/lib/navigation';
@@ -29,6 +29,7 @@ export function Login() {
   const loginMutation = useLoginMutation();
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -142,11 +143,22 @@ export function Login() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
-                    className="pl-9"
+                    className="pl-9 pr-10"
                     {...register('password')}
                   />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-sm text-red-600">{errors.password.message}</p>
