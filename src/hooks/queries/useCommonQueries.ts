@@ -107,3 +107,12 @@ export function useWorkshopsQuery(query: ListWorkshopsQuery, options?: QueryOpti
     ...options,
   });
 }
+
+export function selectDefaultEvent<T extends { status?: string | null }>(events: T[] | undefined): T | null {
+  if (!events || !events.length) return null;
+  const ongoing = events.find((e) => e.status?.toUpperCase() === 'ONGOING');
+  if (ongoing) return ongoing;
+  const upcoming = events.find((e) => e.status?.toUpperCase() === 'UPCOMING');
+  if (upcoming) return upcoming;
+  return events[0];
+}

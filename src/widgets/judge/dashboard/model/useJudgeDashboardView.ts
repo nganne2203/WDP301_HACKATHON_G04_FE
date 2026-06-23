@@ -7,23 +7,66 @@ import { repositoriesApi } from '@/entities/repository/api';
 import { rubricsApi } from '@/entities/rubric/api';
 import { scoringApi } from '@/entities/score-sheet/api';
 import { submissionsApi } from '@/entities/submission/api';
-import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { useEventsQuery, useRoundsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Criterion, JudgingBoard, Round, ScoreSheet } from '@/shared/api/types';
 
 export function useJudgeDashboardView() {
   const user = useStore((state) => state.user);
+  const storeSelectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
 
-  const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedRoundId, setSelectedRoundId] = useState('');
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => events.find((event) => event.id === selectedEventId) || events[0] || null, [events, selectedEventId]);
+  
+  // Sync ongoing/default event with store if not already set
+  useEffect(() => {
+    if (events.length > 0 && !storeSelectedEvent) {
+      const defaultEvent = selectDefaultEvent(events) || events[0];
+      setSelectedEvent({
+        id: defaultEvent.id,
+        title: defaultEvent.title,
+        semester: defaultEvent.semester || '',
+        status: defaultEvent.status,
+      });
+    }
+  }, [events, storeSelectedEvent, setSelectedEvent]);
+
+  const activeEvent = useMemo(() => {
+    if (!events.length) return null;
+    if (storeSelectedEvent) {
+      return events.find((event) => event.id === storeSelectedEvent.id) || events[0];
+    }
+    return selectDefaultEvent(events) || events[0];
+  }, [events, storeSelectedEvent]);
+
+  const selectedEventId = activeEvent?.id || '';
+  const setSelectedEventId = (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    if (event) {
+      setSelectedEvent({
+        id: event.id,
+        title: event.title,
+        semester: event.semester || '',
+        status: event.status,
+      });
+    }
+  };
 
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
   const rounds: Round[] = roundsQuery.data || [];
-  const activeRound = useMemo(() => rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null, [rounds, selectedRoundId]);
+  
+  const activeRound = useMemo(() => {
+    if (selectedRoundId) {
+      return rounds.find((round) => round.id === selectedRoundId) || null;
+    }
+    const ongoingRound = rounds.find(
+      (round) => round.status?.toUpperCase() === 'ONGOING' || round.status?.toUpperCase() === 'ACTIVE'
+    );
+    return ongoingRound || rounds[0] || null;
+  }, [rounds, selectedRoundId]);
 
   // Fetch judging boards for the round
   const boardQuery = useQuery({

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { teamsApi } from '@/entities/team/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useEventsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useMentorTeamsView() {
@@ -18,7 +18,7 @@ export function useMentorTeamsView() {
   // Auto-select first event if store is empty and events are loaded
   useEffect(() => {
     if (events.length > 0 && !selectedEvent) {
-      const defaultEvent = events[0];
+      const defaultEvent = selectDefaultEvent(events) || events[0];
       setSelectedEvent({
         id: defaultEvent.id,
         title: defaultEvent.title,

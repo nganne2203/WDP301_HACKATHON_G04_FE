@@ -5,7 +5,7 @@ import { BookOpen, Calendar, Github, Loader2, Presentation, UsersRound } from 'l
 
 import { teamsApi } from '@/entities/team/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, useWorkshopsQuery } from '@/hooks/queries/useCommonQueries';
+import { useEventsQuery, useWorkshopsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -31,7 +31,7 @@ export function MentorDashboardView() {
   // Initialize selectedEvent in store if not present and events are available
   useEffect(() => {
     if (events.length > 0 && !selectedEvent) {
-      const defaultEvent = events[0];
+      const defaultEvent = selectDefaultEvent(events) || events[0];
       setSelectedEvent({
         id: defaultEvent.id,
         title: defaultEvent.title,

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Bot, GitBranch, Loader2, Server, Users, Webhook } from 'lucide-react';
 
 import { operationsApi } from '@/entities/operations/api';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useStore } from '@/entities/session/model/store';
+import { useEventsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -62,11 +63,46 @@ function StatusBreakdownTable({ title, rows }: { title: string; rows: StatusCoun
 }
 
 export function OperationsView() {
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const storeSelectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
-  const activeEventId = selectedEventId || events[0]?.id || events[0]?._id || '';
+
+  // Sync ongoing/default event with store if not already set
+  useEffect(() => {
+    if (events.length > 0 && !storeSelectedEvent) {
+      const defaultEvent = selectDefaultEvent(events) || events[0];
+      setSelectedEvent({
+        id: defaultEvent.id || (defaultEvent as any)._id,
+        title: defaultEvent.title || (defaultEvent as any).name || '',
+        semester: defaultEvent.semester || '',
+        status: defaultEvent.status || '',
+      });
+    }
+  }, [events, storeSelectedEvent, setSelectedEvent]);
+
+  const activeEvent = useMemo(() => {
+    if (!events.length) return null;
+    if (storeSelectedEvent) {
+      return events.find((e) => (e.id || (e as any)._id) === storeSelectedEvent.id) || events[0];
+    }
+    return selectDefaultEvent(events) || events[0];
+  }, [events, storeSelectedEvent]);
+
+  const activeEventId = activeEvent ? (activeEvent.id || (activeEvent as any)._id) : '';
+
+  const setSelectedEventId = (eventId: string) => {
+    const event = events.find((e) => (e.id || (e as any)._id) === eventId);
+    if (event) {
+      setSelectedEvent({
+        id: event.id || (event as any)._id,
+        title: event.title || (event as any).name || '',
+        semester: event.semester || '',
+        status: event.status || '',
+      });
+    }
+  };
 
   const dashboardQuery = useQuery({
     queryKey: queryKeys.operations.dashboard(activeEventId),
@@ -114,7 +150,7 @@ export function OperationsView() {
             {eventsQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading events…</p>
             ) : (
-              <Select value={selectedEventId || activeEventId} onValueChange={setSelectedEventId}>
+              <Select value={activeEventId} onValueChange={setSelectedEventId}>
                 <SelectTrigger><SelectValue placeholder="Select event" /></SelectTrigger>
                 <SelectContent>
                   {events.map((event: any) => (
