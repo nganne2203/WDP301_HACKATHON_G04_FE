@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { teamsApi } from '@/entities/team/api';
@@ -7,16 +7,38 @@ import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useMentorTeamsView() {
-  const [selectedEventId, setSelectedEventId] = useState('');
   const appRole = useStore((state) => state.appRole);
   const isSpeaker = appRole === 'speaker';
+  const selectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
-  const selectedEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events[0];
-  }, [events, selectedEventId]);
+
+  // Auto-select first event if store is empty and events are loaded
+  useEffect(() => {
+    if (events.length > 0 && !selectedEvent) {
+      const defaultEvent = events[0];
+      setSelectedEvent({
+        id: defaultEvent.id,
+        title: defaultEvent.title,
+        semester: defaultEvent.semester,
+        status: defaultEvent.status,
+      });
+    }
+  }, [events, selectedEvent, setSelectedEvent]);
+
+  const handleEventChange = (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    if (event) {
+      setSelectedEvent({
+        id: event.id,
+        title: event.title,
+        semester: event.semester,
+        status: event.status,
+      });
+    }
+  };
 
   const teamsQuery = useQuery({
     queryKey: queryKeys.teams.list({ eventId: selectedEvent?.id, limit: 20 }),
@@ -26,8 +48,8 @@ export function useMentorTeamsView() {
   const teams = teamsQuery.data || [];
 
   return {
-    selectedEventId,
-    setSelectedEventId,
+    selectedEventId: selectedEvent?.id || '',
+    setSelectedEventId: handleEventChange,
     appRole,
     isSpeaker,
     eventsQuery,

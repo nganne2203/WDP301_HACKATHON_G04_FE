@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, Calendar, Github, Loader2, Presentation, UsersRound } from 'lucide-react';
@@ -22,14 +22,36 @@ function formatDateTime(value?: string | null) {
 export function MentorDashboardView() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
-  const selectedEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events[0];
-  }, [events, selectedEventId]);
+
+  // Initialize selectedEvent in store if not present and events are available
+  useEffect(() => {
+    if (events.length > 0 && !selectedEvent) {
+      const defaultEvent = events[0];
+      setSelectedEvent({
+        id: defaultEvent.id,
+        title: defaultEvent.title,
+        semester: defaultEvent.semester,
+        status: defaultEvent.status,
+      });
+    }
+  }, [events, selectedEvent, setSelectedEvent]);
+
+  const handleEventChange = (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    if (event) {
+      setSelectedEvent({
+        id: event.id,
+        title: event.title,
+        semester: event.semester,
+        status: event.status,
+      });
+    }
+  };
 
   const workshopsQuery = useWorkshopsQuery(
     { eventId: selectedEvent?.id, presenterId: user?.id, limit: 20 },
@@ -52,7 +74,7 @@ export function MentorDashboardView() {
   const isSpeaker = appRole === 'speaker';
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold mb-1">{isSpeaker ? 'Speaker Dashboard' : 'Mentor Dashboard'}</h1>
@@ -64,7 +86,7 @@ export function MentorDashboardView() {
         </div>
         <div className="w-full md:w-80">
           <Label>Event</Label>
-          <Select value={selectedEvent?.id || ''} onValueChange={setSelectedEventId} disabled={eventsQuery.isLoading}>
+          <Select value={selectedEvent?.id || ''} onValueChange={handleEventChange} disabled={eventsQuery.isLoading}>
             <SelectTrigger className="mt-1">
               <SelectValue placeholder="Select event" />
             </SelectTrigger>

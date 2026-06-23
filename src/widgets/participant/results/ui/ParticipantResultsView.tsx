@@ -55,7 +55,7 @@ export function ParticipantResultsView() {
   const podium = rankings.slice(0, 3);
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold mb-1">Results</h1>
