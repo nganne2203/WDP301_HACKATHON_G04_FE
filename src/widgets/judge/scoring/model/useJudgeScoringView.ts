@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
@@ -22,10 +23,28 @@ export function getJudgeScoringErrorMessage(error: unknown) {
 export function useJudgeScoringView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
+  const [searchParams] = useSearchParams();
 
-  const [selectedEventId, setSelectedEventId] = useState('');
-  const [selectedRoundId, setSelectedRoundId] = useState('');
-  const [selectedTeamId, setSelectedTeamId] = useState('');
+  const urlEventId = searchParams.get('eventId') || '';
+  const urlRoundId = searchParams.get('roundId') || '';
+  const urlTeamId = searchParams.get('teamId') || '';
+
+  const [selectedEventId, setSelectedEventId] = useState(urlEventId);
+  const [selectedRoundId, setSelectedRoundId] = useState(urlRoundId);
+  const [selectedTeamId, setSelectedTeamId] = useState(urlTeamId);
+
+  useEffect(() => {
+    if (urlEventId) setSelectedEventId(urlEventId);
+  }, [urlEventId]);
+
+  useEffect(() => {
+    if (urlRoundId) setSelectedRoundId(urlRoundId);
+  }, [urlRoundId]);
+
+  useEffect(() => {
+    if (urlTeamId) setSelectedTeamId(urlTeamId);
+  }, [urlTeamId]);
+
   const [scores, setScores] = useState<Record<string, number>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
   const [generalComment, setGeneralComment] = useState('');
