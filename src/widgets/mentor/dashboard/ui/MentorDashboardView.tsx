@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Calendar, Github, Loader2, Presentation, UsersRound } from 'lucide-react';
+import { Calendar, Loader2, Presentation, UsersRound, Video } from 'lucide-react';
 
 import { teamsApi } from '@/entities/team/api';
 import { useStore } from '@/entities/session/model/store';
@@ -142,15 +142,7 @@ export function MentorDashboardView() {
         </Card>
       </div>
 
-      <Alert>
-        <BookOpen className="h-4 w-4" />
-        <AlertTitle>{isSpeaker ? 'Speaker scope' : 'Mentor assignment scope'}</AlertTitle>
-        <AlertDescription>
-          {isSpeaker
-            ? 'This dashboard focuses on workshops where you are the presenter. Team assignment is not part of the speaker role in the current API surface.'
-            : 'This dashboard shows your workshops and the teams seeded into your mentoring scope for the selected event.'}
-        </AlertDescription>
-      </Alert>
+
 
       <div className={`grid grid-cols-1 gap-6 ${isSpeaker ? 'lg:grid-cols-1' : 'lg:grid-cols-[1.2fr_0.8fr]'}`}>
         <Card>
@@ -188,7 +180,7 @@ export function MentorDashboardView() {
                   <p className="text-sm text-muted-foreground mt-3">{formatDateTime(workshop.startTime)}</p>
                   {workshop.meetLink && (
                     <div className="mt-2 flex items-center gap-2 text-sm text-blue-700">
-                      <Github className="w-4 h-4" />
+                      <Video className="w-4 h-4" />
                       <a href={workshop.meetLink} target="_blank" rel="noreferrer" className="underline">
                         {isSpeaker ? 'Open session link' : 'Open mentoring link'}
                       </a>
@@ -214,9 +206,7 @@ export function MentorDashboardView() {
                 <Link to={`/events/${selectedEvent.id}/gallery`}>Open Event Gallery</Link>
               </Button>
             )}
-            <p className="text-xs text-muted-foreground">
-              Team mentoring assignment, direct mentor notes, and team-specific repository review are not wired yet in the current API surface.
-            </p>
+
           </CardContent>
         </Card>
         )}
