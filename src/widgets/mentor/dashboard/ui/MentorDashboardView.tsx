@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, Calendar, Github, Loader2, Presentation, UsersRound } from 'lucide-react';
+import { Calendar, Loader2, Presentation, UsersRound, Video } from 'lucide-react';
 
 import { teamsApi } from '@/entities/team/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, useWorkshopsQuery } from '@/hooks/queries/useCommonQueries';
+import { useEventsQuery, useWorkshopsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -22,14 +22,36 @@ function formatDateTime(value?: string | null) {
 export function MentorDashboardView() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
-  const selectedEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events[0];
-  }, [events, selectedEventId]);
+
+  // Initialize selectedEvent in store if not present and events are available
+  useEffect(() => {
+    if (events.length > 0 && !selectedEvent) {
+      const defaultEvent = selectDefaultEvent(events) || events[0];
+      setSelectedEvent({
+        id: defaultEvent.id,
+        title: defaultEvent.title,
+        semester: defaultEvent.semester,
+        status: defaultEvent.status,
+      });
+    }
+  }, [events, selectedEvent, setSelectedEvent]);
+
+  const handleEventChange = (eventId: string) => {
+    const event = events.find((e) => e.id === eventId);
+    if (event) {
+      setSelectedEvent({
+        id: event.id,
+        title: event.title,
+        semester: event.semester,
+        status: event.status,
+      });
+    }
+  };
 
   const workshopsQuery = useWorkshopsQuery(
     { eventId: selectedEvent?.id, presenterId: user?.id, limit: 20 },
@@ -52,7 +74,7 @@ export function MentorDashboardView() {
   const isSpeaker = appRole === 'speaker';
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold mb-1">{isSpeaker ? 'Speaker Dashboard' : 'Mentor Dashboard'}</h1>
@@ -64,7 +86,7 @@ export function MentorDashboardView() {
         </div>
         <div className="w-full md:w-80">
           <Label>Event</Label>
-          <Select value={selectedEvent?.id || ''} onValueChange={setSelectedEventId} disabled={eventsQuery.isLoading}>
+          <Select value={selectedEvent?.id || ''} onValueChange={handleEventChange} disabled={eventsQuery.isLoading}>
             <SelectTrigger className="mt-1">
               <SelectValue placeholder="Select event" />
             </SelectTrigger>
@@ -120,15 +142,7 @@ export function MentorDashboardView() {
         </Card>
       </div>
 
-      <Alert>
-        <BookOpen className="h-4 w-4" />
-        <AlertTitle>{isSpeaker ? 'Speaker scope' : 'Mentor assignment scope'}</AlertTitle>
-        <AlertDescription>
-          {isSpeaker
-            ? 'This dashboard focuses on workshops where you are the presenter. Team assignment is not part of the speaker role in the current API surface.'
-            : 'This dashboard shows your workshops and the teams seeded into your mentoring scope for the selected event.'}
-        </AlertDescription>
-      </Alert>
+
 
       <div className={`grid grid-cols-1 gap-6 ${isSpeaker ? 'lg:grid-cols-1' : 'lg:grid-cols-[1.2fr_0.8fr]'}`}>
         <Card>
@@ -166,7 +180,7 @@ export function MentorDashboardView() {
                   <p className="text-sm text-muted-foreground mt-3">{formatDateTime(workshop.startTime)}</p>
                   {workshop.meetLink && (
                     <div className="mt-2 flex items-center gap-2 text-sm text-blue-700">
-                      <Github className="w-4 h-4" />
+                      <Video className="w-4 h-4" />
                       <a href={workshop.meetLink} target="_blank" rel="noreferrer" className="underline">
                         {isSpeaker ? 'Open session link' : 'Open mentoring link'}
                       </a>
@@ -192,9 +206,7 @@ export function MentorDashboardView() {
                 <Link to={`/events/${selectedEvent.id}/gallery`}>Open Event Gallery</Link>
               </Button>
             )}
-            <p className="text-xs text-muted-foreground">
-              Team mentoring assignment, direct mentor notes, and team-specific repository review are not wired yet in the current API surface.
-            </p>
+
           </CardContent>
         </Card>
         )}
