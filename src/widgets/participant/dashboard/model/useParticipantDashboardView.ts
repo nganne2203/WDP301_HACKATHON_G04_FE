@@ -11,6 +11,7 @@ import { queryKeys } from '@/lib/queryKeys';
 
 export function useParticipantDashboardView() {
   const user = useStore((state) => state.user);
+  const appRole = useStore((state) => state.appRole);
   const [selectedEventId, setSelectedEventId] = useState('');
 
   const eventsQuery = useEventsQuery();
@@ -62,14 +63,14 @@ export function useParticipantDashboardView() {
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(selectedEvent?.id, undefined),
-    enabled: Boolean(selectedEvent?.id),
+    enabled: Boolean(selectedEvent?.id && appRole !== 'participant'),
     queryFn: async () => (await rankingsApi.list({ eventId: selectedEvent?.id, limit: 50 })).data,
   });
   const rankings = rankingsQuery.data || [];
 
   const finalistsQuery = useQuery({
     queryKey: queryKeys.finalists.list(selectedEvent?.id, undefined),
-    enabled: Boolean(selectedEvent?.id),
+    enabled: Boolean(selectedEvent?.id && appRole !== 'participant'),
     queryFn: async () => (await finalistsApi.list({ eventId: selectedEvent?.id, limit: 50 })).data,
   });
   const finalists = finalistsQuery.data || [];

@@ -19,6 +19,7 @@ const PLACE_LABELS = ['1st Place', '2nd Place', '3rd Place'];
 
 export function ParticipantResultsView() {
   const user = useStore((state) => state.user);
+  const appRole = useStore((state) => state.appRole);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedRoundId, setSelectedRoundId] = useState('');
 
@@ -37,14 +38,14 @@ export function ParticipantResultsView() {
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(activeEventId, activeRoundId),
-    enabled: Boolean(activeEventId && activeRoundId),
+    enabled: Boolean(activeEventId && activeRoundId && appRole !== 'participant'),
     queryFn: async () => (await rankingsApi.list({ eventId: activeEventId, roundId: activeRoundId, limit: 50 })).data,
   });
   const rankings = rankingsQuery.data || [];
 
   const finalistsQuery = useQuery({
     queryKey: queryKeys.finalists.list(activeEventId, activeRoundId),
-    enabled: Boolean(activeEventId && activeRoundId),
+    enabled: Boolean(activeEventId && activeRoundId && appRole !== 'participant'),
     queryFn: async () => (await finalistsApi.list({ eventId: activeEventId, roundId: activeRoundId, limit: 50 })).data,
   });
   const finalists = finalistsQuery.data || [];
