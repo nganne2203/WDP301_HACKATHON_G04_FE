@@ -38,7 +38,7 @@ export function ParticipantFiltersSheet({
           <div className="space-y-2">
             <Label>Status</Label>
             <div className="space-y-2">
-              {(['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'] as UserStatus[]).map((status) => (
+              {(['PENDING', 'APPROVED', 'ACTIVE', 'REJECTED', 'SUSPENDED'] as UserStatus[]).map((status) => (
                 <div key={status} className="flex items-center space-x-2">
                   <Checkbox
                     id={`filter-${status}`}
