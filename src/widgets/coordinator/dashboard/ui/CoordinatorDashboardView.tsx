@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { MetricCard } from '@/widgets/dashboard/ui/MetricCard';
@@ -118,6 +118,16 @@ export function CoordinatorDashboard() {
   const activeEvent = useMemo(() => getActiveEvent(events, selectedEventId), [events, selectedEventId]);
   const activeEventId = activeEvent?.id;
   const ongoingEvent = events.find((event) => event.status === 'ONGOING') || null;
+
+  // Initialize selectedEvent in store if not present and events are available
+  useEffect(() => {
+    if (events.length > 0 && !selectedEventId) {
+      const defaultEvent = getActiveEvent(events);
+      if (defaultEvent) {
+        setSelectedEvent(toSelectedEvent(defaultEvent));
+      }
+    }
+  }, [events, selectedEventId, setSelectedEvent]);
 
   const handleSelectEvent = (eventId: string) => {
     const event = events.find((item) => item.id === eventId);

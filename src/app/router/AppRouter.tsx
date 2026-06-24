@@ -9,7 +9,6 @@ import { useAuthBootstrapQuery } from '@/hooks/queries/useAuthQueries';
 
 const Login = lazy(async () => ({ default: (await import('@/pages/Login')).Login }));
 const Register = lazy(async () => ({ default: (await import('@/pages/Register')).Register }));
-const GoogleCallback = lazy(async () => ({ default: (await import('@/pages/GoogleCallback')).GoogleCallback }));
 const ChangePassword = lazy(async () => ({ default: (await import('@/pages/ChangePassword')).ChangePassword }));
 const TeamInvitationConfirmation = lazy(async () => ({
   default: (await import('@/pages/TeamInvitationConfirmation')).TeamInvitationConfirmation,
@@ -38,6 +37,7 @@ const AdminMedia = lazy(async () => ({ default: (await import('@/pages/admin/Med
 const AdminAuditLogs = lazy(async () => ({ default: (await import('@/pages/admin/AuditLogs')).AdminAuditLogs }));
 const AdminOperations = lazy(async () => ({ default: (await import('@/pages/admin/Operations')).AdminOperations }));
 const AdminRbac = lazy(async () => ({ default: (await import('@/pages/admin/Rbac')).AdminRbac }));
+const JudgeDashboard = lazy(async () => ({ default: (await import('@/pages/judge/Dashboard')).JudgeDashboard }));
 const JudgeScoring = lazy(async () => ({ default: (await import('@/pages/judge/Scoring')).JudgeScoring }));
 const AdminSettings = lazy(async () => ({ default: (await import('@/pages/admin/Settings')).Settings }));
 const ParticipantDashboard = lazy(async () => ({
@@ -119,7 +119,6 @@ export function AppRouter() {
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/auth/google/callback" element={<GoogleCallback />} />
           <Route path="/team-invitations/confirm" element={<TeamInvitationConfirmation />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -249,7 +248,7 @@ export function AppRouter() {
             path="/judge"
             element={
               <ProtectedRoute allowedRoles={['judge', 'admin']}>
-                <JudgeScoring />
+                <JudgeDashboard />
               </ProtectedRoute>
             }
           />

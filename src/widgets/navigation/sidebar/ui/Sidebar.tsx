@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 import { cn } from '@/shared/lib/cn';
-import { Award, UserCircle } from 'lucide-react';
+import { UserCircle, Images } from 'lucide-react';
 import { useStore } from '@/entities/session/model/store';
 import { getNavigationItems } from '@/widgets/navigation/model/navigation';
 
@@ -10,8 +10,22 @@ export const Sidebar = memo(function Sidebar() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
   const sidebarCollapsed = useStore((state) => state.sidebarCollapsed);
+  const selectedEvent = useStore((state) => state.selectedEvent);
 
-  const navItems = useMemo(() => getNavigationItems(appRole), [appRole]);
+  const navItems = useMemo(() => {
+    const baseItems = getNavigationItems(appRole);
+    if (selectedEvent?.id && (appRole === 'mentor' || appRole === 'speaker')) {
+      return [
+        ...baseItems,
+        {
+          icon: Images,
+          label: 'Event Gallery',
+          href: `/events/${selectedEvent.id}/gallery`,
+        },
+      ];
+    }
+    return baseItems;
+  }, [appRole, selectedEvent]);
 
   const displayName = user?.fullName || 'User';
   const primaryRole = appRole || 'participant';
@@ -24,8 +38,12 @@ export const Sidebar = memo(function Sidebar() {
       )}
     >
       <div className="flex items-center gap-3 h-16 px-4 border-b border-border">
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-white">
-          <Award className="w-6 h-6" />
+        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-black shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden">
+          <img
+            src="/assets/Logo1.png"
+            alt="SEAL logo"
+            className="h-7 w-7 scale-150 object-contain"
+          />
         </div>
         {!sidebarCollapsed && (
           <div>

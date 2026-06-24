@@ -1,32 +1,187 @@
-import { authApi } from '@/shared/api/auth';
+import { useState, type FormEvent } from 'react';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
+import { Github, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
+
+import { resolveHomePathForUser } from '@/entities/session/lib/navigation';
+import { useGoogleRegisterMutation, useGoogleSignInMutation } from '@/hooks/mutations/useAuthMutations';
+import { ApiError } from '@/shared/api/client';
 import { Button } from '@/shared/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/ui/dialog';
+import { Input } from '@/shared/ui/input';
+import { Label } from '@/shared/ui/label';
+
+interface GoogleCredentialPayload {
+  sub: string;
+  email: string;
+  name: string;
+  picture?: string;
+}
+
+function decodeGoogleCredential(credential: string): GoogleCredentialPayload {
+  const payload = credential.split('.')[1];
+  if (!payload) throw new Error('Google returned an invalid credential.');
+
+  const base64 = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
+  const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+  const claims = JSON.parse(new TextDecoder().decode(bytes)) as Partial<GoogleCredentialPayload>;
+
+  if (!claims.sub || !claims.email || !claims.name) {
+    throw new Error('Google profile is missing required information.');
+  }
+
+  return claims as GoogleCredentialPayload;
+}
 
 export function GoogleLoginButton() {
-  function handleGoogleLogin() {
-    window.location.href = authApi.getGoogleLoginUrl();
+  const navigate = useNavigate();
+  const googleSignInMutation = useGoogleSignInMutation();
+  const googleRegisterMutation = useGoogleRegisterMutation();
+  const [pendingProfile, setPendingProfile] = useState<GoogleCredentialPayload | null>(null);
+  const [githubUsername, setGithubUsername] = useState('');
+  const [githubError, setGithubError] = useState('');
+
+  async function handleSuccess(response: CredentialResponse) {
+    let profile: GoogleCredentialPayload | null = null;
+
+    try {
+      if (!response.credential) throw new Error('Google did not return a credential.');
+
+      profile = decodeGoogleCredential(response.credential);
+      const authResponse = await googleSignInMutation.mutateAsync({
+        googleId: profile.sub,
+        email: profile.email,
+        name: profile.name,
+        avatar: profile.picture ?? null,
+      });
+      const { user } = authResponse.data;
+
+      toast.success('Login successful!', {
+        description: `Welcome, ${user.fullName}`,
+      });
+      navigate(resolveHomePathForUser(user));
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'GOOGLE_REGISTRATION_REQUIRED' && profile) {
+        setPendingProfile(profile);
+        setGithubUsername('');
+        setGithubError('');
+        return;
+      }
+
+      if (error instanceof ApiError && error.code === 'FORBIDDEN') {
+        toast.error('Account awaiting approval', { description: error.firstError });
+        return;
+      }
+
+      const description = error instanceof ApiError
+        ? error.firstError
+        : error instanceof Error
+          ? error.message
+          : 'Please try again.';
+      toast.error('Google login failed', { description });
+    }
+  }
+
+  async function handleRegistration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!pendingProfile) return;
+
+    const normalizedUsername = githubUsername.trim();
+    if (
+      normalizedUsername.length > 39 ||
+      !/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(normalizedUsername)
+    ) {
+      setGithubError('Enter a valid GitHub username using letters, numbers, or hyphens.');
+      return;
+    }
+
+    try {
+      await googleRegisterMutation.mutateAsync({
+        googleId: pendingProfile.sub,
+        email: pendingProfile.email,
+        name: pendingProfile.name,
+        avatar: pendingProfile.picture ?? null,
+        githubUsername: normalizedUsername,
+      });
+
+      setPendingProfile(null);
+      setGithubUsername('');
+      toast.success('Registration successful!', {
+        description: 'Your account is waiting for approval. You can sign in after an authorized organizer approves it.',
+      });
+    } catch (error) {
+      const description = error instanceof ApiError
+        ? error.firstError
+        : 'Could not complete registration. Please try again.';
+      toast.error('Google registration failed', { description });
+    }
   }
 
   return (
-    <Button type="button" variant="outline" className="w-full" size="lg" onClick={handleGoogleLogin}>
-      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-        <path
-          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-          fill="#4285F4"
+    <>
+      <div className="flex w-full justify-center">
+        <GoogleLogin
+          onSuccess={handleSuccess}
+          onError={() => toast.error('Google login failed', { description: 'Please try again.' })}
+          text="signin_with"
+          shape="rectangular"
+          size="large"
+          theme="outline"
+          width="400"
+          ux_mode="popup"
         />
-        <path
-          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-          fill="#34A853"
-        />
-        <path
-          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-          fill="#FBBC05"
-        />
-        <path
-          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-          fill="#EA4335"
-        />
-      </svg>
-      Sign in with Google
-    </Button>
+      </div>
+
+      <Dialog
+        open={Boolean(pendingProfile)}
+        onOpenChange={(open) => {
+          if (!open) setPendingProfile(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete your registration</DialogTitle>
+            <DialogDescription>
+              Add your GitHub username. Your participant account will then be sent for approval.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4" onSubmit={handleRegistration}>
+            <div className="space-y-2">
+              <Label htmlFor="google-github-username">GitHub username</Label>
+              <div className="relative">
+                <Github className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="google-github-username"
+                  value={githubUsername}
+                  onChange={(event) => {
+                    setGithubUsername(event.target.value);
+                    setGithubError('');
+                  }}
+                  className="pl-9"
+                  placeholder="octocat"
+                  autoComplete="username"
+                  autoFocus
+                />
+              </div>
+              {githubError && <p className="text-sm text-red-600">{githubError}</p>}
+            </div>
+
+            <Button type="submit" className="w-full" disabled={googleRegisterMutation.isPending}>
+              {googleRegisterMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit for approval
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
