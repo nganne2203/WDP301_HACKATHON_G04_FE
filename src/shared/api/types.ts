@@ -176,6 +176,17 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface GoogleLoginRequest {
+  googleId: string;
+  email: string;
+  name: string;
+  avatar: string | null;
+}
+
+export interface GoogleRegisterRequest extends GoogleLoginRequest {
+  githubUsername: string;
+}
+
 export interface RegisterRequest {
   email: string;
   password: string;

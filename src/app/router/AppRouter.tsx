@@ -9,7 +9,6 @@ import { useAuthBootstrapQuery } from '@/hooks/queries/useAuthQueries';
 
 const Login = lazy(async () => ({ default: (await import('@/pages/Login')).Login }));
 const Register = lazy(async () => ({ default: (await import('@/pages/Register')).Register }));
-const GoogleCallback = lazy(async () => ({ default: (await import('@/pages/GoogleCallback')).GoogleCallback }));
 const ChangePassword = lazy(async () => ({ default: (await import('@/pages/ChangePassword')).ChangePassword }));
 const TeamInvitationConfirmation = lazy(async () => ({
   default: (await import('@/pages/TeamInvitationConfirmation')).TeamInvitationConfirmation,
@@ -120,7 +119,6 @@ export function AppRouter() {
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/auth/google/callback" element={<GoogleCallback />} />
           <Route path="/team-invitations/confirm" element={<TeamInvitationConfirmation />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
 

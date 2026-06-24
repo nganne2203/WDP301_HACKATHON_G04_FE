@@ -72,7 +72,7 @@ Use this phase order in `FE_MASTER_PLAN.md`.
 - add dev quality scripts and test harness before expanding screen count
 
 **Phase 1: Auth, Session, and Event Context**
-- stabilize auth, register, Google callback, password change, session bootstrap
+- stabilize auth, register, Google sign-in, password change, session bootstrap
 - introduce selected-event context flow for all multi-event role screens
 - define permission-aware navigation from backend permission codes, not only derived role names
 
