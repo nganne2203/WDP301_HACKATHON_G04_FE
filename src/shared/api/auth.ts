@@ -2,6 +2,8 @@ import { api } from './client';
 import type {
   AuthData,
   ChangePasswordRequest,
+  GoogleLoginRequest,
+  GoogleRegisterRequest,
   LoginRequest,
   RegisterRequest,
   User,
@@ -10,6 +12,12 @@ import type {
 export const authApi = {
   login: (data: LoginRequest) =>
     api.post<AuthData>('/auth/login', data, { auth: false }),
+
+  googleLogin: (data: GoogleLoginRequest) =>
+    api.post<AuthData>('/auth/google', data, { auth: false }),
+
+  googleRegister: (data: GoogleRegisterRequest) =>
+    api.post<User>('/auth/google/register', data, { auth: false }),
 
   register: (data: RegisterRequest) =>
     api.post<User>('/auth/register', data, { auth: false }),
@@ -25,8 +33,4 @@ export const authApi = {
 
   logout: () =>
     api.post<null>('/auth/logout'),
-
-  /** Returns the URL to redirect the user to for Google OAuth login */
-  getGoogleLoginUrl: () =>
-    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/auth/google`,
 };
