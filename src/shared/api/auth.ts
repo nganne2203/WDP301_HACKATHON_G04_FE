@@ -3,7 +3,6 @@ import type {
   AuthData,
   ChangePasswordRequest,
   GoogleLoginRequest,
-  GoogleRegisterRequest,
   LoginRequest,
   RegisterRequest,
   User,
@@ -15,9 +14,6 @@ export const authApi = {
 
   googleLogin: (data: GoogleLoginRequest) =>
     api.post<AuthData>('/auth/google', data, { auth: false }),
-
-  googleRegister: (data: GoogleRegisterRequest) =>
-    api.post<User>('/auth/google/register', data, { auth: false }),
 
   register: (data: RegisterRequest) =>
     api.post<User>('/auth/register', data, { auth: false }),

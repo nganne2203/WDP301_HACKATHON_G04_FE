@@ -71,7 +71,7 @@ export function Participants() {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'] as ParticipantFilterType[]).map((filter) => (
+        {(['all', 'PENDING', 'APPROVED', 'ACTIVE', 'REJECTED', 'SUSPENDED'] as ParticipantFilterType[]).map((filter) => (
           <Badge
             key={filter}
             variant={view.activeFilter === filter ? 'secondary' : 'outline'}
@@ -175,7 +175,7 @@ export function Participants() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {user.status === 'PENDING' && (
+                          {user.registrationSource === 'FORM' && user.status === 'PENDING' && (
                             <>
                               <DropdownMenuItem
                                 onClick={() => view.approveMutation.mutate(user.id)}
@@ -194,7 +194,7 @@ export function Participants() {
                               </DropdownMenuItem>
                             </>
                           )}
-                          {user.status === 'APPROVED' && (
+                          {(user.status === 'APPROVED' || user.status === 'ACTIVE') && (
                             <DropdownMenuItem
                               onClick={() => view.suspendMutation.mutate(user.id)}
                               disabled={view.suspendMutation.isPending}
@@ -204,7 +204,7 @@ export function Participants() {
                               Suspend
                             </DropdownMenuItem>
                           )}
-                          {user.status === 'REJECTED' && (
+                          {user.registrationSource === 'FORM' && user.status === 'REJECTED' && (
                             <DropdownMenuItem
                               onClick={() => view.approveMutation.mutate(user.id)}
                               disabled={view.approveMutation.isPending}
@@ -213,10 +213,19 @@ export function Participants() {
                               Approve
                             </DropdownMenuItem>
                           )}
-                          {user.status === 'SUSPENDED' && (
+                          {user.registrationSource === 'FORM' && user.status === 'SUSPENDED' && (
                             <DropdownMenuItem
                               onClick={() => view.approveMutation.mutate(user.id)}
                               disabled={view.approveMutation.isPending}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                              Re-activate
+                            </DropdownMenuItem>
+                          )}
+                          {user.registrationSource === 'GOOGLE' && user.status === 'SUSPENDED' && (
+                            <DropdownMenuItem
+                              onClick={() => view.activateMutation.mutate(user.id)}
+                              disabled={view.activateMutation.isPending}
                             >
                               <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
                               Re-activate
