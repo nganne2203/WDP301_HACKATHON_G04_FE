@@ -962,6 +962,8 @@ export interface CreateUserRequest {
   schoolName?: string;
 }
 
+export type UpdateUserRequest = Partial<Omit<CreateUserRequest, 'password' | 'status'>>;
+
 export interface UpdateProfileRequest {
   fullName?: string;
   avatarUrl?: string | null;
