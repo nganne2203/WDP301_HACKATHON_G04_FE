@@ -21,6 +21,11 @@ export function WorkshopForm({
   timelines: TimelineEvent[];
   presenters?: any[];
 }) {
+  const eligiblePresenters = presenters.filter((user) => {
+    const roleCodes = (user.roles || []).map((r: any) => (r.code || r.name || String(r)).toUpperCase());
+    return roleCodes.some((code) => ['SPEAKER', 'MENTOR', 'COORDINATOR', 'ADMIN'].includes(code));
+  });
+
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -87,7 +92,7 @@ export function WorkshopForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No linked user account</SelectItem>
-              {presenters.map((user) => (
+              {eligiblePresenters.map((user) => (
                 <SelectItem key={user.id} value={user.id}>
                   {user.fullName || 'No Name'} ({user.email})
                 </SelectItem>
