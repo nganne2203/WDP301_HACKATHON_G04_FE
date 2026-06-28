@@ -16,6 +16,8 @@ interface CreateTeamCardProps {
   setInvitedMembers: React.Dispatch<React.SetStateAction<MemberInviteRow[]>>;
   setProjectName: (value: string) => void;
   setTeamName: (value: string) => void;
+  teamNameChecking: boolean;
+  teamNameValidationMessage: string;
   teamName: string;
 }
 
@@ -28,8 +30,12 @@ export function CreateTeamCard({
   setInvitedMembers,
   setProjectName,
   setTeamName,
+  teamNameChecking,
+  teamNameValidationMessage,
   teamName,
 }: CreateTeamCardProps) {
+  const hasTeamNameError = Boolean(teamNameValidationMessage);
+
   return (
     <Card>
       <CardHeader>
@@ -48,7 +54,20 @@ export function CreateTeamCard({
               onChange={(event) => setTeamName(event.target.value)}
               placeholder="Enter team name"
               disabled={!registrationOpen}
+              aria-invalid={hasTeamNameError}
+              aria-describedby={hasTeamNameError ? 'teamName-error' : undefined}
             />
+            {teamNameChecking && !hasTeamNameError && (
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Checking team name...
+              </p>
+            )}
+            {hasTeamNameError && (
+              <p id="teamName-error" className="text-xs text-destructive">
+                {teamNameValidationMessage}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="projectName">Project name</Label>
@@ -67,7 +86,7 @@ export function CreateTeamCard({
           <MemberInviteFields rows={invitedMembers} setRows={setInvitedMembers} disabled={!registrationOpen} />
         </div>
 
-        <Button onClick={onCreateTeam} disabled={!registrationOpen || createPending}>
+        <Button onClick={onCreateTeam} disabled={!registrationOpen || createPending || teamNameChecking || hasTeamNameError}>
           {createPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
           Create team and send invites
         </Button>

@@ -14,6 +14,7 @@ export function ParticipantTeam() {
     activeEventId,
     canChangeInvitations,
     cancelMutation,
+    createValidationPending,
     createTeamMutation,
     events,
     eventsQuery,
@@ -34,6 +35,8 @@ export function ParticipantTeam() {
     setSelectedEventId,
     setTeamName,
     team,
+    teamNameChecking,
+    teamNameValidationMessage,
     teamName,
     teamQuery,
   } = useParticipantTeamView();
@@ -88,7 +91,7 @@ export function ParticipantTeam() {
 
       {!teamQuery.isLoading && !team && (
         <CreateTeamCard
-          createPending={createTeamMutation.isPending}
+          createPending={createTeamMutation.isPending || createValidationPending}
           invitedMembers={invitedMembers}
           onCreateTeam={handleCreateTeam}
           projectName={projectName}
@@ -96,6 +99,8 @@ export function ParticipantTeam() {
           setInvitedMembers={setInvitedMembers}
           setProjectName={setProjectName}
           setTeamName={setTeamName}
+          teamNameChecking={teamNameChecking}
+          teamNameValidationMessage={teamNameValidationMessage}
           teamName={teamName}
         />
       )}

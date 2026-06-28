@@ -34,6 +34,8 @@ export const queryKeys = {
     all: ['teams'] as const,
     lists: () => [...queryKeys.teams.all, 'list'] as const,
     list: (query?: QueryParams) => [...queryKeys.teams.lists(), params(query)] as const,
+    availability: (eventId?: string, name?: string) =>
+      [...queryKeys.teams.all, 'availability', eventId, name] as const,
     my: (eventId?: string) => [...queryKeys.teams.all, 'my', eventId] as const,
   },
   users: {
