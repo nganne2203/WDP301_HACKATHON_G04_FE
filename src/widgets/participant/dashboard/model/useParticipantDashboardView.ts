@@ -1,19 +1,37 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import { finalistsApi } from '@/entities/finalist/api';
 import { rankingsApi } from '@/entities/ranking/api';
 import { useStore } from '@/entities/session/model/store';
 import { submissionsApi } from '@/entities/submission/api';
 import { participantsApi } from '@/shared/api/participants';
+import { ApiError } from '@/shared/api/client';
 import { useEventsQuery, useMyTeamQuery, useRoundsQuery, useTimelinesQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 
+function getCheckInErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.code === 'CHECK_IN_QR_EXPIRED') return 'This check-in QR has expired. Ask the coordinator for a new one.';
+    if (error.code === 'PARTICIPANT_ALREADY_CHECKED_IN') return 'You have already checked in for this event.';
+    if (error.code === 'INVALID_CHECK_IN_QR') return 'This is not a valid event check-in QR.';
+    return error.firstError;
+  }
+  if (error instanceof Error) return error.message;
+  return 'Could not process this QR. Please try again.';
+}
+
 export function useParticipantDashboardView() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
   const storeSelectedEvent = useStore((state) => state.selectedEvent);
   const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const processedCheckInTokenRef = useRef<string | null>(null);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -51,6 +69,54 @@ export function useParticipantDashboardView() {
       });
     }
   };
+
+  const clearCheckInTokenFromUrl = useCallback(() => {
+    const params = new URLSearchParams(location.search);
+    if (!params.has('checkInToken') && !params.has('token')) return;
+    params.delete('checkInToken');
+    params.delete('token');
+    navigate(
+      {
+        pathname: location.pathname,
+        search: params.toString() ? `?${params.toString()}` : '',
+        hash: location.hash,
+      },
+      { replace: true },
+    );
+  }, [location.hash, location.pathname, location.search, navigate]);
+
+  const urlCheckInMutation = useMutation({
+    mutationFn: (token: string) => participantsApi.scanCheckInQr(token),
+    onSuccess: async (response) => {
+      const checkedInEvent = events.find((event) => event.id === response.data.eventId);
+      if (checkedInEvent) {
+        setSelectedEvent({
+          id: checkedInEvent.id,
+          title: checkedInEvent.title,
+          semester: checkedInEvent.semester || '',
+          status: checkedInEvent.status,
+        });
+      }
+
+      toast.success('Check-in successful', {
+        description: 'Your attendance has been recorded.',
+      });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.participants.all });
+    },
+    onError: (error: unknown) => {
+      toast.error('Check-in failed', { description: getCheckInErrorMessage(error) });
+    },
+    onSettled: clearCheckInTokenFromUrl,
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const checkInToken = params.get('checkInToken') || params.get('token');
+    if (!checkInToken || processedCheckInTokenRef.current === checkInToken) return;
+
+    processedCheckInTokenRef.current = checkInToken;
+    urlCheckInMutation.mutate(checkInToken);
+  }, [location.search, urlCheckInMutation]);
 
   const teamQuery = useMyTeamQuery(selectedEvent?.id);
   const team = teamQuery.data;
@@ -137,6 +203,7 @@ export function useParticipantDashboardView() {
     submissions,
     timelinesQuery,
     timelineItems,
+    urlCheckInMutation,
     rankingsQuery,
     teamRanking,
     isFinalist,

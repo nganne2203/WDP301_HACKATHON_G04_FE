@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link, Navigate } from 'react-router';
+import { useNavigate, useLocation, Link, Navigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,6 +25,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useStore((state) => state.user);
   const loginMutation = useLoginMutation();
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -40,9 +41,14 @@ export function Login() {
     resolver: zodResolver(loginSchema),
   });
 
+  const fromLocation = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
+  const redirectTarget = fromLocation?.pathname
+    ? `${fromLocation.pathname}${fromLocation.search || ''}${fromLocation.hash || ''}`
+    : null;
+
   // If already authenticated, redirect to the right dashboard
   if (user) {
-    return <Navigate to={resolveHomePathForUser(user)} replace />;
+    return <Navigate to={redirectTarget || resolveHomePathForUser(user)} replace />;
   }
 
   function handleForgotClose() {
@@ -63,7 +69,7 @@ export function Login() {
         description: `Welcome back, ${authUser.fullName}`,
       });
 
-      navigate(resolveHomePathForUser(authUser));
+      navigate(redirectTarget || resolveHomePathForUser(authUser), { replace: Boolean(redirectTarget) });
     } catch (error) {
       if (error instanceof ApiError) {
         const msg = error.firstError;

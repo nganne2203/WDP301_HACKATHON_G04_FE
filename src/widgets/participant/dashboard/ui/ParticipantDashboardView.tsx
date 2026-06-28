@@ -56,6 +56,14 @@ export function ParticipantDashboard() {
         </Alert>
       )}
 
+      {view.urlCheckInMutation.isPending && (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertTitle>Processing check-in QR</AlertTitle>
+          <AlertDescription>Please wait while your attendance is recorded.</AlertDescription>
+        </Alert>
+      )}
+
       {view.selectedEvent?.registrationEnd && (
         <Alert className="bg-blue-50 border-blue-200">
           <Clock className="h-4 w-4 text-blue-600" />
