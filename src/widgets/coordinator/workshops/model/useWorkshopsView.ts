@@ -50,10 +50,6 @@ export function useWorkshopsView() {
     queryFn: () => workshopsApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
   });
 
-  const presentersQuery = useQuery({
-    queryKey: queryKeys.users.list({ page: 1, limit: 100 }),
-    queryFn: () => usersApi.list({ page: 1, limit: 100 }),
-  });
 
   const workshopTimelinesQuery = useTimelinesQuery(
     {
@@ -270,7 +266,6 @@ export function useWorkshopsView() {
     workshopTimelines,
     workshopTimelinesQuery,
     workshops,
-    presenters,
     workshopQuestions: workshopQuestionsQuery.data?.data || [],
     workshopQuestionsQuery,
     workshopsQuery,
