@@ -66,8 +66,9 @@ function toComparableDate(value: string) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function validateRoundSchedule(form: RoundFormState) {
+function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boolean }) {
   const now = toComparableDate(getCurrentDateTimeLocalInputValue());
+  const allowPast = options?.allowPast === true;
   const timeFields = [
     { key: 'startTime', label: 'Start time', value: form.startTime },
     { key: 'endTime', label: 'End time', value: form.endTime },
@@ -79,7 +80,7 @@ function validateRoundSchedule(form: RoundFormState) {
     if (!field.value) continue;
     const parsed = toComparableDate(field.value);
     if (!parsed) continue;
-    if (now && parsed < now) {
+    if (!allowPast && now && parsed < now) {
       throw new ApiError({
         success: false,
         code: 'VALIDATION_ERROR',
@@ -163,7 +164,7 @@ export function buildCreateRoundPayload(form: RoundFormState, eventId: string): 
 }
 
 export function buildUpdateRoundPayload(form: RoundFormState): UpdateRoundRequest {
-  validateRoundSchedule(form);
+  validateRoundSchedule(form, { allowPast: true });
 
   return {
     name: form.name.trim(),
@@ -189,7 +190,9 @@ export function toggleId(ids: string[], id: string) {
 }
 
 export function isJudgeUser(user: User) {
-  const roleNames = user.roles.map((role) => role.name?.toUpperCase());
+  const roleNames = user.roles
+    .map((role) => (typeof role === 'string' ? role : role.code || role.name))
+    .map((role) => role?.toUpperCase());
   return roleNames.includes('JUDGE') || roleNames.includes('ADMIN');
 }
 
