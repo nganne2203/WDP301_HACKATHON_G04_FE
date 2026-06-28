@@ -100,6 +100,26 @@ export function useRoundsView() {
     },
   });
 
+  const submitCreateRound = () => {
+    if (!activeEvent) return;
+
+    try {
+      createMutation.mutate(buildCreateRoundPayload(createForm, activeEvent.id));
+    } catch (error) {
+      toast.error('Failed to create round', { description: getRoundErrorMessage(error) });
+    }
+  };
+
+  const submitUpdateRound = () => {
+    if (!selectedRound) return;
+
+    try {
+      updateMutation.mutate({ id: selectedRound.id, payload: buildUpdateRoundPayload(editForm) });
+    } catch (error) {
+      toast.error('Failed to update round', { description: getRoundErrorMessage(error) });
+    }
+  };
+
   return {
     activeEvent,
     createForm,
@@ -119,6 +139,8 @@ export function useRoundsView() {
     rubrics,
     rubricsQuery,
     selectedRound,
+    submitCreateRound,
+    submitUpdateRound,
     setCreateForm,
     setCreateOpen,
     setDeleteOpen,

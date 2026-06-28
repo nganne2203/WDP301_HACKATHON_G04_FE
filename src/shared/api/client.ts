@@ -6,7 +6,12 @@ import type { ApiErrorResponse, ApiSuccessResponse } from './types';
 // API Client Configuration
 // ============================================================
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+function normalizeApiBaseUrl(baseUrl: string): string {
+  const trimmed = baseUrl.replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 // ============================================================
 // Token Management
