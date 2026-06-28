@@ -1,7 +1,10 @@
-import type { TimelineEvent, Workshop, WorkshopStatus } from '@/shared/api/types';
+import type { TimelineEvent, User, Workshop, WorkshopStatus } from '@/shared/api/types';
 import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/workshops';
 
 export const workshopStatusOptions: WorkshopStatus[] = ['SCHEDULED', 'LIVE', 'COMPLETED', 'CANCELLED'];
+const workshopPresenterRoles = new Set(['SPEAKER', 'MENTOR']);
+const workshopPresenterPermissions = new Set(['WORKSHOP_MEET_CREATE']);
+const eligiblePresenterStatuses = new Set(['APPROVED', 'ACTIVE']);
 
 export interface WorkshopFormState {
   timelineEventId: string;
@@ -49,6 +52,12 @@ export function toDateTimeInputValue(value?: string | null) {
   return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
 }
 
+function toApiDateTimeValue(value: string) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
 export function formatDateTime(value?: string | null) {
   if (!value) return '-';
   return new Date(value).toLocaleString();
@@ -94,8 +103,8 @@ export function buildWorkshopPayload(form: WorkshopFormState, eventId: string): 
       bio: normalizeOptionalText(form.speakerBio) || undefined,
     },
     meetLink: normalizeOptionalText(form.meetLink) || undefined,
-    startTime: form.startTime,
-    endTime: form.endTime,
+    startTime: toApiDateTimeValue(form.startTime),
+    endTime: toApiDateTimeValue(form.endTime),
     questionnaire: parseQuestionnaire(form.questionnaire),
     status: form.status,
   };
@@ -114,8 +123,8 @@ export function buildWorkshopUpdatePayload(form: WorkshopFormState): UpdateWorks
       bio: normalizeOptionalText(form.speakerBio) || undefined,
     },
     meetLink: normalizeOptionalText(form.meetLink) || undefined,
-    startTime: form.startTime || undefined,
-    endTime: form.endTime || undefined,
+    startTime: form.startTime ? toApiDateTimeValue(form.startTime) : undefined,
+    endTime: form.endTime ? toApiDateTimeValue(form.endTime) : undefined,
     questionnaire: parseQuestionnaire(form.questionnaire),
     status: form.status,
   };
@@ -123,6 +132,22 @@ export function buildWorkshopUpdatePayload(form: WorkshopFormState): UpdateWorks
 
 export function workshopPresenterLabel(workshop: Workshop) {
   return workshop.presenter?.fullName || workshop.speakerInfo?.name || workshop.presenter?.email || '-';
+}
+
+export function isWorkshopPresenterCandidate(user: User) {
+  if (!eligiblePresenterStatuses.has(user.status)) return false;
+
+  const roleNames = user.roles
+    .map((role) => (role.name || role.code)?.toUpperCase())
+    .filter((roleName): roleName is string => Boolean(roleName));
+  const hasPresenterRole = roleNames.some((roleName) => workshopPresenterRoles.has(roleName));
+  const hasPresenterPermission = (user.permissions || []).some((permission) => workshopPresenterPermissions.has(permission));
+
+  return hasPresenterRole || hasPresenterPermission;
+}
+
+export function workshopPresenterUserLabel(user: User) {
+  return user.fullName || user.email;
 }
 
 export type { TimelineEvent };

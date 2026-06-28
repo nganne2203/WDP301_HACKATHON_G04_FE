@@ -108,6 +108,12 @@ export function formatDateTimeInput(value?: string | null) {
   return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
 }
 
+function toApiDateTimeValue(value?: string | null) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
 export function formatDateTimeDisplay(value?: string | null) {
   if (!value) return '-';
   return new Date(value).toLocaleString();
@@ -144,10 +150,10 @@ export function buildCreateRoundPayload(form: RoundFormState, eventId: string): 
     assignedTeamIds: form.assignedTeamIds,
     assignedJudgeIds: form.assignedJudgeIds,
     rubricId: form.rubricId === 'none' ? null : form.rubricId,
-    startTime: form.startTime || null,
-    endTime: form.endTime || null,
-    submissionDeadline: form.submissionDeadline || null,
-    publishTime: form.publishTime || null,
+    startTime: toApiDateTimeValue(form.startTime),
+    endTime: toApiDateTimeValue(form.endTime),
+    submissionDeadline: toApiDateTimeValue(form.submissionDeadline),
+    publishTime: toApiDateTimeValue(form.publishTime),
     maxPromotedTeams: form.maxPromotedTeams ? Number(form.maxPromotedTeams) : null,
     promotionRule: normalizeText(form.promotionRule),
     tieBreakRule: normalizeText(form.tieBreakRule),
@@ -166,10 +172,10 @@ export function buildUpdateRoundPayload(form: RoundFormState): UpdateRoundReques
     assignedTeamIds: form.assignedTeamIds,
     assignedJudgeIds: form.assignedJudgeIds,
     rubricId: form.rubricId === 'none' ? null : form.rubricId,
-    startTime: form.startTime || null,
-    endTime: form.endTime || null,
-    submissionDeadline: form.submissionDeadline || null,
-    publishTime: form.publishTime || null,
+    startTime: toApiDateTimeValue(form.startTime),
+    endTime: toApiDateTimeValue(form.endTime),
+    submissionDeadline: toApiDateTimeValue(form.submissionDeadline),
+    publishTime: toApiDateTimeValue(form.publishTime),
     maxPromotedTeams: form.maxPromotedTeams ? Number(form.maxPromotedTeams) : null,
     promotionRule: normalizeText(form.promotionRule),
     tieBreakRule: normalizeText(form.tieBreakRule),

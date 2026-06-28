@@ -85,7 +85,13 @@ export function Workshops() {
                 <DialogTitle>Create Workshop</DialogTitle>
                 <DialogDescription>Schedule a workshop for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
               </DialogHeader>
-              <WorkshopForm form={view.createForm} onChange={view.setCreateForm} timelines={view.workshopTimelines} presenters={view.presenters} />
+              <WorkshopForm
+                form={view.createForm}
+                onChange={view.setCreateForm}
+                presenters={view.presenterUsers}
+                presentersLoading={view.presenterUsersQuery.isLoading}
+                timelines={view.workshopTimelines}
+              />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
@@ -115,6 +121,10 @@ export function Workshops() {
 
       {view.workshopTimelinesQuery.error && (
         <WorkshopInlineError message={view.workshopTimelinesQuery.error instanceof ApiError ? view.workshopTimelinesQuery.error.firstError : 'Failed to load workshop timelines'} />
+      )}
+
+      {view.presenterUsersQuery.error && (
+        <WorkshopInlineError message={view.presenterUsersQuery.error instanceof ApiError ? view.presenterUsersQuery.error.firstError : 'Failed to load presenters'} />
       )}
 
       <Card>
@@ -231,7 +241,13 @@ export function Workshops() {
             <DialogTitle>Edit Workshop</DialogTitle>
             <DialogDescription>Update workshop speaker info and scheduling fields to match the backend.</DialogDescription>
           </DialogHeader>
-          <WorkshopForm form={view.editForm} onChange={view.setEditForm} timelines={view.workshopTimelines} presenters={view.presenters} />
+          <WorkshopForm
+            form={view.editForm}
+            onChange={view.setEditForm}
+            presenters={view.presenterUsers}
+            presentersLoading={view.presenterUsersQuery.isLoading}
+            timelines={view.workshopTimelines}
+          />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel

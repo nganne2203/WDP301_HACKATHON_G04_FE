@@ -1,23 +1,27 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { AlertCircle } from 'lucide-react';
 
-import type { TimelineEvent, WorkshopStatus } from '@/shared/api/types';
+import type { TimelineEvent, User, WorkshopStatus } from '@/shared/api/types';
 import { Card } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Textarea } from '@/shared/ui/textarea';
 
-import { workshopStatusOptions, type WorkshopFormState } from '../model/workshop-form';
+import { workshopPresenterUserLabel, workshopStatusOptions, type WorkshopFormState } from '../model/workshop-form';
 
 export function WorkshopForm({
   form,
   onChange,
+  presenters,
+  presentersLoading,
   timelines,
   presenters = [],
 }: {
   form: WorkshopFormState;
   onChange: Dispatch<SetStateAction<WorkshopFormState>>;
+  presenters: User[];
+  presentersLoading?: boolean;
   timelines: TimelineEvent[];
   presenters?: any[];
 }) {
@@ -82,23 +86,28 @@ export function WorkshopForm({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label>Presenter (User Account)</Label>
+          <Label>Presenter</Label>
           <Select
             value={form.presenterId || 'none'}
             onValueChange={(value) => onChange((current) => ({ ...current, presenterId: value === 'none' ? '' : value }))}
+            disabled={presentersLoading}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Optional presenter reference" />
+            <SelectTrigger id="workshop-presenter-id">
+              <SelectValue placeholder={presentersLoading ? 'Loading presenters...' : 'Select presenter'} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">No linked user account</SelectItem>
-              {eligiblePresenters.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.fullName || 'No Name'} ({user.email})
+              <SelectItem value="none">No presenter assigned</SelectItem>
+              {presenters.map((presenter) => (
+                <SelectItem key={presenter.id} value={presenter.id}>
+                  <span className="min-w-0 truncate">{workshopPresenterUserLabel(presenter)}</span>
+                  <span className="min-w-0 truncate text-xs text-muted-foreground">{presenter.email}</span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {!presentersLoading && presenters.length === 0 && (
+            <p className="text-xs text-muted-foreground">No eligible presenter accounts found.</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label>Status</Label>

@@ -41,6 +41,12 @@ export function toDateTimeInputValue(value?: string | null) {
   return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
 }
 
+function toApiDateTimeValue(value: string) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
 export function formatDateTime(value?: string | null) {
   if (!value) return '-';
   return new Date(value).toLocaleString();
@@ -62,8 +68,8 @@ export function buildTimelinePayload(form: TimelineFormState, eventId: string): 
     eventId,
     title: form.title.trim(),
     description: normalizeOptionalText(form.description),
-    startTime: form.startTime || undefined,
-    endTime: form.endTime || undefined,
+    startTime: toApiDateTimeValue(form.startTime),
+    endTime: toApiDateTimeValue(form.endTime),
     eventType: form.eventType,
     status: form.status,
   };
@@ -73,8 +79,8 @@ export function buildTimelineUpdatePayload(form: TimelineFormState): UpdateTimel
   return {
     title: form.title.trim(),
     description: normalizeOptionalText(form.description),
-    startTime: form.startTime || undefined,
-    endTime: form.endTime || undefined,
+    startTime: form.startTime ? toApiDateTimeValue(form.startTime) : undefined,
+    endTime: form.endTime ? toApiDateTimeValue(form.endTime) : undefined,
     eventType: form.eventType,
     status: form.status,
   };
