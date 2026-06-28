@@ -534,6 +534,16 @@ export interface CreateTeamRequest {
   invitedMembers?: TeamInviteMember[];
 }
 
+export interface TeamAvailability {
+  eventId: string;
+  name: string;
+  normalizedName: string;
+  available: boolean;
+  nameAvailable: boolean;
+  leaderAvailable: boolean;
+  errors: string[];
+}
+
 export interface TeamInviteMember {
   fullName: string;
   email: string;
