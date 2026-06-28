@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
-import { workshopsApi } from '@/shared/api';
+import { workshopsApi, usersApi } from '@/shared/api';
 import { useEventsQuery, useTimelinesQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
@@ -49,6 +49,11 @@ export function useWorkshopsView() {
     queryFn: () => workshopsApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
   });
 
+  const presentersQuery = useQuery({
+    queryKey: queryKeys.users.list({ page: 1, limit: 100 }),
+    queryFn: () => usersApi.list({ page: 1, limit: 100 }),
+  });
+
   const workshopTimelinesQuery = useTimelinesQuery(
     {
       eventId: activeEvent?.id,
@@ -62,6 +67,7 @@ export function useWorkshopsView() {
   const workshops = workshopsQuery.data?.data || [];
   const pagination = workshopsQuery.data?.pagination;
   const workshopTimelines = workshopTimelinesQuery.data || [];
+  const presenters = presentersQuery.data?.data || [];
   const workshopQuestionsQuery = useQuery({
     queryKey: queryKeys.workshops.questions(selectedQuestionsWorkshop?.id, { page: 1, limit: 50 }),
     enabled: questionsOpen && Boolean(selectedQuestionsWorkshop?.id),
@@ -255,6 +261,7 @@ export function useWorkshopsView() {
     workshopTimelines,
     workshopTimelinesQuery,
     workshops,
+    presenters,
     workshopQuestions: workshopQuestionsQuery.data?.data || [],
     workshopQuestionsQuery,
     workshopsQuery,

@@ -85,7 +85,7 @@ export function Workshops() {
                 <DialogTitle>Create Workshop</DialogTitle>
                 <DialogDescription>Schedule a workshop for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
               </DialogHeader>
-              <WorkshopForm form={view.createForm} onChange={view.setCreateForm} timelines={view.workshopTimelines} />
+              <WorkshopForm form={view.createForm} onChange={view.setCreateForm} timelines={view.workshopTimelines} presenters={view.presenters} />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
@@ -231,7 +231,7 @@ export function Workshops() {
             <DialogTitle>Edit Workshop</DialogTitle>
             <DialogDescription>Update workshop speaker info and scheduling fields to match the backend.</DialogDescription>
           </DialogHeader>
-          <WorkshopForm form={view.editForm} onChange={view.setEditForm} timelines={view.workshopTimelines} />
+          <WorkshopForm form={view.editForm} onChange={view.setEditForm} timelines={view.workshopTimelines} presenters={view.presenters} />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel

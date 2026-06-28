@@ -14,10 +14,12 @@ export function WorkshopForm({
   form,
   onChange,
   timelines,
+  presenters = [],
 }: {
   form: WorkshopFormState;
   onChange: Dispatch<SetStateAction<WorkshopFormState>>;
   timelines: TimelineEvent[];
+  presenters?: any[];
 }) {
   return (
     <div className="grid gap-4 py-4">
@@ -75,13 +77,23 @@ export function WorkshopForm({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="workshop-presenter-id">Presenter Id</Label>
-          <Input
-            id="workshop-presenter-id"
-            value={form.presenterId}
-            onChange={(event) => onChange((current) => ({ ...current, presenterId: event.target.value }))}
-            placeholder="Optional user id from backend"
-          />
+          <Label>Presenter (User Account)</Label>
+          <Select
+            value={form.presenterId || 'none'}
+            onValueChange={(value) => onChange((current) => ({ ...current, presenterId: value === 'none' ? '' : value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Optional presenter reference" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No linked user account</SelectItem>
+              {presenters.map((user) => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.fullName || 'No Name'} ({user.email})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Status</Label>
