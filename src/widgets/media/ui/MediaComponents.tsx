@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Check,
   Download,
@@ -146,13 +147,26 @@ export function MediaCard({
   onView: (media: MediaItem) => void;
   onDelete?: (media: MediaItem) => void;
 }) {
+  const [imgError, setImgError] = useState(false);
   const meta = TYPE_META[media.mediaType];
   const Icon = meta.icon;
 
+  const isImage = media.mediaType === 'IMAGE' && media.fileUrl && !imgError;
+
   return (
     <Card className="overflow-hidden rounded-lg">
-      <div className="flex h-36 items-center justify-center bg-gray-100">
-        <Icon className="w-12 h-12 text-gray-500" />
+      <div className="flex h-36 items-center justify-center bg-gray-100 overflow-hidden">
+        {isImage ? (
+          <img
+            src={media.fileUrl}
+            alt={media.title || media.originalFileName}
+            className="h-full w-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+            onClick={() => onView(media)}
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <Icon className="w-12 h-12 text-gray-500" />
+        )}
       </div>
       <CardContent className="space-y-3 p-4">
         <div className="space-y-1">
