@@ -1,4 +1,5 @@
-import { AlertCircle, Ban, CheckCircle, Download, Filter, Loader2, Search, XCircle } from 'lucide-react';
+import type { Dispatch, SetStateAction } from 'react';
+import { AlertCircle, Ban, CheckCircle, Download, Filter, Loader2, Pencil, Plus, Search, XCircle } from 'lucide-react';
 
 import { ApiError } from '@/shared/api/client';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -6,6 +7,7 @@ import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { Checkbox } from '@/shared/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +15,9 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { Input } from '@/shared/ui/input';
+import { Label } from '@/shared/ui/label';
 import { ListPagination } from '@/shared/ui/list-pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
   Table,
   TableBody,
@@ -22,7 +26,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table';
+import { Textarea } from '@/shared/ui/textarea';
 
+import {
+  participantUserRoleOptions,
+  participantUserStatusOptions,
+  toggleUserRole,
+  userNeedsStudentInfo,
+  type ParticipantUserFormState,
+} from '../model/participant-user-form';
 import {
   getParticipantInitials,
   getParticipantRoleLabels,
@@ -47,6 +59,10 @@ export function Participants() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => view.setCreateOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create User
+          </Button>
           <Button variant="outline" onClick={view.handleExport}>
             <Download className="w-4 h-4 mr-2" />
             Export
@@ -175,6 +191,10 @@ export function Participants() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => view.openEditDialog(user)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
                           {user.registrationSource === 'FORM' && user.status === 'PENDING' && (
                             <>
                               <DropdownMenuItem
@@ -250,6 +270,214 @@ export function Participants() {
         setActiveFilter={view.setActiveFilter}
         filterCounts={view.filterCounts}
       />
+
+      <ParticipantUserDialog
+        form={view.createForm}
+        mode="create"
+        onChange={view.setCreateForm}
+        onOpenChange={view.setCreateOpen}
+        onSubmit={view.handleCreateUser}
+        open={view.createOpen}
+        submitting={view.createMutation.isPending}
+      />
+
+      <ParticipantUserDialog
+        form={view.editForm}
+        mode="edit"
+        onChange={view.setEditForm}
+        onOpenChange={view.setEditOpen}
+        onSubmit={view.handleUpdateUser}
+        open={view.editOpen}
+        submitting={view.updateMutation.isPending}
+      />
     </div>
+  );
+}
+
+function ParticipantUserDialog({
+  form,
+  mode,
+  onChange,
+  onOpenChange,
+  onSubmit,
+  open,
+  submitting,
+}: {
+  form: ParticipantUserFormState;
+  mode: 'create' | 'edit';
+  onChange: Dispatch<SetStateAction<ParticipantUserFormState>>;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: () => void;
+  open: boolean;
+  submitting: boolean;
+}) {
+  const needsStudentInfo = userNeedsStudentInfo(form);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{mode === 'create' ? 'Create User' : 'Edit User'}</DialogTitle>
+          <DialogDescription>
+            {mode === 'create' ? 'Add a local account for a participant or event staff member.' : 'Update account profile fields and assigned roles.'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 py-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor={`${mode}-user-full-name`}>Full Name</Label>
+              <Input
+                id={`${mode}-user-full-name`}
+                value={form.fullName}
+                onChange={(event) => onChange((current) => ({ ...current, fullName: event.target.value }))}
+                placeholder="Nguyen Van A"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${mode}-user-email`}>Email</Label>
+              <Input
+                id={`${mode}-user-email`}
+                type="email"
+                value={form.email}
+                onChange={(event) => onChange((current) => ({ ...current, email: event.target.value }))}
+                placeholder="participant@example.com"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {mode === 'create' && (
+              <div className="space-y-2">
+                <Label htmlFor="create-user-password">Password</Label>
+                <Input
+                  id="create-user-password"
+                  type="password"
+                  value={form.password}
+                  onChange={(event) => onChange((current) => ({ ...current, password: event.target.value }))}
+                  placeholder="At least 8 characters"
+                />
+              </div>
+            )}
+            {mode === 'create' && (
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select
+                  value={form.status}
+                  onValueChange={(value) => onChange((current) => ({ ...current, status: value as ParticipantUserFormState['status'] }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {participantUserStatusOptions.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Roles</Label>
+            <div className="grid grid-cols-2 gap-2 rounded-md border p-3 md:grid-cols-4">
+              {participantUserRoleOptions.map((role) => (
+                <label key={role} className="flex cursor-pointer items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={form.roles.includes(role)}
+                    onCheckedChange={() => onChange((current) => ({ ...current, roles: toggleUserRole(current.roles, role) }))}
+                  />
+                  <span className="truncate">{role}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {needsStudentInfo && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Student Type</Label>
+                <Select
+                  value={form.studentType}
+                  onValueChange={(value) => onChange((current) => ({ ...current, studentType: value as ParticipantUserFormState['studentType'] }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FPT">FPT</SelectItem>
+                    <SelectItem value="EXTERNAL">External</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`${mode}-student-id`}>Student ID</Label>
+                <Input
+                  id={`${mode}-student-id`}
+                  value={form.studentId}
+                  onChange={(event) => onChange((current) => ({ ...current, studentId: event.target.value }))}
+                  placeholder="SE123456"
+                />
+              </div>
+              {form.studentType === 'EXTERNAL' && (
+                <div className="space-y-2">
+                  <Label htmlFor={`${mode}-school-name`}>School Name</Label>
+                  <Input
+                    id={`${mode}-school-name`}
+                    value={form.schoolName}
+                    onChange={(event) => onChange((current) => ({ ...current, schoolName: event.target.value }))}
+                    placeholder="University name"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor={`${mode}-github-username`}>GitHub Username</Label>
+              <Input
+                id={`${mode}-github-username`}
+                value={form.githubUsername}
+                onChange={(event) => onChange((current) => ({ ...current, githubUsername: event.target.value }))}
+                placeholder="octocat"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${mode}-phone`}>Phone</Label>
+              <Input
+                id={`${mode}-phone`}
+                value={form.phone}
+                onChange={(event) => onChange((current) => ({ ...current, phone: event.target.value }))}
+                placeholder="+84901234567"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`${mode}-bio`}>Bio</Label>
+            <Textarea
+              id={`${mode}-bio`}
+              rows={3}
+              value={form.bio}
+              onChange={(event) => onChange((current) => ({ ...current, bio: event.target.value }))}
+              placeholder="Short profile note"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={onSubmit} disabled={submitting}>
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : mode === 'create' ? 'Create User' : 'Save Changes'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
