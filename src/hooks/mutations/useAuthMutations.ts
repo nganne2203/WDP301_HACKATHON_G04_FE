@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@/entities/session/model/store';
 import { authApi } from '@/shared/api/auth';
 import { clearTokens, getAccessToken } from '@/shared/api/client';
-import type { GoogleLoginRequest, GoogleRegisterRequest, LoginRequest } from '@/shared/api/types';
+import type { GoogleLoginRequest, LoginRequest } from '@/shared/api/types';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useLoginMutation() {
@@ -31,12 +31,6 @@ export function useGoogleSignInMutation() {
       setAuth(user, tokens.accessToken, tokens.refreshToken);
       queryClient.setQueryData(queryKeys.auth.me(), user);
     },
-  });
-}
-
-export function useGoogleRegisterMutation() {
-  return useMutation({
-    mutationFn: (data: GoogleRegisterRequest) => authApi.googleRegister(data),
   });
 }
 

@@ -117,6 +117,7 @@ export interface User {
   id: string;
   email: string;
   authProvider: 'LOCAL' | 'GOOGLE';
+  registrationSource: 'FORM' | 'GOOGLE';
   fullName: string;
   status: UserStatus;
   mustChangePassword: boolean;
@@ -136,7 +137,7 @@ export interface User {
   updatedAt: string;
 }
 
-export type UserStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+export type UserStatus = 'PENDING' | 'APPROVED' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
 
 export interface EmailDeliveryResult {
   sent: boolean;
@@ -181,10 +182,6 @@ export interface GoogleLoginRequest {
   email: string;
   name: string;
   avatar: string | null;
-}
-
-export interface GoogleRegisterRequest extends GoogleLoginRequest {
-  githubUsername: string;
 }
 
 export interface RegisterRequest {
@@ -535,6 +532,16 @@ export interface CreateTeamRequest {
   projectName?: string;
   invitedEmails?: string[];
   invitedMembers?: TeamInviteMember[];
+}
+
+export interface TeamAvailability {
+  eventId: string;
+  name: string;
+  normalizedName: string;
+  available: boolean;
+  nameAvailable: boolean;
+  leaderAvailable: boolean;
+  errors: string[];
 }
 
 export interface TeamInviteMember {

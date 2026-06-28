@@ -7,6 +7,7 @@ import type {
   ListTeamsQuery,
   ReplaceInvitationRequest,
   Team,
+  TeamAvailability,
   TeamInvitation,
 } from './types';
 
@@ -16,6 +17,9 @@ export const teamsApi = {
 
   create: (data: CreateTeamRequest) =>
     api.post<Team>('/teams', data),
+
+  checkAvailability: (query: { eventId: string; name: string }) =>
+    api.get<TeamAvailability>('/teams/availability', { params: query }),
 
   getById: (id: string) =>
     api.get<Team>(`/teams/${id}`),

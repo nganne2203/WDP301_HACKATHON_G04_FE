@@ -106,6 +106,19 @@ export function useParticipantsView() {
     },
   });
 
+  const activateMutation = useMutation({
+    mutationFn: (id: string) => usersApi.updateStatus(id, 'ACTIVE'),
+    onSuccess: async () => {
+      toast.success('Google account re-activated');
+      await queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to re-activate user', {
+        description: getParticipantErrorMessage(error),
+      });
+    },
+  });
+
   const filteredUsers = allUsers;
 
   const allSelected = filteredUsers.length > 0 && selectedIds.length === filteredUsers.length;
@@ -115,6 +128,7 @@ export function useParticipantsView() {
     all: allUsers.length,
     PENDING: allUsers.filter((user) => user.status === 'PENDING').length,
     APPROVED: allUsers.filter((user) => user.status === 'APPROVED').length,
+    ACTIVE: allUsers.filter((user) => user.status === 'ACTIVE').length,
     REJECTED: allUsers.filter((user) => user.status === 'REJECTED').length,
     SUSPENDED: allUsers.filter((user) => user.status === 'SUSPENDED').length,
   }), [allUsers]);
@@ -162,6 +176,7 @@ export function useParticipantsView() {
     approveMutation,
     rejectMutation,
     suspendMutation,
+    activateMutation,
     allSelected,
     someSelected,
     filterCounts,

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
@@ -11,9 +11,17 @@ import {
   normalizeMemberRows,
   type MemberInviteRow,
 } from '@/features/team/member-invites/model/helpers';
-import type { TeamInvitation } from '@/shared/api/types';
+import type { TeamAvailability, TeamInvitation } from '@/shared/api/types';
 import { useEventsQuery, useMyTeamQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
+import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
+
+function getTeamAvailabilityMessage(availability?: TeamAvailability | null) {
+  if (!availability || availability.available) return '';
+  if (!availability.nameAvailable) return 'Team name already exists in this event.';
+  if (!availability.leaderAvailable) return 'You already created a team for this event.';
+  return availability.errors[0] || 'Team name or leader already exists in this event.';
+}
 
 export function useParticipantTeamView() {
   const queryClient = useQueryClient();
@@ -24,6 +32,7 @@ export function useParticipantTeamView() {
   const [invitedMembers, setInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [newInvitedMembers, setNewInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [replacementEmails, setReplacementEmails] = useState<Record<string, string>>({});
+  const [createValidationPending, setCreateValidationPending] = useState(false);
 
   const eventsQuery = useEventsQuery();
 
@@ -36,6 +45,40 @@ export function useParticipantTeamView() {
   const activeEventId = selectedEvent?.id || '';
 
   const teamQuery = useMyTeamQuery(activeEventId);
+  const team = teamQuery.data;
+  const registrationOpen = isRegistrationOpen(selectedEvent);
+  const trimmedTeamName = teamName.trim();
+  const debouncedTeamName = useDebouncedValue(trimmedTeamName, 350);
+
+  const teamAvailabilityQuery = useQuery({
+    queryKey: queryKeys.teams.availability(activeEventId, debouncedTeamName),
+    enabled: Boolean(activeEventId && registrationOpen && !team && debouncedTeamName.length >= 2),
+    queryFn: async () => {
+      const response = await teamsApi.checkAvailability({
+        eventId: activeEventId,
+        name: debouncedTeamName,
+      });
+      return response.data;
+    },
+    staleTime: 5_000,
+  });
+
+  const isTeamNameCheckCurrent = debouncedTeamName === trimmedTeamName;
+  const teamNameValidationMessage = useMemo(() => {
+    if (!trimmedTeamName) return '';
+    if (trimmedTeamName.length < 2) return 'Team name must be at least 2 characters.';
+    if (team) return 'You already created a team for this event.';
+    if (!isTeamNameCheckCurrent) return '';
+    return getTeamAvailabilityMessage(teamAvailabilityQuery.data);
+  }, [isTeamNameCheckCurrent, team, teamAvailabilityQuery.data, trimmedTeamName]);
+
+  const teamNameChecking = Boolean(
+    activeEventId &&
+    registrationOpen &&
+    !team &&
+    trimmedTeamName.length >= 2 &&
+    teamAvailabilityQuery.isFetching
+  );
 
   const invalidateTeam = async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.teams.my(activeEventId) });
@@ -105,16 +148,48 @@ export function useParticipantTeamView() {
     onError: (error) => toast.error('Could not cancel invitation', { description: getApiErrorMessage(error) }),
   });
 
-  const team = teamQuery.data;
-  const registrationOpen = isRegistrationOpen(selectedEvent);
   const isLeader = Boolean(team && user && team.leaderId === user.id);
   const canChangeInvitations = Boolean(isLeader && registrationOpen && team?.status !== 'REJECTED');
 
-  function handleCreateTeam() {
-    if (!teamName.trim()) {
+  async function handleCreateTeam() {
+    if (!trimmedTeamName) {
       toast.error('Team name is required.');
       return;
     }
+
+    if (trimmedTeamName.length < 2) {
+      toast.error('Team name must be at least 2 characters.');
+      return;
+    }
+
+    if (team) {
+      toast.error('You already created a team for this event.');
+      return;
+    }
+
+    if (!activeEventId) {
+      toast.error('Please select an event first.');
+      return;
+    }
+
+    setCreateValidationPending(true);
+    try {
+      const response = await teamsApi.checkAvailability({
+        eventId: activeEventId,
+        name: trimmedTeamName,
+      });
+      const availabilityMessage = getTeamAvailabilityMessage(response.data);
+      if (availabilityMessage) {
+        toast.error('Could not create team', { description: availabilityMessage });
+        return;
+      }
+    } catch (error) {
+      toast.error('Could not validate team', { description: getApiErrorMessage(error) });
+      return;
+    } finally {
+      setCreateValidationPending(false);
+    }
+
     createTeamMutation.mutate();
   }
 
@@ -126,6 +201,7 @@ export function useParticipantTeamView() {
     activeEventId,
     canChangeInvitations,
     cancelMutation,
+    createValidationPending,
     createTeamMutation,
     events,
     eventsQuery,
@@ -147,6 +223,8 @@ export function useParticipantTeamView() {
     setSelectedEventId,
     setTeamName,
     team,
+    teamNameChecking,
+    teamNameValidationMessage,
     teamName,
     teamQuery,
   };
