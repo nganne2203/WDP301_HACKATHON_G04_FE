@@ -52,6 +52,12 @@ export function toDateTimeInputValue(value?: string | null) {
   return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
 }
 
+function toApiDateTimeValue(value: string) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toISOString();
+}
+
 export function formatDateTime(value?: string | null) {
   if (!value) return '-';
   return new Date(value).toLocaleString();
@@ -97,8 +103,8 @@ export function buildWorkshopPayload(form: WorkshopFormState, eventId: string): 
       bio: normalizeOptionalText(form.speakerBio) || undefined,
     },
     meetLink: normalizeOptionalText(form.meetLink) || undefined,
-    startTime: form.startTime,
-    endTime: form.endTime,
+    startTime: toApiDateTimeValue(form.startTime),
+    endTime: toApiDateTimeValue(form.endTime),
     questionnaire: parseQuestionnaire(form.questionnaire),
     status: form.status,
   };
@@ -117,8 +123,8 @@ export function buildWorkshopUpdatePayload(form: WorkshopFormState): UpdateWorks
       bio: normalizeOptionalText(form.speakerBio) || undefined,
     },
     meetLink: normalizeOptionalText(form.meetLink) || undefined,
-    startTime: form.startTime || undefined,
-    endTime: form.endTime || undefined,
+    startTime: form.startTime ? toApiDateTimeValue(form.startTime) : undefined,
+    endTime: form.endTime ? toApiDateTimeValue(form.endTime) : undefined,
     questionnaire: parseQuestionnaire(form.questionnaire),
     status: form.status,
   };
