@@ -945,6 +945,7 @@ export interface ListUsersQuery {
   limit?: number;
   status?: UserStatus;
   search?: string;
+  roles?: UserRoleName[];
 }
 
 export interface CreateUserRequest {

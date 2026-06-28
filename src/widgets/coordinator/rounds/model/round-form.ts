@@ -189,7 +189,9 @@ export function toggleId(ids: string[], id: string) {
 }
 
 export function isJudgeUser(user: User) {
-  const roleNames = user.roles.map((role) => role.name?.toUpperCase());
+  const roleNames = user.roles
+    .map((role) => (typeof role === 'string' ? role : role.code || role.name))
+    .map((role) => role?.toUpperCase());
   return roleNames.includes('JUDGE') || roleNames.includes('ADMIN');
 }
 

@@ -53,7 +53,7 @@ export function useRoundsView() {
 
   const teamsQuery = useTeamsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
 
-  const judgesQuery = useUsersQuery();
+  const judgesQuery = useUsersQuery({ page: 1, limit: 100, roles: ['JUDGE', 'ADMIN'] });
 
   const rounds = roundsQuery.data || [];
   const tracks = tracksQuery.data || [];

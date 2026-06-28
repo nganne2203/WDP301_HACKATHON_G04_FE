@@ -106,7 +106,7 @@ async function attemptTokenRefresh(): Promise<string | null> {
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
-  params?: Record<string, string | number | boolean | undefined | null>;
+  params?: Record<string, string | number | boolean | Array<string | number | boolean> | undefined | null>;
   /** If false, skip sending auth header. Default true. */
   auth?: boolean;
 }
@@ -122,6 +122,15 @@ export async function apiRequest<T>(
   if (params) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item !== undefined && item !== null && item !== '') {
+            searchParams.append(key, String(item));
+          }
+        });
+        return;
+      }
+
       if (value !== undefined && value !== null && value !== '') {
         searchParams.set(key, String(value));
       }
