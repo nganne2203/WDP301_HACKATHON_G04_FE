@@ -16,19 +16,13 @@ export function WorkshopForm({
   presenters,
   presentersLoading,
   timelines,
-  presenters = [],
 }: {
   form: WorkshopFormState;
   onChange: Dispatch<SetStateAction<WorkshopFormState>>;
   presenters: User[];
   presentersLoading?: boolean;
   timelines: TimelineEvent[];
-  presenters?: any[];
 }) {
-  const eligiblePresenters = presenters.filter((user) => {
-    const roleCodes = (user.roles || []).map((r: any) => (r.code || r.name || String(r)).toUpperCase());
-    return roleCodes.some((code) => ['SPEAKER', 'MENTOR', 'COORDINATOR', 'ADMIN'].includes(code));
-  });
 
   return (
     <div className="grid gap-4 py-4">
