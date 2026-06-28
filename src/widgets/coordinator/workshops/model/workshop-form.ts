@@ -1,7 +1,10 @@
-import type { TimelineEvent, Workshop, WorkshopStatus } from '@/shared/api/types';
+import type { TimelineEvent, User, Workshop, WorkshopStatus } from '@/shared/api/types';
 import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/workshops';
 
 export const workshopStatusOptions: WorkshopStatus[] = ['SCHEDULED', 'LIVE', 'COMPLETED', 'CANCELLED'];
+const workshopPresenterRoles = new Set(['SPEAKER', 'MENTOR']);
+const workshopPresenterPermissions = new Set(['WORKSHOP_MEET_CREATE']);
+const eligiblePresenterStatuses = new Set(['APPROVED', 'ACTIVE']);
 
 export interface WorkshopFormState {
   timelineEventId: string;
@@ -123,6 +126,22 @@ export function buildWorkshopUpdatePayload(form: WorkshopFormState): UpdateWorks
 
 export function workshopPresenterLabel(workshop: Workshop) {
   return workshop.presenter?.fullName || workshop.speakerInfo?.name || workshop.presenter?.email || '-';
+}
+
+export function isWorkshopPresenterCandidate(user: User) {
+  if (!eligiblePresenterStatuses.has(user.status)) return false;
+
+  const roleNames = user.roles
+    .map((role) => (role.name || role.code)?.toUpperCase())
+    .filter((roleName): roleName is string => Boolean(roleName));
+  const hasPresenterRole = roleNames.some((roleName) => workshopPresenterRoles.has(roleName));
+  const hasPresenterPermission = (user.permissions || []).some((permission) => workshopPresenterPermissions.has(permission));
+
+  return hasPresenterRole || hasPresenterPermission;
+}
+
+export function workshopPresenterUserLabel(user: User) {
+  return user.fullName || user.email;
 }
 
 export type { TimelineEvent };

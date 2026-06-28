@@ -2,6 +2,7 @@ import { api } from './client';
 import type {
   User,
   CreateUserRequest,
+  UpdateUserRequest,
   UpdateProfileRequest,
   AssignRolesRequest,
   ListUsersQuery,
@@ -17,6 +18,9 @@ export const usersApi = {
 
   create: (data: CreateUserRequest) =>
     api.post<User>('/users', data),
+
+  update: (id: string, data: UpdateUserRequest) =>
+    api.patch<User>(`/users/${id}`, data),
 
   updateProfile: (data: UpdateProfileRequest) =>
     api.patch<User>('/users/me', data),

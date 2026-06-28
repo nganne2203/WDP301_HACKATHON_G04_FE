@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
 import { workshopsApi } from '@/shared/api';
-import { useEventsQuery, useTimelinesQuery } from '@/hooks/queries/useCommonQueries';
+import { useEventsQuery, useTimelinesQuery, useUsersQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Workshop } from '@/shared/api/types';
@@ -14,6 +14,7 @@ import {
   buildWorkshopPayload,
   buildWorkshopUpdatePayload,
   createEmptyWorkshopForm,
+  isWorkshopPresenterCandidate,
   mapWorkshopToForm,
   type WorkshopFormState,
 } from './workshop-form';
@@ -59,9 +60,16 @@ export function useWorkshopsView() {
     { enabled: Boolean(activeEvent?.id) }
   );
 
+  const presenterUsersQuery = useUsersQuery({ page: 1, limit: 100 });
+
   const workshops = workshopsQuery.data?.data || [];
   const pagination = workshopsQuery.data?.pagination;
   const workshopTimelines = workshopTimelinesQuery.data || [];
+  const presenterUsers = useMemo(() => {
+    return (presenterUsersQuery.data?.data || [])
+      .filter(isWorkshopPresenterCandidate)
+      .sort((first, second) => (first.fullName || first.email).localeCompare(second.fullName || second.email));
+  }, [presenterUsersQuery.data?.data]);
   const workshopQuestionsQuery = useQuery({
     queryKey: queryKeys.workshops.questions(selectedQuestionsWorkshop?.id, { page: 1, limit: 50 }),
     enabled: questionsOpen && Boolean(selectedQuestionsWorkshop?.id),
@@ -250,6 +258,8 @@ export function useWorkshopsView() {
     },
     page,
     pagination,
+    presenterUsers,
+    presenterUsersQuery,
     setPage,
     setSelectedWorkshop,
     workshopTimelines,
