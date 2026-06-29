@@ -79,13 +79,17 @@ export function Timelines() {
                 Add Timeline Item
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden p-0">
+              <div className="flex-shrink-0 px-6 pt-6">
               <DialogHeader>
                 <DialogTitle>Create Timeline Item</DialogTitle>
                 <DialogDescription>Schedule a new milestone for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
               </DialogHeader>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6">
               <TimelineForm form={view.createForm} onChange={view.setCreateForm} />
-              <div className="flex justify-end gap-2">
+              </div>
+              <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
                 </Button>
@@ -192,13 +196,17 @@ export function Timelines() {
       </Card>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden p-0">
+          <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Edit Timeline Item</DialogTitle>
             <DialogDescription>Keep the website schedule consistent with backend data.</DialogDescription>
           </DialogHeader>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6">
           <TimelineForm form={view.editForm} onChange={view.setEditForm} />
-          <div className="flex justify-end gap-2">
+          </div>
+          <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel
             </Button>

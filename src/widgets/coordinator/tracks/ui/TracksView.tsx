@@ -77,15 +77,19 @@ export function Tracks() {
                 Create Track
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
+              <div className="flex-shrink-0 px-6 pt-6">
               <DialogHeader>
                 <DialogTitle>Create Track</DialogTitle>
                 <DialogDescription>
                   Add a new track for {view.activeEvent?.title || 'the selected event'}.
                 </DialogDescription>
               </DialogHeader>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6">
               <TrackForm form={view.createForm} onChange={view.setCreateForm} />
-              <div className="flex justify-end gap-2">
+              </div>
+              <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
                 </Button>
@@ -195,13 +199,17 @@ export function Tracks() {
       </Card>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
+          <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Edit Track</DialogTitle>
             <DialogDescription>Update track metadata to match the current backend rules.</DialogDescription>
           </DialogHeader>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6">
           <TrackForm form={view.editForm} onChange={view.setEditForm} />
-          <div className="flex justify-end gap-2">
+          </div>
+          <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel
             </Button>

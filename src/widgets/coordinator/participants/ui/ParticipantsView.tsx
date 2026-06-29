@@ -315,14 +315,17 @@ function ParticipantUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
+        <div className="flex-shrink-0 px-6 pt-6">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Create User' : 'Edit User'}</DialogTitle>
           <DialogDescription>
             {mode === 'create' ? 'Add a local account for a participant or event staff member.' : 'Update account profile fields and assigned roles.'}
           </DialogDescription>
         </DialogHeader>
+        </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto px-6">
         <div className="grid gap-4 py-2">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -468,8 +471,9 @@ function ParticipantUserDialog({
             />
           </div>
         </div>
+        </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

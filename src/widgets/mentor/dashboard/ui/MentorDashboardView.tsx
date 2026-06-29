@@ -1,12 +1,13 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Loader2, Presentation, UsersRound, Video } from 'lucide-react';
+import { Calendar, Loader2, MessageSquare, Presentation, RefreshCw, UsersRound, Video } from 'lucide-react';
 
 import { teamsApi } from '@/entities/team/api';
 import { useStore } from '@/entities/session/model/store';
 import { useEventsQuery, useWorkshopsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
+import { workshopsApi } from '@/shared/api/workshops';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -24,6 +25,7 @@ export function MentorDashboardView() {
   const appRole = useStore((state) => state.appRole);
   const selectedEvent = useStore((state) => state.selectedEvent);
   const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const [selectedSpeakerWorkshopId, setSelectedSpeakerWorkshopId] = useState<string>('');
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -72,6 +74,49 @@ export function MentorDashboardView() {
     .sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime())
     .slice(0, 3);
   const isSpeaker = appRole === 'speaker';
+  const speakerWorkshopOptions = useMemo(
+    () =>
+      [...workshops].sort((left, right) => {
+        const leftTime = new Date(left.startTime).getTime();
+        const rightTime = new Date(right.startTime).getTime();
+        return leftTime - rightTime;
+      }),
+    [workshops]
+  );
+  const defaultSpeakerWorkshop = useMemo(
+    () =>
+      speakerWorkshopOptions.find((workshop) => workshop.status === 'LIVE') ||
+      speakerWorkshopOptions.find((workshop) => workshop.status === 'SCHEDULED') ||
+      speakerWorkshopOptions[0],
+    [speakerWorkshopOptions]
+  );
+  const selectedSpeakerWorkshop =
+    speakerWorkshopOptions.find((workshop) => workshop.id === selectedSpeakerWorkshopId) || defaultSpeakerWorkshop;
+
+  useEffect(() => {
+    if (!isSpeaker) {
+      if (selectedSpeakerWorkshopId) setSelectedSpeakerWorkshopId('');
+      return;
+    }
+
+    if (selectedSpeakerWorkshop && selectedSpeakerWorkshop.id !== selectedSpeakerWorkshopId) {
+      setSelectedSpeakerWorkshopId(selectedSpeakerWorkshop.id);
+    }
+  }, [isSpeaker, selectedSpeakerWorkshop, selectedSpeakerWorkshopId]);
+
+  const speakerQuestionsQuery = useQuery({
+    queryKey: queryKeys.workshops.questions(selectedSpeakerWorkshop?.id, { page: 1, limit: 20 }),
+    enabled: Boolean(isSpeaker && selectedSpeakerWorkshop?.id),
+    queryFn: async () => (await workshopsApi.listQuestions(selectedSpeakerWorkshop!.id, { page: 1, limit: 20 })).data,
+  });
+  const speakerQuestions = useMemo(
+    () =>
+      [...(speakerQuestionsQuery.data || [])].sort((left, right) => {
+        if (right.voteCount !== left.voteCount) return right.voteCount - left.voteCount;
+        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+      }),
+    [speakerQuestionsQuery.data]
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -144,7 +189,7 @@ export function MentorDashboardView() {
 
 
 
-      <div className={`grid grid-cols-1 gap-6 ${isSpeaker ? 'lg:grid-cols-1' : 'lg:grid-cols-[1.2fr_0.8fr]'}`}>
+      <div className={`grid grid-cols-1 gap-6 ${isSpeaker ? 'lg:grid-cols-[1fr_1fr]' : 'lg:grid-cols-[1.2fr_0.8fr]'}`}>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle>Upcoming Sessions</CardTitle>
@@ -191,6 +236,87 @@ export function MentorDashboardView() {
             )}
           </CardContent>
         </Card>
+
+        {isSpeaker && (
+        <Card>
+          <CardHeader className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle>Participant Questions</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Questions submitted by participants for your assigned workshop.
+                </p>
+              </div>
+              {selectedSpeakerWorkshop?.id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => speakerQuestionsQuery.refetch()}
+                  disabled={speakerQuestionsQuery.isFetching}
+                >
+                  {speakerQuestionsQuery.isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  Refresh
+                </Button>
+              )}
+            </div>
+            {speakerWorkshopOptions.length > 0 && (
+              <div className="space-y-1">
+                <Label>Workshop</Label>
+                <Select value={selectedSpeakerWorkshop?.id || ''} onValueChange={setSelectedSpeakerWorkshopId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select workshop" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {speakerWorkshopOptions.map((workshop) => (
+                      <SelectItem key={workshop.id} value={workshop.id}>
+                        {workshop.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {!selectedSpeakerWorkshop ? (
+              <Alert>
+                <AlertTitle>No workshop selected</AlertTitle>
+                <AlertDescription>You need at least one assigned workshop before participant questions can appear here.</AlertDescription>
+              </Alert>
+            ) : speakerQuestionsQuery.isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading participant questions...
+              </div>
+            ) : speakerQuestions.length === 0 ? (
+              <Alert>
+                <AlertTitle>No participant questions yet</AlertTitle>
+                <AlertDescription>
+                  Participants have not submitted any questions for "{selectedSpeakerWorkshop.title}" yet.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              speakerQuestions.map((question) => (
+                <div key={question.id} className="rounded-lg border p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-full bg-muted p-2">
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium leading-relaxed">{question.content}</p>
+                      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span>{question.author?.fullName || question.author?.email || 'Anonymous participant'}</span>
+                        <span>{formatDateTime(question.createdAt)}</span>
+                        <span>{question.voteCount} votes</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+        )}
 
         {!isSpeaker && (
         <Card>
