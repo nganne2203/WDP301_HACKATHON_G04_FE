@@ -1,5 +1,8 @@
-import { Mail } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { authApi } from '@/shared/api/auth';
+import { ApiError } from '@/shared/api/client';
 import { Button } from '@/shared/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/input';
@@ -18,15 +21,30 @@ export function ForgotPasswordDialog({
   onEmailChange,
   onOpenChange,
 }: ForgotPasswordDialogProps) {
-  function handleForgotSubmit() {
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleForgotSubmit() {
     if (!email.trim()) {
       toast.error('Please enter your email address.');
       return;
     }
 
-    toast.error('Password reset is not available yet', {
-      description: 'The backend does not expose a reset-password email flow in this build.',
-    });
+    setSubmitting(true);
+    try {
+      await authApi.forgotPassword({ email: email.trim() });
+      toast.success('Check your email', {
+        description: 'If this email exists, a password reset link has been sent.',
+      });
+      handleClose();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error('Could not send reset link', { description: error.firstError });
+      } else {
+        toast.error('Could not connect to server.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function handleClose() {
@@ -40,7 +58,7 @@ export function ForgotPasswordDialog({
         <DialogHeader>
           <DialogTitle>Reset Password</DialogTitle>
           <DialogDescription>
-            Password reset email is not connected to a backend endpoint in this build.
+            Enter your email and we will send a password reset link if the account exists.
           </DialogDescription>
         </DialogHeader>
         <div className="mt-1 space-y-4">
@@ -63,7 +81,8 @@ export function ForgotPasswordDialog({
             <Button variant="outline" className="flex-1" onClick={handleClose}>
               Cancel
             </Button>
-            <Button className="flex-1" onClick={handleForgotSubmit}>
+            <Button className="flex-1" disabled={submitting} onClick={handleForgotSubmit}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send Reset Link
             </Button>
           </div>
