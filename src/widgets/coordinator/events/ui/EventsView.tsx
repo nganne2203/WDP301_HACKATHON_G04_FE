@@ -53,7 +53,7 @@ export function Events() {
               Create Event
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Event</DialogTitle>
               <DialogDescription>Fill in the details below to create a new hackathon event.</DialogDescription>
@@ -163,7 +163,7 @@ export function Events() {
       />
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
             <DialogDescription>Update the event information below.</DialogDescription>

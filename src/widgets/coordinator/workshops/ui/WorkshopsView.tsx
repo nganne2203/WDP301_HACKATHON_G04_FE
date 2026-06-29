@@ -80,11 +80,14 @@ export function Workshops() {
                 Create Workshop
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
+              <div className="flex-shrink-0 px-6 pt-6">
               <DialogHeader>
                 <DialogTitle>Create Workshop</DialogTitle>
                 <DialogDescription>Schedule a workshop for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
               </DialogHeader>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6">
               <WorkshopForm
                 form={view.createForm}
                 onChange={view.setCreateForm}
@@ -92,7 +95,8 @@ export function Workshops() {
                 presentersLoading={view.presenterUsersQuery.isLoading}
                 timelines={view.workshopTimelines}
               />
-              <div className="flex justify-end gap-2">
+              </div>
+              <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
                 </Button>
@@ -236,11 +240,14 @@ export function Workshops() {
       </Card>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
+          <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Edit Workshop</DialogTitle>
             <DialogDescription>Update workshop speaker info and scheduling fields to match the backend.</DialogDescription>
           </DialogHeader>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6">
           <WorkshopForm
             form={view.editForm}
             onChange={view.setEditForm}
@@ -248,7 +255,8 @@ export function Workshops() {
             presentersLoading={view.presenterUsersQuery.isLoading}
             timelines={view.workshopTimelines}
           />
-          <div className="flex justify-end gap-2">
+          </div>
+          <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel
             </Button>
@@ -280,14 +288,17 @@ export function Workshops() {
       </AlertDialog>
 
       <Dialog open={view.questionsOpen} onOpenChange={view.setQuestionsOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
+          <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Questions for Speaker</DialogTitle>
             <DialogDescription>
               Participant-submitted questions for {view.selectedQuestionsWorkshop?.title || 'this workshop'}.
             </DialogDescription>
           </DialogHeader>
+          </div>
 
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
           <div className="space-y-4">
             <div className="rounded-md border bg-muted/30 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Workshop Questionnaire</p>
@@ -381,6 +392,7 @@ export function Workshops() {
                 ))}
               </div>
             )}
+          </div>
           </div>
         </DialogContent>
       </Dialog>
