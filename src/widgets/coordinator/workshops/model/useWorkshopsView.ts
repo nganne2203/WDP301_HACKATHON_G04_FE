@@ -50,6 +50,7 @@ export function useWorkshopsView() {
     queryFn: () => workshopsApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
   });
 
+
   const workshopTimelinesQuery = useTimelinesQuery(
     {
       eventId: activeEvent?.id,

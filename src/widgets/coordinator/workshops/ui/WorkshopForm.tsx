@@ -23,6 +23,7 @@ export function WorkshopForm({
   presentersLoading?: boolean;
   timelines: TimelineEvent[];
 }) {
+
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

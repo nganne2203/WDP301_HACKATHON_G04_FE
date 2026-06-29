@@ -6,7 +6,12 @@ import type { ApiErrorResponse, ApiSuccessResponse } from './types';
 // API Client Configuration
 // ============================================================
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+function normalizeApiBaseUrl(baseUrl: string): string {
+  const trimmed = baseUrl.replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 // ============================================================
 // Token Management
@@ -106,7 +111,7 @@ async function attemptTokenRefresh(): Promise<string | null> {
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
-  params?: Record<string, string | number | boolean | undefined | null>;
+  params?: Record<string, string | number | boolean | Array<string | number | boolean> | undefined | null>;
   /** If false, skip sending auth header. Default true. */
   auth?: boolean;
 }
@@ -122,6 +127,15 @@ export async function apiRequest<T>(
   if (params) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item !== undefined && item !== null && item !== '') {
+            searchParams.append(key, String(item));
+          }
+        });
+        return;
+      }
+
       if (value !== undefined && value !== null && value !== '') {
         searchParams.set(key, String(value));
       }
