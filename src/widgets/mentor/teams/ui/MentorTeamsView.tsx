@@ -1,22 +1,26 @@
-import { Loader2, UsersRound } from 'lucide-react';
+import { MessageSquare, Loader2, UsersRound } from 'lucide-react';
+import { useState } from 'react';
 
 import { useMentorTeamsView } from '../model/useMentorTeamsView';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Button } from '@/shared/ui/button';
 import { Label } from '@/shared/ui/label';
+import { ListPagination } from '@/shared/ui/list-pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/shared/ui/sheet';
 import { TeamCard } from './components/TeamCard';
-import { TeamDetail } from '@/entities/team';
+import { MentorTeamWorkspaceSheet } from './components/MentorTeamWorkspaceSheet';
 
 export function MentorTeams() {
   const view = useMentorTeamsView();
+  const [workspaceTeamId, setWorkspaceTeamId] = useState<string | null>(null);
+  const [workspaceTab, setWorkspaceTab] = useState<'overview' | 'chat'>('overview');
+
+  const workspaceTeam = view.teams.find((team) => team.id === workspaceTeamId) || null;
+
+  const openWorkspace = (teamId: string, tab: 'overview' | 'chat') => {
+    setWorkspaceTeamId(teamId);
+    setWorkspaceTab(tab);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -72,27 +76,42 @@ export function MentorTeams() {
           </AlertDescription>
         </Alert>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <>
+        <div className="grid auto-rows-fr grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {view.teams.map((team) => (
-            <Sheet key={team.id}>
-              <SheetTrigger asChild>
-                <div>
-                  <TeamCard team={team} isSpeaker={view.isSpeaker} />
+            <TeamCard
+              key={team.id}
+              team={team}
+              isSpeaker={view.isSpeaker}
+              footer={(
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+                  <Button type="button" variant="outline" onClick={() => openWorkspace(team.id, 'overview')}>
+                    View details
+                  </Button>
+                  <Button type="button" onClick={() => openWorkspace(team.id, 'chat')}>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Message team
+                  </Button>
                 </div>
-              </SheetTrigger>
-              <SheetContent className="w-full overflow-y-auto px-6 sm:max-w-xl">
-                <SheetHeader className="pr-8">
-                  <SheetTitle>{team.name}</SheetTitle>
-                  <SheetDescription>
-                    Review confirmed members and pending invitations for this team.
-                  </SheetDescription>
-                </SheetHeader>
-                <TeamDetail team={team} />
-              </SheetContent>
-            </Sheet>
+              )}
+            />
           ))}
         </div>
+        <ListPagination page={view.page} pagination={view.pagination} onPageChange={view.setPage} />
+        </>
       )}
+
+      {workspaceTeam ? (
+        <MentorTeamWorkspaceSheet
+          team={workspaceTeam}
+          open={Boolean(workspaceTeam)}
+          activeTab={workspaceTab}
+          onActiveTabChange={setWorkspaceTab}
+          onOpenChange={(open) => {
+            if (!open) setWorkspaceTeamId(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

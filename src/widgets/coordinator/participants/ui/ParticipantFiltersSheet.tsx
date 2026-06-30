@@ -29,7 +29,7 @@ export function ParticipantFiltersSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
         <SheetHeader>
-          <SheetTitle>Filter Participants</SheetTitle>
+          <SheetTitle>Filter Users</SheetTitle>
           <SheetDescription>
             Apply advanced filters to narrow down the participant list.
           </SheetDescription>

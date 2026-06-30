@@ -51,9 +51,9 @@ export function Participants() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Participants</h1>
+          <h1 className="text-2xl font-semibold mb-1">Users</h1>
           <p className="text-sm text-muted-foreground">
-            Manage participant registration and status
+            Manage user accounts, assigned roles, and approval status
             {view.selectedIds.length > 0 && ` - ${view.selectedIds.length} selected`}
             {view.pagination && ` - ${view.pagination.totalItems} total`}
           </p>
@@ -102,7 +102,7 @@ export function Participants() {
       {view.usersQuery.isLoading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-blue-600 mr-2" />
-          <span className="text-muted-foreground">Loading participants...</span>
+          <span className="text-muted-foreground">Loading users...</span>
         </div>
       )}
 
@@ -110,7 +110,7 @@ export function Participants() {
         <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
           <AlertCircle className="w-5 h-5 text-red-500" />
           <p className="text-sm text-red-700">
-            {view.usersQuery.error instanceof ApiError ? view.usersQuery.error.firstError : 'Failed to load participants'}
+            {view.usersQuery.error instanceof ApiError ? view.usersQuery.error.firstError : 'Failed to load users'}
           </p>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { teamsApi } from '@/entities/team/api';
@@ -11,6 +11,7 @@ export function useMentorTeamsView() {
   const isSpeaker = appRole === 'speaker';
   const selectedEvent = useStore((state) => state.selectedEvent);
   const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const [page, setPage] = useState(1);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -31,6 +32,7 @@ export function useMentorTeamsView() {
   const handleEventChange = (eventId: string) => {
     const event = events.find((e) => e.id === eventId);
     if (event) {
+      setPage(1);
       setSelectedEvent({
         id: event.id,
         title: event.title,
@@ -41,13 +43,17 @@ export function useMentorTeamsView() {
   };
 
   const teamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: selectedEvent?.id, limit: 20 }),
+    queryKey: queryKeys.teams.list({ eventId: selectedEvent?.id, page, limit: 12 }),
     enabled: Boolean(selectedEvent?.id),
-    queryFn: async () => (await teamsApi.list({ eventId: selectedEvent?.id, limit: 20 })).data,
+    queryFn: async () => await teamsApi.list({ eventId: selectedEvent?.id, page, limit: 12 }),
   });
-  const teams = teamsQuery.data || [];
+  const teams = teamsQuery.data?.data || [];
+  const pagination = teamsQuery.data?.pagination || null;
 
   return {
+    page,
+    setPage,
+    pagination,
     selectedEventId: selectedEvent?.id || '',
     setSelectedEventId: handleEventChange,
     appRole,
