@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Mail, Users } from 'lucide-react';
+import { Loader2, Mail, UserRound, Users } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -53,9 +53,9 @@ export function Teams() {
   }, [events, selectedEventId]);
 
   const teamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, page, limit: 10 }),
+    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, page, limit: 12 }),
     enabled: Boolean(activeEvent?.id),
-    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
+    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, page, limit: 12 }),
   });
 
   const teams = teamsQuery.data?.data || [];
@@ -120,20 +120,22 @@ export function Teams() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {teams.map((team) => (
           <Sheet key={team.id}>
             <SheetTrigger asChild>
               <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <CardTitle className="text-lg truncate">{team.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground truncate mt-1">
+                <CardHeader className="space-y-3">
+                  <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-lg break-words">{team.name}</CardTitle>
+                      <p className="mt-1 text-sm text-muted-foreground break-words">
                         {team.projectName || team.event?.title}
                       </p>
                     </div>
-                    <Badge variant={statusBadgeVariant(team.status)}>{team.status.replaceAll('_', ' ')}</Badge>
+                    <Badge className="w-fit shrink-0 self-start" variant={statusBadgeVariant(team.status)}>
+                      {team.status.replaceAll('_', ' ')}
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -144,6 +146,10 @@ export function Teams() {
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <span>{team.invitations.filter((invitation) => invitation.status === 'PENDING').length} pending invite(s)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <UserRound className="w-4 h-4 text-muted-foreground" />
+                    <span>{team.assignedMentors?.length || 0} mentor(s) assigned</span>
                   </div>
                   <div className="pt-2">
                     <Progress value={Math.min((getConfirmedMemberCount(team) / (team.event?.minTeamMembers || 3)) * 100, 100)} />

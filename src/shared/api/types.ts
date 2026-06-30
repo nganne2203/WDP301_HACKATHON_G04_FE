@@ -579,8 +579,28 @@ export interface InvitationDecisionResult {
   invitation: TeamInvitation;
 }
 
+export interface UpdateTeamMentorsRequest {
+  mentorIds: string[];
+}
+
+export interface AssignMentorsByBoardRequest {
+  eventId: string;
+  boardNumber: number;
+  mentorIds: string[];
+}
+
+export interface AssignMentorsByBoardResult {
+  eventId: string;
+  boardNumber: number;
+  mentorIds: string[];
+  updatedCount: number;
+  teamIds: string[];
+  teams: Team[];
+}
+
 export interface ListTeamsQuery {
   eventId?: string;
+  boardNumber?: number;
   status?: TeamStatus;
   page?: number;
   limit?: number;

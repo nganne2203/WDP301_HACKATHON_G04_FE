@@ -17,6 +17,7 @@ import {
   Settings,
   Trophy,
   Users,
+  UserRound,
   UsersRound,
 } from 'lucide-react';
 import type { AppRole } from '@/entities/session/model/store';
@@ -37,6 +38,7 @@ const coordinatorNavigation: NavigationItem[] = [
   { icon: Presentation, label: 'Workshops', href: '/coordinator/workshops' },
   { icon: Users, label: 'Participants', href: '/coordinator/participants' },
   { icon: UsersRound, label: 'Teams', href: '/coordinator/teams' },
+  { icon: UserRound, label: 'Mentor Assignments', href: '/coordinator/mentor-assignments' },
   { icon: ClipboardCheck, label: 'Check-in', href: '/coordinator/checkin' },
   { icon: Github, label: 'Repositories', href: '/coordinator/repos' },
   { icon: Scale, label: 'Judging', href: '/coordinator/judging' },
@@ -55,6 +57,7 @@ const adminNavigation: NavigationItem[] = [
   { icon: Presentation, label: 'Workshops', href: '/coordinator/workshops' },
   { icon: Users, label: 'Participants', href: '/coordinator/participants' },
   { icon: UsersRound, label: 'Teams', href: '/coordinator/teams' },
+  { icon: UserRound, label: 'Mentor Assignments', href: '/coordinator/mentor-assignments' },
   { icon: ClipboardCheck, label: 'Check-in', href: '/coordinator/checkin' },
   { icon: Github, label: 'Repositories', href: '/coordinator/repos' },
   { icon: Scale, label: 'Judging', href: '/coordinator/judging' },

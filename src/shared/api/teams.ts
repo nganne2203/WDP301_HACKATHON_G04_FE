@@ -1,5 +1,7 @@
 import { api } from './client';
 import type {
+  AssignMentorsByBoardRequest,
+  AssignMentorsByBoardResult,
   CreateTeamRequest,
   InvitationDecisionResult,
   InviteMembersRequest,
@@ -9,6 +11,7 @@ import type {
   Team,
   TeamAvailability,
   TeamInvitation,
+  UpdateTeamMentorsRequest,
 } from './types';
 
 export const teamsApi = {
@@ -26,6 +29,12 @@ export const teamsApi = {
 
   getMyTeam: (eventId: string) =>
     api.get<Team>('/teams/my', { params: { eventId } }),
+
+  updateMentors: (teamId: string, data: UpdateTeamMentorsRequest) =>
+    api.patch<Team>(`/teams/${teamId}/mentors`, data),
+
+  assignMentorsByBoard: (data: AssignMentorsByBoardRequest) =>
+    api.patch<AssignMentorsByBoardResult>('/teams/mentor-assignments/by-board', data),
 
   inviteMembers: (teamId: string, data: InviteMembersRequest) =>
     api.post<InviteMembersResult>(`/teams/${teamId}/invitations`, data),

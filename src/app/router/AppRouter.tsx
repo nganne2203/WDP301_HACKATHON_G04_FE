@@ -28,6 +28,9 @@ const Participants = lazy(async () => ({
   default: (await import('@/pages/coordinator/Participants')).Participants,
 }));
 const Teams = lazy(async () => ({ default: (await import('@/pages/coordinator/Teams')).Teams }));
+const MentorAssignments = lazy(async () => ({
+  default: (await import('@/pages/coordinator/MentorAssignments')).MentorAssignments,
+}));
 const Checkin = lazy(async () => ({ default: (await import('@/pages/coordinator/Checkin')).Checkin }));
 const Repositories = lazy(async () => ({
   default: (await import('@/pages/coordinator/Repositories')).Repositories,
@@ -205,6 +208,14 @@ export function AppRouter() {
             element={
               <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
                 <Teams />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/mentor-assignments"
+            element={
+              <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                <MentorAssignments />
               </ProtectedRoute>
             }
           />
