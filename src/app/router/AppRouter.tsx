@@ -1,5 +1,5 @@
 import { Suspense, lazy, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
 import { Loader2 } from 'lucide-react';
 import { AppShell } from '@/app/layouts/AppShell';
 import { resolveHomePathForRole } from '@/entities/session/lib/navigation';
@@ -49,6 +49,15 @@ const ParticipantDashboard = lazy(async () => ({
 }));
 const ParticipantTeam = lazy(async () => ({
   default: (await import('@/pages/participant/Team')).ParticipantTeam,
+}));
+const ParticipantChats = lazy(async () => ({
+  default: (await import('@/pages/participant/Chats')).ParticipantChats,
+}));
+const ParticipantChatsHome = lazy(async () => ({
+  default: (await import('@/pages/participant/ChatsIndex')).ParticipantChatsHome,
+}));
+const ParticipantChatRoom = lazy(async () => ({
+  default: (await import('@/pages/participant/ChatRoom')).ParticipantChatRoom,
 }));
 const ParticipantSubmissions = lazy(async () => ({
   default: (await import('@/pages/participant/Submissions')).ParticipantSubmissions,
@@ -293,6 +302,17 @@ export function AppRouter() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/participant/chats"
+            element={
+              <ProtectedRoute allowedRoles={['participant', 'admin']}>
+                <ParticipantChats />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<ParticipantChatsHome />} />
+            <Route path=":chatRoomId" element={<ParticipantChatRoom />} />
+          </Route>
           <Route
             path="/participant/submissions"
             element={

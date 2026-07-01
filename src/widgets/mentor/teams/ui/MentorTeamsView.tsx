@@ -88,7 +88,12 @@ export function MentorTeams() {
                   <Button type="button" variant="outline" onClick={() => openWorkspace(team.id, 'overview')}>
                     View details
                   </Button>
-                  <Button type="button" onClick={() => openWorkspace(team.id, 'chat')}>
+                  <Button type="button" className="relative" onClick={() => openWorkspace(team.id, 'chat')}>
+                    {(view.unreadCountsByTeamId.get(team.id) || 0) > 0 ? (
+                      <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-semibold text-white shadow">
+                        {(view.unreadCountsByTeamId.get(team.id) || 0) > 99 ? '99+' : view.unreadCountsByTeamId.get(team.id)}
+                      </span>
+                    ) : null}
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Message team
                   </Button>

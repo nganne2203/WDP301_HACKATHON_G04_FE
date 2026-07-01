@@ -16,6 +16,7 @@ import {
   Server,
   Settings,
   Trophy,
+  MessageSquare,
   Users,
   UserRound,
   UsersRound,
@@ -77,6 +78,7 @@ const judgeNavigation: NavigationItem[] = [
 const participantNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/participant' },
   { icon: UsersRound, label: 'My Team', href: '/participant/team' },
+  { icon: MessageSquare, label: 'Chats', href: '/participant/chats' },
   { icon: Send, label: 'Submissions', href: '/participant/submissions' },
   { icon: Presentation, label: 'Workshops', href: '/participant/workshops' },
   { icon: Trophy, label: 'Results', href: '/participant/results' },
