@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { AlertCircle, Ban, CheckCircle, Download, Loader2, Pencil, Plus, Search, XCircle } from 'lucide-react';
+import { AlertCircle, Ban, CheckCircle, Download, Loader2, Pencil, Plus, Search, X, XCircle } from 'lucide-react';
 
 import { ApiError } from '@/shared/api/client';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -74,10 +74,20 @@ export function Participants() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by name or email..."
-            className="pl-9"
+            className="pl-9 pr-10"
             value={view.searchQuery}
             onChange={(event) => view.setSearchQuery(event.target.value)}
           />
+          {view.searchQuery ? (
+            <button
+              type="button"
+              onClick={() => view.setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
       </div>
 

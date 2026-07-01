@@ -32,7 +32,7 @@ export function createEmptyParticipantUserForm(): ParticipantUserFormState {
     password: '',
     fullName: '',
     roles: ['PARTICIPANT'],
-    status: 'PENDING',
+    status: 'APPROVED',
     phone: '',
     bio: '',
     githubUsername: '',
