@@ -2,7 +2,6 @@ import type { CreateUserRequest, UpdateUserRequest, User, UserRoleName, UserStat
 
 export const participantUserRoleOptions: UserRoleName[] = [
   'PARTICIPANT',
-  'USER',
   'MENTOR',
   'SPEAKER',
   'JUDGE',
@@ -49,7 +48,7 @@ function normalizeOptionalText(value: string) {
 }
 
 export function userNeedsStudentInfo(form: Pick<ParticipantUserFormState, 'roles'>) {
-  return form.roles.some((role) => role === 'USER' || role === 'PARTICIPANT');
+  return form.roles.includes('PARTICIPANT');
 }
 
 export function mapUserToParticipantUserForm(user: User): ParticipantUserFormState {

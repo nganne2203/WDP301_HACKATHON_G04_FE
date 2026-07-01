@@ -158,7 +158,6 @@ export type UserRoleName =
   | 'JUDGE'
   | 'MENTOR'
   | 'SPEAKER'
-  | 'USER'
   | 'PARTICIPANT';
 
 export interface TokenPair {
