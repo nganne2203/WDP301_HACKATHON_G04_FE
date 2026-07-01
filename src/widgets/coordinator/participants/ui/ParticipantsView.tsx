@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { AlertCircle, Ban, CheckCircle, Download, Filter, Loader2, Pencil, Plus, Search, XCircle } from 'lucide-react';
+import { AlertCircle, Ban, CheckCircle, Download, Loader2, Pencil, Plus, Search, XCircle } from 'lucide-react';
 
 import { ApiError } from '@/shared/api/client';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -42,7 +42,6 @@ import {
   type ParticipantFilterType,
 } from '../model/participants-view.utils';
 import { useParticipantsView } from '../model/useParticipantsView';
-import { ParticipantFiltersSheet } from './ParticipantFiltersSheet';
 
 export function Participants() {
   const view = useParticipantsView();
@@ -80,10 +79,6 @@ export function Participants() {
             onChange={(event) => view.setSearchQuery(event.target.value)}
           />
         </div>
-        <Button variant="outline" onClick={() => view.setFilterSheetOpen(true)}>
-          <Filter className="w-4 h-4 mr-2" />
-          Filters
-        </Button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -262,14 +257,6 @@ export function Participants() {
           <ListPagination page={view.page} pagination={view.pagination} onPageChange={view.setPage} />
         </Card>
       )}
-
-      <ParticipantFiltersSheet
-        open={view.filterSheetOpen}
-        onOpenChange={view.setFilterSheetOpen}
-        activeFilter={view.activeFilter}
-        setActiveFilter={view.setActiveFilter}
-        filterCounts={view.filterCounts}
-      />
 
       <ParticipantUserDialog
         form={view.createForm}
