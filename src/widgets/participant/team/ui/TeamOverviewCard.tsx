@@ -12,6 +12,45 @@ interface TeamOverviewCardProps {
   team: Team;
 }
 
+function getConfirmedMemberCount(team: Team) {
+  const activeParticipants = team.participants
+    ? team.participants.filter((participant) => participant.status === 'JOINED')
+    : [];
+  return activeParticipants.length || (team.members?.length || 0);
+}
+
+function getTotalMemberCount(team: Team) {
+  const participantEmails = new Set(
+    (team.participants || [])
+      .map((participant) => participant.user?.email?.trim().toLowerCase())
+      .filter(Boolean)
+  );
+  const participantIds = new Set(
+    (team.participants || [])
+      .map((participant) => participant.user?.id)
+      .filter(Boolean)
+  );
+
+  let total = (team.participants || []).length;
+
+  for (const invitation of team.invitations || []) {
+    const invitedEmail = invitation.invitedEmail?.trim().toLowerCase();
+    const invitedUserId = invitation.invitedUserId;
+    const invitedUserEmail = invitation.invitedUser?.email?.trim().toLowerCase();
+
+    const matchesParticipant =
+      (invitedUserId && participantIds.has(invitedUserId)) ||
+      (invitedUserEmail && participantEmails.has(invitedUserEmail)) ||
+      (invitedEmail && participantEmails.has(invitedEmail));
+
+    if (!matchesParticipant) {
+      total += 1;
+    }
+  }
+
+  return total || (team.members?.length || 0);
+}
+
 export function TeamOverviewCard({ eventTitle, minTeamMembers, team }: TeamOverviewCardProps) {
   return (
     <>
@@ -28,7 +67,7 @@ export function TeamOverviewCard({ eventTitle, minTeamMembers, team }: TeamOverv
         <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="flex items-center gap-2 text-sm">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span>{team.members.length} confirmed member(s)</span>
+            <span>{getConfirmedMemberCount(team)} confirmed of {getTotalMemberCount(team)} member(s)</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Mail className="h-4 w-4 text-muted-foreground" />

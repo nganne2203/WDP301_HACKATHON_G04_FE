@@ -30,7 +30,35 @@ function getConfirmedMemberCount(team: Team) {
 }
 
 function getTotalMemberCount(team: Team) {
-  return (team.participants?.length) || (team.members?.length || 0);
+  const participantEmails = new Set(
+    (team.participants || [])
+      .map((participant) => participant.user?.email?.trim().toLowerCase())
+      .filter(Boolean)
+  );
+  const participantIds = new Set(
+    (team.participants || [])
+      .map((participant) => participant.user?.id)
+      .filter(Boolean)
+  );
+
+  let total = (team.participants || []).length;
+
+  for (const invitation of team.invitations || []) {
+    const invitedEmail = invitation.invitedEmail?.trim().toLowerCase();
+    const invitedUserId = invitation.invitedUserId;
+    const invitedUserEmail = invitation.invitedUser?.email?.trim().toLowerCase();
+
+    const matchesParticipant =
+      (invitedUserId && participantIds.has(invitedUserId)) ||
+      (invitedUserEmail && participantEmails.has(invitedUserEmail)) ||
+      (invitedEmail && participantEmails.has(invitedEmail));
+
+    if (!matchesParticipant) {
+      total += 1;
+    }
+  }
+
+  return total || (team.members?.length || 0);
 }
 
 interface TeamDetailProps {
