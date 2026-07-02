@@ -120,7 +120,7 @@ export function MentorAssignmentsView() {
   const teams = teamsQuery.data?.data || [];
   const pagination = teamsQuery.data?.pagination;
   const mentors = (mentorsQuery.data?.data || []).filter((mentor) => (
-    mentor.status === 'APPROVED' || mentor.status === 'ACTIVE'
+    mentor.status === 'ACTIVE'
   ));
   const allEventTeams = boardTeamsQuery.data?.data || [];
   const boardOptions = useMemo(() => {
@@ -187,7 +187,7 @@ export function MentorAssignmentsView() {
         <div className="max-w-2xl">
           <h1 className="text-2xl font-semibold mb-1">Mentor Assignments</h1>
           <p className="text-sm text-muted-foreground">
-            Assign approved or active mentor accounts to teams and surface ownership clearly.
+            Assign active mentor accounts to teams and surface ownership clearly.
           </p>
         </div>
         <div className="grid w-full gap-3 xl:w-auto xl:grid-cols-[minmax(280px,420px)_minmax(180px,240px)_auto]">
@@ -246,15 +246,15 @@ export function MentorAssignmentsView() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading mentor assignment data</AlertTitle>
-          <AlertDescription>Fetching teams and approved mentor accounts for the selected event.</AlertDescription>
+          <AlertDescription>Fetching teams and active mentor accounts for the selected event.</AlertDescription>
         </Alert>
       )}
 
       {!mentorsQuery.isLoading && mentors.length === 0 && (
         <Alert>
           <UserRound className="h-4 w-4" />
-          <AlertTitle>No approved mentors found</AlertTitle>
-          <AlertDescription>Approve a mentor account before assigning mentors to teams.</AlertDescription>
+          <AlertTitle>No active mentors found</AlertTitle>
+          <AlertDescription>Activate a mentor account before assigning mentors to teams.</AlertDescription>
         </Alert>
       )}
 
@@ -382,7 +382,7 @@ export function MentorAssignmentsView() {
                       );
                     }) : (
                       <div className="rounded-md border border-dashed px-4 py-6 text-sm text-muted-foreground">
-                        No approved mentor accounts available.
+                        No active mentor accounts available.
                       </div>
                     )}
                   </div>
@@ -466,7 +466,7 @@ export function MentorAssignmentsView() {
                     );
                   }) : (
                     <div className="rounded-md border border-dashed px-4 py-6 text-sm text-muted-foreground">
-                      No approved mentor accounts available.
+                    No active mentor accounts available.
                     </div>
                   )}
                 </div>

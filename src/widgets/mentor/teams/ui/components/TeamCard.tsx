@@ -18,7 +18,7 @@ function initials(value?: string) {
 
 function getConfirmedMemberCount(team: Team) {
   const activeParticipants = team.participants
-    ? team.participants.filter((participant) => participant.status === 'ACTIVE')
+    ? team.participants.filter((participant) => participant.status === 'JOINED')
     : [];
   return activeParticipants.length || (team.members?.length || 0);
 }
@@ -37,7 +37,7 @@ export function TeamCard({ team, isSpeaker, footer }: TeamCardProps) {
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Badge variant={team.status === 'ACTIVE' || team.status === 'CONFIRMED' ? 'default' : 'secondary'}>
+            <Badge variant={team.status === 'CONFIRMED' ? 'default' : 'secondary'}>
               {team.status}
             </Badge>
           </div>

@@ -52,7 +52,7 @@ export function Participants() {
         <div>
           <h1 className="text-2xl font-semibold mb-1">Users</h1>
           <p className="text-sm text-muted-foreground">
-            Manage user accounts, assigned roles, and approval status
+            Manage user accounts, assigned roles, and activation status
             {view.selectedIds.length > 0 && ` - ${view.selectedIds.length} selected`}
             {view.pagination && ` - ${view.pagination.totalItems} total`}
           </p>
@@ -92,7 +92,7 @@ export function Participants() {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'PENDING', 'APPROVED', 'ACTIVE', 'REJECTED', 'SUSPENDED'] as ParticipantFilterType[]).map((filter) => (
+        {(['all', 'PENDING', 'ACTIVE', 'REJECTED', 'SUSPENDED'] as ParticipantFilterType[]).map((filter) => (
           <Badge
             key={filter}
             variant={view.activeFilter === filter ? 'secondary' : 'outline'}
@@ -207,7 +207,7 @@ export function Participants() {
                                 disabled={view.approveMutation.isPending}
                               >
                                 <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                                Approve
+                                Activate
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => view.rejectMutation.mutate(user.id)}
@@ -219,7 +219,7 @@ export function Participants() {
                               </DropdownMenuItem>
                             </>
                           )}
-                          {(user.status === 'APPROVED' || user.status === 'ACTIVE') && (
+                          {user.status === 'ACTIVE' && (
                             <DropdownMenuItem
                               onClick={() => view.suspendMutation.mutate(user.id)}
                               disabled={view.suspendMutation.isPending}
@@ -235,7 +235,7 @@ export function Participants() {
                               disabled={view.approveMutation.isPending}
                             >
                               <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                              Approve
+                              Activate
                             </DropdownMenuItem>
                           )}
                           {user.registrationSource === 'FORM' && user.status === 'SUSPENDED' && (

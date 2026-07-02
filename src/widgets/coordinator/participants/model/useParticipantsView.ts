@@ -64,7 +64,6 @@ export function useParticipantsView() {
     queries: [
       { key: 'all', status: undefined },
       { key: 'PENDING', status: 'PENDING' as const },
-      { key: 'APPROVED', status: 'APPROVED' as const },
       { key: 'ACTIVE', status: 'ACTIVE' as const },
       { key: 'REJECTED', status: 'REJECTED' as const },
       { key: 'SUSPENDED', status: 'SUSPENDED' as const },
@@ -109,11 +108,11 @@ export function useParticipantsView() {
   const approveMutation = useMutation({
     mutationFn: (id: string) => usersApi.approve(id),
     onSuccess: async (response) => {
-      showStatusToast(response.data, 'User approved');
+      showStatusToast(response.data, 'User activated');
       await queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to approve user', {
+      toast.error('Failed to activate user', {
         description: getParticipantErrorMessage(error),
       });
     },
@@ -197,12 +196,11 @@ export function useParticipantsView() {
   const someSelected = selectedIds.length > 0 && !allSelected;
 
   const filterCounts = useMemo(() => {
-    const [allCount, pendingCount, approvedCount, activeCount, rejectedCount, suspendedCount] = statusCountQueries;
+    const [allCount, pendingCount, activeCount, rejectedCount, suspendedCount] = statusCountQueries;
 
     return {
       all: allCount.data || 0,
       PENDING: pendingCount.data || 0,
-      APPROVED: approvedCount.data || 0,
       ACTIVE: activeCount.data || 0,
       REJECTED: rejectedCount.data || 0,
       SUSPENDED: suspendedCount.data || 0,

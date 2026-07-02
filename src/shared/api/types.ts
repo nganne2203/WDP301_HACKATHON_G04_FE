@@ -137,7 +137,7 @@ export interface User {
   updatedAt: string;
 }
 
-export type UserStatus = 'PENDING' | 'APPROVED' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
+export type UserStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
 
 export interface EmailDeliveryResult {
   sent: boolean;
@@ -433,13 +433,10 @@ export interface MediaStatistics {
 // ============================================================
 
 export type TeamStatus =
-  | 'PENDING'
   | 'WAITING_FOR_MEMBERS'
+  | 'WAITLISTED'
   | 'CONFIRMED'
-  | 'REJECTED'
-  | 'ACTIVE'
-  | 'INACTIVE'
-  | 'DISQUALIFIED';
+  | 'REJECTED';
 
 export type TeamInvitationStatus =
   | 'PENDING'
@@ -483,7 +480,7 @@ export interface TeamParticipant {
   teamId: string;
   user: TeamUserSummary | null;
   teamRole: 'LEADER' | 'MEMBER';
-  status: string;
+  status: ParticipantStatus;
   joinedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -1120,7 +1117,7 @@ export interface ListTracksQuery {
 // Participant Types
 // ============================================================
 
-export type ParticipantStatus = 'INVITED' | 'ACTIVE' | 'WITHDRAWN';
+export type ParticipantStatus = 'INVITED' | 'JOINED' | 'WITHDRAWN';
 export type CheckInStatus = 'NOT_CHECKED_IN' | 'CHECKED_IN';
 export type GitHubAccessStatus = 'NOT_GRANTED' | 'GRANTED' | 'REVOKED';
 export type EligibilityStatus = 'PENDING' | 'ELIGIBLE' | 'INELIGIBLE';

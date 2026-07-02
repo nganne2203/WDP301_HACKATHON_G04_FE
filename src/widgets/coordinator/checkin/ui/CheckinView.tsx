@@ -278,7 +278,7 @@ export function Checkin() {
                   <TableHead>Participant</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Team</TableHead>
-                  <TableHead>Status</TableHead>
+                      <TableHead>Check-in</TableHead>
                   <TableHead className="w-32">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -314,7 +314,7 @@ export function Checkin() {
                         ) : (
                           <Badge variant="secondary">
                             <Clock className="w-3 h-3 mr-1" />
-                            Pending
+                            Not Checked In
                           </Badge>
                         )}
                       </TableCell>

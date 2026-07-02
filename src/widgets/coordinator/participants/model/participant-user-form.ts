@@ -10,7 +10,7 @@ export const participantUserRoleOptions: UserRoleName[] = [
   'ADMIN',
 ];
 
-export const participantUserStatusOptions: UserStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'];
+export const participantUserStatusOptions: UserStatus[] = ['PENDING', 'ACTIVE', 'REJECTED', 'SUSPENDED'];
 
 export interface ParticipantUserFormState {
   email: string;
@@ -32,7 +32,7 @@ export function createEmptyParticipantUserForm(): ParticipantUserFormState {
     password: '',
     fullName: '',
     roles: ['PARTICIPANT'],
-    status: 'APPROVED',
+    status: 'ACTIVE',
     phone: '',
     bio: '',
     githubUsername: '',

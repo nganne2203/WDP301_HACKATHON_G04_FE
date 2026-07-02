@@ -17,14 +17,14 @@ function getInitials(value?: string) {
 }
 
 function statusBadgeVariant(status: string): BadgeVariant {
-  if (status === 'CONFIRMED' || status === 'ACTIVE') return 'default';
-  if (status === 'REJECTED' || status === 'DISQUALIFIED') return 'destructive';
+  if (status === 'CONFIRMED' || status === 'JOINED' || status === 'ACTIVE' || status === 'ACCEPTED') return 'default';
+  if (status === 'REJECTED' || status === 'DECLINED' || status === 'CANCELLED') return 'destructive';
   return 'secondary';
 }
 
 function getConfirmedMemberCount(team: Team) {
   const activeParticipants = team.participants
-    ? team.participants.filter((participant) => participant.status === 'ACTIVE')
+    ? team.participants.filter((participant) => participant.status === 'JOINED')
     : [];
   return activeParticipants.length || (team.members?.length || 0);
 }

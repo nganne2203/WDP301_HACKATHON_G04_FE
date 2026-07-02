@@ -65,7 +65,7 @@ export function getApiErrorMessage(error: unknown) {
 }
 
 export function statusBadgeVariant(status: string): BadgeVariant {
-  if (status === 'CONFIRMED' || status === 'ACTIVE' || status === 'ACCEPTED') return 'default';
+  if (status === 'CONFIRMED' || status === 'JOINED' || status === 'ACTIVE' || status === 'ACCEPTED') return 'default';
   if (status === 'REJECTED' || status === 'DECLINED' || status === 'CANCELLED') return 'destructive';
   return 'secondary';
 }

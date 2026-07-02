@@ -24,14 +24,14 @@ import type { Team } from '@/shared/api/types';
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
 function statusBadgeVariant(status: string): BadgeVariant {
-  if (status === 'CONFIRMED' || status === 'ACTIVE') return 'default';
-  if (status === 'REJECTED' || status === 'DISQUALIFIED') return 'destructive';
+  if (status === 'CONFIRMED') return 'default';
+  if (status === 'REJECTED') return 'destructive';
   return 'secondary';
 }
 
 function getConfirmedMemberCount(team: Team) {
   const activeParticipants = team.participants
-    ? team.participants.filter((participant) => participant.status === 'ACTIVE')
+    ? team.participants.filter((participant) => participant.status === 'JOINED')
     : [];
   return activeParticipants.length || (team.members?.length || 0);
 }
@@ -60,7 +60,7 @@ export function Teams() {
 
   const teams = teamsQuery.data?.data || [];
   const pagination = teamsQuery.data?.pagination;
-  const confirmedTeams = teams.filter((team) => team.status === 'CONFIRMED' || team.status === 'ACTIVE').length;
+  const confirmedTeams = teams.filter((team) => team.status === 'CONFIRMED').length;
   const maxTeams = activeEvent?.maxTeams || 30;
   const capacityPercent = maxTeams > 0 ? Math.min(Math.round((confirmedTeams / maxTeams) * 100), 100) : 0;
 
