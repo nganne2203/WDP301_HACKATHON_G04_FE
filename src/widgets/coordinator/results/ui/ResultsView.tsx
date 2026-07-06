@@ -18,10 +18,12 @@ import {
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Checkbox } from '@/shared/ui/checkbox';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Separator } from '@/shared/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
+import { Textarea } from '@/shared/ui/textarea';
 import type { RepositoryAccessAction } from '@/shared/api/types';
 
 const PLACE_ICONS = [Trophy, Medal, Award];
@@ -149,14 +151,14 @@ export function Results() {
               <Button
                 variant="outline"
                 onClick={() => view.selectFinalistsMutation.mutate()}
-                disabled={view.selectFinalistsMutation.isPending || view.rankings.length === 0}
+                disabled={view.selectFinalistsMutation.isPending || view.rankings.length === 0 || view.isCustomSelectionMode}
                 className="w-full"
               >
                 {view.selectFinalistsMutation.isPending
                   ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   : <Users className="mr-2 h-4 w-4" />
                 }
-                Select Finalists
+                {view.isCustomSelectionMode ? 'Use Manual Selection' : 'Select Finalists'}
               </Button>
               )}
             </div>
@@ -255,6 +257,44 @@ export function Results() {
         </Card>
       )}
 
+      {view.rankings.length > 0 && view.canSelectFinalists && view.isCustomSelectionMode && (
+        <Card className="border-amber-200 bg-amber-50/40">
+          <CardHeader>
+            <CardTitle>Manual Finalist Review</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Custom mode is active. Tick teams from the ranking table below, then save the manual advancement list.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="manual-selection-reason">Selection reason</Label>
+              <Textarea
+                id="manual-selection-reason"
+                value={view.manualSelectionReason}
+                onChange={(event) => view.setManualSelectionReason(event.target.value)}
+                placeholder="Optional: e.g. Organizer manual review after tie-break discussion."
+                rows={2}
+              />
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                {view.manualSelectedTeamIds.length} team(s) currently ticked for the next round.
+              </p>
+              <Button
+                onClick={() => view.selectManualFinalistsMutation.mutate()}
+                disabled={view.selectManualFinalistsMutation.isPending || view.manualSelectedTeamIds.length === 0}
+              >
+                {view.selectManualFinalistsMutation.isPending
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <CheckCircle2 className="mr-2 h-4 w-4" />
+                }
+                Save Manual Selection
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Podium */}
       {podiumItems.length >= 3 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -298,6 +338,7 @@ export function Results() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {view.canSelectFinalists && view.isCustomSelectionMode && <TableHead className="w-14">Select</TableHead>}
                   <TableHead className="w-16">Rank</TableHead>
                   <TableHead>Team</TableHead>
                   <TableHead>Score</TableHead>
@@ -309,6 +350,19 @@ export function Results() {
               <TableBody>
                 {view.rankings.map((ranking) => (
                   <TableRow key={ranking.id}>
+                    {view.canSelectFinalists && view.isCustomSelectionMode && (
+                      <TableCell>
+                        <Checkbox
+                          checked={ranking.teamId ? view.manualSelectedTeamIds.includes(ranking.teamId) : false}
+                          disabled={!ranking.teamId || Boolean(ranking.publishedAt)}
+                          onCheckedChange={(checked) => {
+                            if (!ranking.teamId) return;
+                            view.toggleManualTeamSelection(ranking.teamId, checked === true);
+                          }}
+                          aria-label={`Select ${ranking.team?.name || 'team'} as finalist`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
                         {ranking.rank}

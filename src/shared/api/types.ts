@@ -1858,6 +1858,11 @@ export interface SelectFinalistsRequest {
   roundId: string;
 }
 
+export interface SelectManualFinalistsRequest extends SelectFinalistsRequest {
+  teamIds: string[];
+  selectionReason?: string | null;
+}
+
 export interface SelectFinalistsResult {
   finalists: Ranking[];
   summary?: {

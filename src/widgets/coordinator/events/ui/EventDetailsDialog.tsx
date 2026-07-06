@@ -15,7 +15,7 @@ export function EventDetailsDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="!w-[min(50rem,calc(100vw-2rem))] !max-w-none">
         <DialogHeader>
           <DialogTitle>Event Details</DialogTitle>
           <DialogDescription>Detailed information about the event.</DialogDescription>

@@ -90,7 +90,15 @@ export function Events() {
 
       {!view.eventsQuery.isLoading && !view.eventsQuery.error && (
         <Card>
-          <Table>
+          <Table className="table-fixed">
+            <colgroup>
+              <col className="w-[40%]" />
+              <col className="w-[13%]" />
+              <col className="w-[12%]" />
+              <col className="w-[22%]" />
+              <col className="w-[10rem]" />
+              <col className="w-12" />
+            </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>Event</TableHead>
@@ -98,7 +106,7 @@ export function Events() {
                 <TableHead>Status</TableHead>
                 <TableHead>Advancement Rule</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead className="w-12"></TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -109,22 +117,27 @@ export function Events() {
                   </TableCell>
                 </TableRow>
               ) : (
-                view.events.map((event) => (
+                view.events.map((event) => {
+                  const advancementRule = describeAdvancementRule(event);
+
+                  return (
                   <TableRow key={event.id}>
-                    <TableCell>
+                    <TableCell className="overflow-hidden">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
                           <Calendar className="w-4 h-4 text-blue-600" />
                         </div>
-                        <span className="font-medium">{event.title}</span>
+                        <span className="truncate font-medium">{event.title}</span>
                       </div>
                     </TableCell>
                     <TableCell>{event.semester || '-'}</TableCell>
                     <TableCell>
                       <StatusBadge status={mapEventStatus(event.status) as never} />
                     </TableCell>
-                    <TableCell className="max-w-xs text-sm text-muted-foreground">
-                      {describeAdvancementRule(event)}
+                    <TableCell className="overflow-hidden text-sm text-muted-foreground">
+                      <div className="truncate" title={advancementRule}>
+                        {advancementRule}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatEventDate(event.startDate)} - {formatEventDate(event.endDate)}
@@ -153,7 +166,8 @@ export function Events() {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
