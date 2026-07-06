@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
 import { workshopsApi } from '@/shared/api';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { selectDefaultEvent, useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Workshop } from '@/shared/api/types';
@@ -12,6 +12,8 @@ import type { Workshop } from '@/shared/api/types';
 export function useParticipantWorkshopsView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const userPermissions = useStore((state) => state.user?.permissions || []);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [questionContent, setQuestionContent] = useState('');
@@ -24,8 +26,31 @@ export function useParticipantWorkshopsView() {
 
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events.find((event) => event.id === selectedEvent?.id) || events[0];
+    return events.find((event) => event.id === selectedEventId)
+      || events.find((event) => event.id === selectedEvent?.id)
+      || selectDefaultEvent(events)
+      || events[0];
   }, [events, selectedEventId, selectedEvent?.id]);
+
+  useEffect(() => {
+    if (!activeEvent) return;
+
+    if (
+      selectedEvent?.id === activeEvent.id &&
+      selectedEvent.title === activeEvent.title &&
+      selectedEvent.semester === (activeEvent.semester || '') &&
+      selectedEvent.status === activeEvent.status
+    ) {
+      return;
+    }
+
+    setSelectedEvent({
+      id: activeEvent.id,
+      title: activeEvent.title,
+      semester: activeEvent.semester || '',
+      status: activeEvent.status,
+    });
+  }, [activeEvent, selectedEvent, setSelectedEvent]);
 
   const workshopsQuery = useQuery({
     queryKey: queryKeys.workshops.list({ eventId: activeEvent?.id }),
@@ -42,6 +67,10 @@ export function useParticipantWorkshopsView() {
   });
 
   const workshopQuestions = workshopQuestionsQuery.data?.data || workshopQuestionsQuery.data || [];
+  const canCreateQuestion = userPermissions.includes('WORKSHOP_QUESTION_CREATE');
+  const canVoteQuestion = userPermissions.includes('WORKSHOP_QUESTION_VOTE');
+  const canCreateRating = userPermissions.includes('WORKSHOP_RATING_CREATE');
+  const canCreateFeedback = userPermissions.includes('WORKSHOP_FEEDBACK_CREATE');
 
   const createQuestionMutation = useMutation({
     mutationFn: ({ workshopId, content }: { workshopId: string; content: string }) =>
@@ -157,17 +186,21 @@ export function useParticipantWorkshopsView() {
     setQuestionContent,
     handleCreateQuestion,
     createQuestionMutation,
+    canCreateQuestion,
     workshopQuestions,
     workshopQuestionsQuery,
     voteQuestionMutation,
+    canVoteQuestion,
     ratingValue,
     setRatingValue,
     handleRateWorkshop,
     createRatingMutation,
+    canCreateRating,
     feedbackContent,
     setFeedbackContent,
     handleFeedbackSubmit,
     createFeedbackMutation,
+    canCreateFeedback,
     setSelectedEventId,
   };
 }

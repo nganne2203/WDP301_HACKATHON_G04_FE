@@ -27,6 +27,7 @@ export interface NavigationItem {
   href: string;
   icon: LucideIcon;
   label: string;
+  disabled?: boolean;
 }
 
 const coordinatorNavigation: NavigationItem[] = [
@@ -88,10 +89,12 @@ const participantNavigation: NavigationItem[] = [
 const mentorNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/mentor' },
   { icon: UsersRound, label: 'My Teams', href: '/mentor/teams' },
+  { icon: Presentation, label: 'Workshops', href: '/mentor/workshops' },
 ];
 
 const speakerNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/mentor' },
+  { icon: Presentation, label: 'Workshops', href: '/mentor/workshops' },
 ];
 
 export function getNavigationItems(role: AppRole | null | undefined) {
