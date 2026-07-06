@@ -1,6 +1,6 @@
 import { AlertCircle, Calendar, Loader2, MoreVertical, Plus } from 'lucide-react';
 
-import { formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
+import { describeAdvancementRule, formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
 import { ApiError } from '@/shared/api/client';
 import {
   AlertDialog,
@@ -96,6 +96,7 @@ export function Events() {
                 <TableHead>Event</TableHead>
                 <TableHead>Semester</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Advancement Rule</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
@@ -103,7 +104,7 @@ export function Events() {
             <TableBody>
               {view.events.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     No events found. Create your first event to get started.
                   </TableCell>
                 </TableRow>
@@ -121,6 +122,9 @@ export function Events() {
                     <TableCell>{event.semester || '-'}</TableCell>
                     <TableCell>
                       <StatusBadge status={mapEventStatus(event.status) as never} />
+                    </TableCell>
+                    <TableCell className="max-w-xs text-sm text-muted-foreground">
+                      {describeAdvancementRule(event)}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatEventDate(event.startDate)} - {formatEventDate(event.endDate)}

@@ -42,7 +42,11 @@ export function useEventsView() {
 
   const createForm = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: { status: 'DRAFT' },
+    defaultValues: {
+      status: 'DRAFT',
+      finalistSelectionMode: 'FIXED_PER_BOARD',
+      fillRemainingFinalistsByOverallScore: false,
+    },
   });
 
   const editForm = useForm<EventFormValues>({
@@ -54,7 +58,11 @@ export function useEventsView() {
     onSuccess: async (response) => {
       toast.success('Event Created', { description: `${response.data.title} has been created.` });
       setCreateOpen(false);
-      createForm.reset({ status: 'DRAFT' });
+      createForm.reset({
+        status: 'DRAFT',
+        finalistSelectionMode: 'FIXED_PER_BOARD',
+        fillRemainingFinalistsByOverallScore: false,
+      });
       await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
     },
     onError: (error: unknown) => {
@@ -151,7 +159,11 @@ export function useEventsView() {
   const openCreateDialog = (open: boolean) => {
     setCreateOpen(open);
     if (!open) {
-      createForm.reset({ status: 'DRAFT' });
+      createForm.reset({
+        status: 'DRAFT',
+        finalistSelectionMode: 'FIXED_PER_BOARD',
+        fillRemainingFinalistsByOverallScore: false,
+      });
     }
   };
 

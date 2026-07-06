@@ -1,11 +1,7 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
-  AlertTriangle,
-  Bot,
   CheckCircle2,
   Clock,
-  Code,
   ExternalLink,
   FileText,
   LayoutDashboard,
@@ -16,7 +12,6 @@ import {
 } from 'lucide-react';
 
 import { useJudgeDashboardView } from '../model/useJudgeDashboardView';
-import { RepositoryEvidenceDialog } from '../../scoring/ui/RepositoryEvidenceDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -28,17 +23,9 @@ export function JudgeDashboardView() {
   const view = useJudgeDashboardView();
   const navigate = useNavigate();
 
-  const [selectedRepo, setSelectedRepo] = useState<any>(null);
-  const [evidenceOpen, setEvidenceOpen] = useState(false);
-
   const handleScoreTeam = (teamId: string) => {
     if (!view.activeEvent || !view.activeRound) return;
     navigate(`/judge/scoring?teamId=${teamId}&roundId=${view.activeRound.id}&eventId=${view.activeEvent.id}`);
-  };
-
-  const openEvidence = (repo: any) => {
-    setSelectedRepo(repo);
-    setEvidenceOpen(true);
   };
 
   const progressPercent = view.totalTeamsCount > 0 
@@ -55,7 +42,7 @@ export function JudgeDashboardView() {
             Judge Dashboard
           </h1>
           <p className="text-sm text-muted-foreground">
-            Manage your assignments, view automated n8n AI code reviews, and evaluate team submissions.
+            Manage your assignments, track scoring progress, and evaluate team submissions.
           </p>
         </div>
 
@@ -207,7 +194,7 @@ export function JudgeDashboardView() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <div>
                 <CardTitle className="text-lg font-semibold">Assigned Teams list</CardTitle>
-                <CardDescription>Click on any team to review submissions, inspect code audits, or fill score sheets.</CardDescription>
+                <CardDescription>Click on any team to review submissions or fill score sheets.</CardDescription>
               </div>
               <Badge variant="outline" className="text-xs font-normal">
                 {view.myBoard?.name || 'Evaluation Board'}
@@ -226,7 +213,6 @@ export function JudgeDashboardView() {
                       <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         <th className="px-6 py-3">Team / Project</th>
                         <th className="px-6 py-3">Evidence Links</th>
-                        <th className="px-6 py-3">GitHub Audit (n8n AI / SAST)</th>
                         <th className="px-6 py-3 text-center">Status</th>
                         <th className="px-6 py-3 text-right">Actions</th>
                       </tr>
@@ -235,13 +221,6 @@ export function JudgeDashboardView() {
                       {view.assignedTeams.map((team) => {
                         const sub = view.submissionByTeam[team.id];
                         const sheet = view.sheetByTeamId.get(team.id);
-                        const staticAnalysis = view.staticAnalysisByTeamId.get(team.id) || [];
-                        const aiReviews = view.aiReviewsByTeamId.get(team.id);
-
-                        const latestAnalysis = staticAnalysis[0] || null;
-                        const latestAiReview = aiReviews?.aiReviews?.[0] || null;
-                        const repository = aiReviews?.repository || sub?.repository || null;
-
                         // Scoring state logic
                         let statusBadge = (
                           <Badge variant="outline" className="bg-gray-50 text-gray-500 border-gray-200">
@@ -306,70 +285,6 @@ export function JudgeDashboardView() {
                               )}
                             </td>
 
-                            {/* GitHub Audit (n8n AI / SAST) */}
-                            <td className="px-6 py-4">
-                              {sub?.repositoryId ? (
-                                <div className="flex flex-col gap-1">
-                                  {/* Repository name & Webhook status */}
-                                  <div className="flex items-center gap-2">
-                                    <span 
-                                      onClick={() => openEvidence(repository)}
-                                      className="text-xs font-mono font-medium text-blue-600 hover:underline cursor-pointer flex items-center gap-1"
-                                      title="Inspect Repository Evidence"
-                                    >
-                                      <Code className="h-3.5 w-3.5" />
-                                      {repository?.repositoryFullName || 'Inspect Code'}
-                                    </span>
-                                  </div>
-
-                                  {/* n8n SAST Analysis Results */}
-                                  <div className="flex items-center gap-2 mt-1">
-                                    {latestAnalysis ? (
-                                      <div className="flex gap-1.5">
-                                        {latestAnalysis.errorCount > 0 && (
-                                          <Badge variant="destructive" className="h-5 px-1.5 text-[10px] gap-1 flex items-center">
-                                            <AlertTriangle className="h-2.5 w-2.5" /> {latestAnalysis.errorCount} Errors
-                                          </Badge>
-                                        )}
-                                        {latestAnalysis.warningCount > 0 && (
-                                          <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-amber-700 bg-amber-50 border-amber-200 gap-1 flex items-center">
-                                            {latestAnalysis.warningCount} Warnings
-                                          </Badge>
-                                        )}
-                                        {latestAnalysis.errorCount === 0 && latestAnalysis.warningCount === 0 && (
-                                          <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-green-700 bg-green-50 border-green-200">
-                                            Code Quality: OK
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span className="text-[11px] text-muted-foreground">n8n: No static run yet</span>
-                                    )}
-
-                                    {/* n8n AI Review */}
-                                    {latestAiReview ? (
-                                      <Badge 
-                                        variant="outline" 
-                                        className={`h-5 px-1.5 text-[10px] gap-1 flex items-center ${
-                                          latestAiReview.needsHumanReview 
-                                            ? 'text-red-700 bg-red-50 border-red-200' 
-                                            : 'text-purple-700 bg-purple-50 border-purple-200'
-                                        }`}
-                                        title={latestAiReview.summary || 'AI Code review'}
-                                      >
-                                        <Bot className="h-3 w-3" />
-                                        {latestAiReview.needsHumanReview ? 'AI Warning' : 'AI OK'}
-                                      </Badge>
-                                    ) : (
-                                      <span className="text-[11px] text-muted-foreground">AI: Pending</span>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">No GitHub linked</span>
-                              )}
-                            </td>
-
                             {/* Status */}
                             <td className="px-6 py-4 text-center">
                               {statusBadge}
@@ -410,12 +325,6 @@ export function JudgeDashboardView() {
         </>
       )}
 
-      {/* Reusable Repository Evidence Dialog */}
-      <RepositoryEvidenceDialog
-        open={evidenceOpen}
-        onOpenChange={setEvidenceOpen}
-        repository={selectedRepo}
-      />
     </div>
   );
 }

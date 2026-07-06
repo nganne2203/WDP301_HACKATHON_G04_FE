@@ -43,6 +43,7 @@ const AdminOperations = lazy(async () => ({ default: (await import('@/pages/admi
 const AdminRbac = lazy(async () => ({ default: (await import('@/pages/admin/Rbac')).AdminRbac }));
 const JudgeDashboard = lazy(async () => ({ default: (await import('@/pages/judge/Dashboard')).JudgeDashboard }));
 const JudgeScoring = lazy(async () => ({ default: (await import('@/pages/judge/Scoring')).JudgeScoring }));
+const JudgeCodeReviews = lazy(async () => ({ default: (await import('@/pages/judge/CodeReviews')).JudgeCodeReviews }));
 const AdminSettings = lazy(async () => ({ default: (await import('@/pages/admin/Settings')).Settings }));
 const ParticipantDashboard = lazy(async () => ({
   default: (await import('@/pages/participant/Dashboard')).ParticipantDashboard,
@@ -61,6 +62,9 @@ const ParticipantChatRoom = lazy(async () => ({
 }));
 const ParticipantSubmissions = lazy(async () => ({
   default: (await import('@/pages/participant/Submissions')).ParticipantSubmissions,
+}));
+const ParticipantRounds = lazy(async () => ({
+  default: (await import('@/pages/participant/Rounds')).ParticipantRounds,
 }));
 const ParticipantResults = lazy(async () => ({
   default: (await import('@/pages/participant/Results')).ParticipantResults,
@@ -286,6 +290,22 @@ export function AppRouter() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/judge/code-reviews"
+            element={
+              <ProtectedRoute allowedRoles={['judge', 'admin']}>
+                <JudgeCodeReviews />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/judge/results"
+            element={
+              <ProtectedRoute allowedRoles={['judge', 'admin']}>
+                <Results />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/participant"
@@ -319,6 +339,14 @@ export function AppRouter() {
             element={
               <ProtectedRoute allowedRoles={['participant', 'admin']}>
                 <ParticipantSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/participant/rounds"
+            element={
+              <ProtectedRoute allowedRoles={['participant', 'admin']}>
+                <ParticipantRounds />
               </ProtectedRoute>
             }
           />

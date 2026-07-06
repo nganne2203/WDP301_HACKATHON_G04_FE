@@ -250,10 +250,26 @@ export interface Event {
   maxTeamMembers?: number;
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
+  competitionConfig?: CompetitionConfig;
   status: EventStatus;
   createdBy?: EventCreator | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type FinalistSelectionMode = 'FIXED_PER_BOARD' | 'TOP_PER_BOARD_WITH_WILDCARD' | 'OVERALL_SCORE' | 'CUSTOM';
+
+export interface CompetitionConfig {
+  boardCount?: number;
+  trackCount?: number;
+  maxTeamsPerBoard?: number;
+  finalistCount?: number;
+  finalistsPerBoard?: number;
+  finalistSelectionMode?: FinalistSelectionMode;
+  fillRemainingFinalistsByOverallScore?: boolean;
+  rankingScopes?: string[];
+  tieBreakRule?: string;
+  tieBreakDurationMinutes?: number;
 }
 
 export interface CreateEventRequest {
@@ -273,6 +289,7 @@ export interface CreateEventRequest {
   maxTeamMembers?: number;
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
+  competitionConfig?: CompetitionConfig;
   status?: EventStatus;
 }
 
@@ -1363,6 +1380,8 @@ export interface Round {
   rubric: { id: string; title: string; totalScore: number | null } | null;
   name: string;
   roundType: RoundType;
+  problemStatement?: string | null;
+  examDriveUrl?: string | null;
   status: RoundStatus;
   startTime: string | null;
   endTime: string | null;
@@ -1404,6 +1423,8 @@ export interface CreateRoundRequest {
   eventId: string;
   name: string;
   roundType?: RoundType;
+  problemStatement?: string | null;
+  examDriveUrl?: string | null;
   trackId?: string | null;
   assignedTeamIds?: string[];
   promotedTeamIds?: string[];
@@ -1821,8 +1842,12 @@ export interface GenerateRankingsRequest {
 }
 
 export interface GenerateRankingsResult {
-  generated: number;
   rankings: Ranking[];
+  summary?: {
+    generatedCount?: number;
+    source?: string;
+    tiedGroups?: unknown[];
+  };
 }
 
 // ============================================================
@@ -1834,8 +1859,13 @@ export interface SelectFinalistsRequest {
 }
 
 export interface SelectFinalistsResult {
-  selected: number;
-  rankings: Ranking[];
+  finalists: Ranking[];
+  summary?: {
+    finalistSelectionMode?: string;
+    finalistCount?: number;
+    promotedTeamIds?: string[];
+    source?: string;
+  };
 }
 
 // ============================================================
@@ -1850,8 +1880,12 @@ export interface PublishResultsRequest {
 }
 
 export interface PublishResultsResult {
-  published: number;
-  repositoryAccessAction: RepositoryAccessAction;
+  publishedAt: string;
+  rankings: Ranking[];
+  repositoryAccessAction: {
+    action: RepositoryAccessAction;
+    affectedRepositories: number;
+  };
   notified?: number;
 }
 

@@ -2,7 +2,7 @@ import type { Event } from '@/shared/api/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { Label } from '@/shared/ui/label';
 import { StatusBadge } from '@/shared/ui/status-badge';
-import { formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
+import { describeAdvancementRule, formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
 
 export function EventDetailsDialog({
   open,
@@ -64,6 +64,28 @@ export function EventDetailsDialog({
                 <p className="font-medium mt-1">
                   {event.minTeamMembers || '?'} - {event.maxTeamMembers || '?'} members
                 </p>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <Label className="text-muted-foreground">Advancement Rules</Label>
+              <p className="mt-1 font-medium">{describeAdvancementRule(event)}</p>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div>
+                  <span className="text-muted-foreground">Boards</span>
+                  <p className="font-medium">{event.competitionConfig?.boardCount || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Teams / board</span>
+                  <p className="font-medium">{event.competitionConfig?.maxTeamsPerBoard || '-'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Advance / board</span>
+                  <p className="font-medium">{event.competitionConfig?.finalistsPerBoard ?? event.finalistSlotsPerTrack ?? '-'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Total advance</span>
+                  <p className="font-medium">{event.competitionConfig?.finalistCount ?? event.totalFinalistSlots ?? '-'}</p>
+                </div>
               </div>
             </div>
           </div>

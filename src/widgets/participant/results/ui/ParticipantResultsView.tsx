@@ -38,14 +38,14 @@ export function ParticipantResultsView() {
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(activeEventId, activeRoundId),
-    enabled: Boolean(activeEventId && activeRoundId && appRole !== 'participant'),
+    enabled: Boolean(activeEventId && activeRoundId && appRole),
     queryFn: async () => (await rankingsApi.list({ eventId: activeEventId, roundId: activeRoundId, limit: 50 })).data,
   });
   const rankings = rankingsQuery.data || [];
 
   const finalistsQuery = useQuery({
     queryKey: queryKeys.finalists.list(activeEventId, activeRoundId),
-    enabled: Boolean(activeEventId && activeRoundId && appRole !== 'participant'),
+    enabled: Boolean(activeEventId && activeRoundId && appRole),
     queryFn: async () => (await finalistsApi.list({ eventId: activeEventId, roundId: activeRoundId, limit: 50 })).data,
   });
   const finalists = finalistsQuery.data || [];

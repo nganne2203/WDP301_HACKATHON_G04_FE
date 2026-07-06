@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { finalistsApi } from '@/entities/finalist/api';
 import { rankingsApi } from '@/entities/ranking/api';
 import { resultsApi } from '@/entities/result/api';
+import { useStore } from '@/entities/session/model/store';
 import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { RepositoryAccessAction } from '@/shared/api/types';
@@ -16,9 +17,15 @@ function getApiErrorMessage(error: unknown): string {
 
 export function useResultsView() {
   const queryClient = useQueryClient();
+  const appRole = useStore((state) => state.appRole);
+  const hasPermission = useStore((state) => state.hasPermission);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedRoundId, setSelectedRoundId] = useState('');
   const [repositoryAccessAction, setRepositoryAccessAction] = useState<RepositoryAccessAction>('NONE');
+  const canGenerateRankings = appRole === 'admin' || hasPermission('RANKING_GENERATE');
+  const canSelectFinalists = appRole === 'admin' || hasPermission('FINALIST_SELECT');
+  const canPublishResults = appRole === 'admin' || hasPermission('RESULT_PUBLISH');
+  const canManageResults = canGenerateRankings || canSelectFinalists || canPublishResults;
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -51,7 +58,7 @@ export function useResultsView() {
       return (await rankingsApi.generate({ eventId: activeEventId, roundId: activeRoundId })).data;
     },
     onSuccess: async (result) => {
-      toast.success(`Rankings generated — ${result.generated} entries`);
+      toast.success(`Rankings generated - ${result.summary?.generatedCount ?? result.rankings.length} entries`);
       await queryClient.invalidateQueries({ queryKey: queryKeys.rankings.list(activeEventId, activeRoundId) });
     },
     onError: (error) => toast.error('Could not generate rankings', { description: getApiErrorMessage(error) }),
@@ -64,7 +71,7 @@ export function useResultsView() {
       return (await finalistsApi.select({ eventId: activeEventId, roundId: activeRoundId })).data;
     },
     onSuccess: async (result) => {
-      toast.success(`Finalists selected — ${result.selected} teams`);
+      toast.success(`Finalists selected - ${result.summary?.finalistCount ?? result.finalists.length} teams`);
       await queryClient.invalidateQueries({ queryKey: queryKeys.finalists.list(activeEventId, activeRoundId) });
       await queryClient.invalidateQueries({ queryKey: queryKeys.rankings.list(activeEventId, activeRoundId) });
     },
@@ -83,7 +90,7 @@ export function useResultsView() {
     },
     onSuccess: async (result) => {
       toast.success('Results published', {
-        description: `${result.published} rankings published. Repositories: ${result.repositoryAccessAction}.`,
+        description: `${result.rankings.length} rankings published. Repositories: ${result.repositoryAccessAction.action}.`,
       });
       await queryClient.invalidateQueries({ queryKey: queryKeys.rankings.list(activeEventId, activeRoundId) });
     },
@@ -109,6 +116,10 @@ export function useResultsView() {
     rankingsQuery,
     finalists,
     finalistsQuery,
+    canManageResults,
+    canGenerateRankings,
+    canSelectFinalists,
+    canPublishResults,
 
     repositoryAccessAction,
     setRepositoryAccessAction,

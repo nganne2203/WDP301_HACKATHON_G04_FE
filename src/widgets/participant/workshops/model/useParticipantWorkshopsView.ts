@@ -13,6 +13,7 @@ export function useParticipantWorkshopsView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
   const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const appRole = useStore((state) => state.appRole);
   const userPermissions = useStore((state) => state.user?.permissions || []);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
@@ -20,6 +21,7 @@ export function useParticipantWorkshopsView() {
   const [ratingValue, setRatingValue] = useState(5);
   const [feedbackContent, setFeedbackContent] = useState('');
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isQuestionsOpen, setIsQuestionsOpen] = useState(false);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -62,7 +64,7 @@ export function useParticipantWorkshopsView() {
 
   const workshopQuestionsQuery = useQuery({
     queryKey: queryKeys.workshops.questions(selectedWorkshop?.id, { page: 1, limit: 50 }),
-    enabled: isDetailOpen && Boolean(selectedWorkshop?.id),
+    enabled: (isDetailOpen || isQuestionsOpen) && Boolean(selectedWorkshop?.id),
     queryFn: () => workshopsApi.listQuestions(selectedWorkshop!.id, { page: 1, limit: 50 }),
   });
 
@@ -167,9 +169,24 @@ export function useParticipantWorkshopsView() {
     setIsDetailOpen(true);
   };
 
+  const openQuestionsDialog = (workshop: Workshop) => {
+    setSelectedWorkshop(workshop);
+    setQuestionContent('');
+    setIsQuestionsOpen(true);
+  };
+
   const closeDetailSheet = () => {
     setIsDetailOpen(false);
-    setSelectedWorkshop(null);
+    if (!isQuestionsOpen) {
+      setSelectedWorkshop(null);
+    }
+  };
+
+  const closeQuestionsDialog = () => {
+    setIsQuestionsOpen(false);
+    if (!isDetailOpen) {
+      setSelectedWorkshop(null);
+    }
   };
 
   return {
@@ -179,9 +196,13 @@ export function useParticipantWorkshopsView() {
     workshops,
     workshopsQuery,
     selectedWorkshop,
+    appRole,
     isDetailOpen,
+    isQuestionsOpen,
     openDetailSheet,
+    openQuestionsDialog,
     closeDetailSheet,
+    closeQuestionsDialog,
     questionContent,
     setQuestionContent,
     handleCreateQuestion,

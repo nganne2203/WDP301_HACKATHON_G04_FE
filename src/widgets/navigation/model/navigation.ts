@@ -4,6 +4,7 @@ import {
   Clock3,
   ClipboardCheck,
   ClipboardList,
+  Code,
   FileText,
   GitBranch,
   Github,
@@ -74,11 +75,14 @@ const adminNavigation: NavigationItem[] = [
 const judgeNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/judge' },
   { icon: Scale, label: 'Score Teams', href: '/judge/scoring' },
+  { icon: Code, label: 'Code Reviews', href: '/judge/code-reviews' },
+  { icon: Trophy, label: 'Results', href: '/judge/results' },
 ];
 
 const participantNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/participant' },
   { icon: UsersRound, label: 'My Team', href: '/participant/team' },
+  { icon: Calendar, label: 'Rounds', href: '/participant/rounds' },
   { icon: MessageSquare, label: 'Chats', href: '/participant/chats' },
   { icon: Send, label: 'Submissions', href: '/participant/submissions' },
   { icon: Presentation, label: 'Workshops', href: '/participant/workshops' },

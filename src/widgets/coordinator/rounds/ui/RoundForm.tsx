@@ -153,6 +153,28 @@ export function RoundForm({
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="round-problem-statement">Problem Statement</Label>
+          <Textarea
+            id="round-problem-statement"
+            rows={5}
+            value={form.problemStatement}
+            onChange={(event) => onChange((current) => ({ ...current, problemStatement: event.target.value }))}
+            placeholder="Describe the exam problem, constraints, and expected deliverables."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="round-drive-url">Exam Drive Link</Label>
+          <Input
+            id="round-drive-url"
+            value={form.examDriveUrl}
+            onChange={(event) => onChange((current) => ({ ...current, examDriveUrl: event.target.value }))}
+            placeholder="https://drive.google.com/..."
+          />
+        </div>
+      </div>
+
       <SelectionList
         label={`Assigned Teams (${form.assignedTeamIds.length})`}
         items={teams.map((team) => ({ id: team.id, primary: team.name, secondary: team.projectName || team.status }))}
