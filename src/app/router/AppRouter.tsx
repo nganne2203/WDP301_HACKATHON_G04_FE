@@ -11,6 +11,7 @@ const Login = lazy(async () => ({ default: (await import('@/pages/Login')).Login
 const Register = lazy(async () => ({ default: (await import('@/pages/Register')).Register }));
 const ResetPassword = lazy(async () => ({ default: (await import('@/pages/ResetPassword')).ResetPassword }));
 const ChangePassword = lazy(async () => ({ default: (await import('@/pages/ChangePassword')).ChangePassword }));
+const Profile = lazy(async () => ({ default: (await import('@/pages/Profile')).Profile }));
 const TeamInvitationConfirmation = lazy(async () => ({
   default: (await import('@/pages/TeamInvitationConfirmation')).TeamInvitationConfirmation,
 }));
@@ -149,6 +150,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

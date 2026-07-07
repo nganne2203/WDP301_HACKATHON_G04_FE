@@ -151,6 +151,33 @@ export interface EmailDeliveryResult {
 
 export type UserEmailNotification = EmailDeliveryResult;
 
+export type NotificationType = 'DEADLINE' | 'WORKSHOP' | 'RESULT' | 'FEEDBACK' | 'SYSTEM';
+export type NotificationStatus = 'UNREAD' | 'READ';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message?: string | null;
+  type: NotificationType;
+  status: NotificationStatus;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListNotificationsQuery {
+  page?: number;
+  limit?: number;
+  status?: NotificationStatus;
+  type?: NotificationType;
+}
+
+export interface MarkAllNotificationsReadResult {
+  matchedCount: number;
+  modifiedCount: number;
+}
+
 export type UserRoleName =
   | 'ADMIN'
   | 'EVENT_COORDINATOR'
@@ -1158,9 +1185,21 @@ export interface ParticipantTeamSummary {
   status?: string;
 }
 
+export interface ParticipantEventSummary {
+  id: string;
+  title?: string;
+  semester?: string | null;
+  season?: string | null;
+  year?: number | null;
+  status?: EventStatus;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
 export interface Participant {
   id: string;
   eventId: string;
+  event?: ParticipantEventSummary | null;
   user: ParticipantUserSummary | null;
   team: ParticipantTeamSummary | null;
   chapterName?: string | null;

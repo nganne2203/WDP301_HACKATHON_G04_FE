@@ -43,6 +43,11 @@ export const queryKeys = {
     lists: () => [...queryKeys.users.all, 'list'] as const,
     list: (query?: QueryParams) => [...queryKeys.users.lists(), params(query)] as const,
   },
+  notifications: {
+    all: ['notifications'] as const,
+    lists: () => [...queryKeys.notifications.all, 'list'] as const,
+    list: (query?: QueryParams) => [...queryKeys.notifications.lists(), params(query)] as const,
+  },
   participants: {
     all: ['participants'] as const,
     lists: () => [...queryKeys.participants.all, 'list'] as const,
