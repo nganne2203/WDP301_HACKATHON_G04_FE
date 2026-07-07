@@ -59,7 +59,7 @@ export function TeamOverviewCard({ eventTitle, minTeamMembers, team }: TeamOverv
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <CardTitle>{team.name}</CardTitle>
-              <CardDescription>{team.projectName || eventTitle}</CardDescription>
+              <CardDescription>{eventTitle}</CardDescription>
             </div>
             <Badge variant={statusBadgeVariant(team.status)}>{team.status.replaceAll('_', ' ')}</Badge>
           </div>

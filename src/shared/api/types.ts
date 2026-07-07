@@ -468,8 +468,16 @@ export interface MediaStatistics {
   uploadsByWeek: Array<{ week: string; count: number }>;
   uploadsByMonth: Array<{ month: string; count: number }>;
   uploadsByMediaType: Array<{ mediaType: MediaType; count: number }>;
-  mostActiveParticipants: Array<{ participantId: string; uploads: number }>;
-  mostViewedMedia: Array<{ mediaId: string; views: number }>;
+  mostActiveParticipants: Array<{
+    participantId: string;
+    participant: { id: string; email?: string; fullName?: string } | null;
+    uploads: number;
+  }>;
+  mostViewedMedia: Array<{
+    mediaId: string;
+    media: { id: string; title?: string; originalFileName?: string; mediaType?: MediaType } | null;
+    views: number;
+  }>;
 }
 
 // ============================================================
@@ -578,7 +586,6 @@ export interface CreateTeamRequest {
   name: string;
   trackId?: string | null;
   chapterName?: string;
-  projectName?: string;
   invitedEmails?: string[];
   invitedMembers?: TeamInviteMember[];
 }

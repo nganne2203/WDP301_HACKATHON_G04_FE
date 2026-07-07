@@ -77,7 +77,7 @@ export function JudgeCodeReviewsView() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <CardTitle className="text-lg">{row.team.name}</CardTitle>
-                  <CardDescription>{row.team.projectName || 'No project name linked'}</CardDescription>
+                  <CardDescription>{row.repository?.repositoryFullName || 'Repository evidence'}</CardDescription>
                 </div>
                 {row.latestAiReview ? (
                   <Badge variant={row.latestAiReview.needsHumanReview ? 'destructive' : 'secondary'}>

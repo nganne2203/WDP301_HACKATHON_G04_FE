@@ -53,7 +53,7 @@ function ChatRoomRow({ room, selected }: { room: ChatRoom; selected: boolean }) 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{room.team?.name || 'Team chat'}</p>
               <p className={['mt-1 truncate text-xs', selected ? 'text-white/70' : 'text-muted-foreground'].join(' ')}>
-                {room.team?.projectName || 'Shared team conversation'}
+                Shared team conversation
               </p>
             </div>
             <span className={['shrink-0 text-[11px]', selected ? 'text-white/70' : 'text-muted-foreground'].join(' ')}>

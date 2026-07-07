@@ -81,7 +81,7 @@ export function RepositoryDetailDialog({
           <div className="rounded-lg border p-3">
             <p className="text-sm text-muted-foreground">Team</p>
             <p className="font-medium">{repository.team?.name || '-'}</p>
-            <p className="text-xs text-muted-foreground">{repository.team?.projectName || 'No project name'}</p>
+            <p className="text-xs text-muted-foreground">{repository.team?.chapterName || repository.team?.status || '-'}</p>
           </div>
           <div className="rounded-lg border p-3">
             <p className="text-sm text-muted-foreground">Round</p>

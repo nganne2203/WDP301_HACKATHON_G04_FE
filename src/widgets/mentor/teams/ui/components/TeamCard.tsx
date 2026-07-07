@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Github, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Badge } from '@/shared/ui/badge';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -60,10 +60,6 @@ export function TeamCard({ team, isSpeaker, footer }: TeamCardProps) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="w-4 h-4 shrink-0" />
           <span className="truncate">{confirmedCount} confirmed member(s)</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Github className="w-4 h-4 shrink-0" />
-          <span className="truncate">{team.projectName || 'No project name yet'}</span>
         </div>
         {!isSpeaker && team.assignedMentors && team.assignedMentors.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">

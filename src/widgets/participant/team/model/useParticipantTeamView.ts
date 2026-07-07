@@ -28,7 +28,6 @@ export function useParticipantTeamView() {
   const user = useStore((state) => state.user);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [teamName, setTeamName] = useState('');
-  const [projectName, setProjectName] = useState('');
   const [invitedMembers, setInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [newInvitedMembers, setNewInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [replacementEmails, setReplacementEmails] = useState<Record<string, string>>({});
@@ -91,7 +90,6 @@ export function useParticipantTeamView() {
       const response = await teamsApi.create({
         eventId: activeEventId,
         name: teamName.trim(),
-        projectName: projectName.trim(),
         invitedMembers: members,
       });
       return response.data;
@@ -99,7 +97,6 @@ export function useParticipantTeamView() {
     onSuccess: async () => {
       toast.success('Team created and invitations sent');
       setTeamName('');
-      setProjectName('');
       setInvitedMembers([createMemberRow()]);
       await invalidateTeam();
     },
@@ -210,7 +207,6 @@ export function useParticipantTeamView() {
     inviteMutation,
     invitedMembers,
     newInvitedMembers,
-    projectName,
     registrationOpen,
     replacementEmails,
     replaceMutation,
@@ -218,7 +214,6 @@ export function useParticipantTeamView() {
     selectedEventId,
     setInvitedMembers,
     setNewInvitedMembers,
-    setProjectName,
     setReplacementEmails,
     setSelectedEventId,
     setTeamName,

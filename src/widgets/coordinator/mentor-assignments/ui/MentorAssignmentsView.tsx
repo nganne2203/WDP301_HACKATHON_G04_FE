@@ -286,7 +286,7 @@ export function MentorAssignmentsView() {
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                   <div className="min-w-0 flex-1">
                     <CardTitle className="break-words">{team.name}</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground break-words">{team.projectName || team.event?.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground break-words">{team.event?.title}</p>
                   </div>
                   <Badge className="w-fit shrink-0 self-start" variant="outline">
                     {team.assignedMentors?.length || 0} mentor(s)
@@ -355,7 +355,7 @@ export function MentorAssignmentsView() {
                 {editingTeam && (
                   <div className="rounded-lg border p-4">
                     <p className="text-sm font-medium">Team context</p>
-                    <p className="mt-2 text-sm text-muted-foreground">{editingTeam.projectName || editingTeam.event?.title}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{editingTeam.event?.title}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {editingTeam.participants.length} participant(s), {editingTeam.invitations.length} invitation(s)
                     </p>
@@ -426,7 +426,7 @@ export function MentorAssignmentsView() {
                   {teamsInSelectedBoard.map((team) => (
                     <div key={team.id} className="rounded-md border px-3 py-2">
                       <p className="text-sm font-medium">{team.name}</p>
-                      <p className="text-xs text-muted-foreground break-words">{team.projectName || team.event?.title}</p>
+                      <p className="text-xs text-muted-foreground break-words">{team.event?.title}</p>
                     </div>
                   ))}
                 </div>

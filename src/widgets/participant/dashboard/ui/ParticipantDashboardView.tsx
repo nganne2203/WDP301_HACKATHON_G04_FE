@@ -138,7 +138,7 @@ export function ParticipantDashboard() {
                       {view.team.leaderId === view.user?.id ? 'Leader' : 'Member'}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{view.team.projectName || view.selectedEvent?.title}</p>
+                  <p className="text-sm text-muted-foreground">{view.selectedEvent?.title}</p>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">

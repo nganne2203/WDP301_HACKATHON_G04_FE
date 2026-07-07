@@ -243,11 +243,10 @@ export function JudgeDashboardView() {
 
                         return (
                           <tr key={team.id} className="hover:bg-gray-50/70 transition-colors">
-                            {/* Team / Project */}
+                            {/* Team */}
                             <td className="px-6 py-4">
                               <div className="min-w-0">
                                 <p className="font-semibold text-gray-900 truncate">{team.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">{team.projectName || 'No project name linked'}</p>
                               </div>
                             </td>
 

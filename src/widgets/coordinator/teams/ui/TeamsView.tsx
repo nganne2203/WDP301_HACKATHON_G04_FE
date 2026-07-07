@@ -158,7 +158,7 @@ export function Teams() {
                     <div className="min-w-0 flex-1">
                       <CardTitle className="text-lg break-words">{team.name}</CardTitle>
                       <p className="mt-1 text-sm text-muted-foreground break-words">
-                        {team.projectName || team.event?.title}
+                        {team.event?.title}
                       </p>
                     </div>
                     <Badge className="w-fit shrink-0 self-start" variant={statusBadgeVariant(team.status)}>

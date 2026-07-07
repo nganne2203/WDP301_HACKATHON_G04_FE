@@ -23,14 +23,12 @@ export function ParticipantTeam() {
     inviteMutation,
     invitedMembers,
     newInvitedMembers,
-    projectName,
     registrationOpen,
     replacementEmails,
     replaceMutation,
     selectedEvent,
     setInvitedMembers,
     setNewInvitedMembers,
-    setProjectName,
     setReplacementEmails,
     setSelectedEventId,
     setTeamName,
@@ -95,10 +93,8 @@ export function ParticipantTeam() {
           createPending={createTeamMutation.isPending || createValidationPending}
           invitedMembers={invitedMembers}
           onCreateTeam={handleCreateTeam}
-          projectName={projectName}
           registrationOpen={registrationOpen}
           setInvitedMembers={setInvitedMembers}
-          setProjectName={setProjectName}
           setTeamName={setTeamName}
           teamNameChecking={teamNameChecking}
           teamNameValidationMessage={teamNameValidationMessage}

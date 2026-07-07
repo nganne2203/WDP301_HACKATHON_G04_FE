@@ -247,7 +247,7 @@ export function ParticipantChatRoomView() {
               <div className="min-w-0">
                 <h2 className="truncate text-xl font-semibold text-slate-950">{room.team?.name || 'Team chat'}</h2>
                 <p className="mt-1 truncate text-sm text-slate-500">
-                  {team?.projectName || room.team?.projectName || 'Shared room for your team and assigned mentors'}
+                  Shared room for your team and assigned mentors
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">

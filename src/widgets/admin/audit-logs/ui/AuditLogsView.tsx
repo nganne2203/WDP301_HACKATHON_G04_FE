@@ -45,69 +45,41 @@ const RESULT_OPTIONS = [
   { label: 'Failure', value: 'FAILURE' },
 ] as const;
 
-const DEFAULT_ACTION_OPTIONS = [
-  'AUTH_REGISTER_SUCCESS',
-  'AUTH_REGISTER_FAILED',
-  'AUTH_LOGIN_SUCCESS',
-  'AUTH_LOGIN_FAILED',
-  'AUTH_GOOGLE_LOGIN_STARTED',
-  'AUTH_GOOGLE_LOGIN_SUCCESS',
-  'AUTH_GOOGLE_LOGIN_FAILED',
-  'AUTH_TOKEN_REFRESHED',
-  'AUTH_TOKEN_REFRESH_FAILED',
-  'AUTH_PASSWORD_CHANGED',
-  'AUTH_PASSWORD_CHANGE_FAILED',
-  'AUTH_LOGOUT',
-  'USER_CREATED',
-  'USER_UPDATED',
-  'USER_STATUS_CHANGED',
-  'USER_ROLE_CHANGED',
-  'USER_DELETED',
-  'ROLE_CREATED',
-  'ROLE_UPDATED',
-  'ROLE_DELETED',
-  'ROLE_PERMISSION_CHANGED',
-  'PERMISSION_UPDATED',
-  'TEAM_CREATED',
-  'TEAM_UPDATED',
-  'TEAM_STATUS_CHANGED',
-  'TEAM_MEMBER_INVITED',
-  'TEAM_MEMBER_REMOVED',
-  'TEAM_INVITATION_ACCEPTED',
-  'TEAM_INVITATION_DECLINED',
-  'TEAM_INVITATION_CANCELLED',
-  'EVENT_CREATED',
-  'EVENT_UPDATED',
-  'EVENT_DELETED',
-  'ROUND_CREATED',
-  'ROUND_UPDATED',
-  'ROUND_DELETED',
-  'RUBRIC_CREATED',
-  'RUBRIC_UPDATED',
-  'RUBRIC_DELETED',
-  'SUBMISSION_CREATED',
-  'SUBMISSION_UPDATED',
-  'SUBMISSION_SUBMITTED',
-  'SUBMISSION_STATUS_CHANGED',
-  'SCORE_SHEET_CREATED',
-  'SCORE_SHEET_UPDATED',
-  'SCORE_SHEET_SUBMITTED',
-  'SCORE_SHEET_SUBMITTED_AND_LOCKED',
-  'RANKING_GENERATED',
-  'FINALISTS_SELECTED',
-  'RESULTS_PUBLISHED',
-  'AI_REVIEW_REQUESTED',
-  'AI_REVIEW_COMPLETED',
-  'AI_REVIEW_FAILED',
-  'FILE_UPLOADED',
-  'FILE_DOWNLOADED',
-  'FILE_DELETED',
-  'SETTINGS_UPDATED',
-  'SECURITY_UNAUTHORIZED_ACCESS',
-  'SECURITY_PERMISSION_DENIED',
-  'SECURITY_RATE_LIMITED',
-  'API_MUTATION_FAILED',
-  'API_MUTATION_COMPLETED',
+const ROLE_OPTIONS = [
+  { label: 'All roles', value: 'all' },
+  { label: 'Admin', value: 'ADMIN' },
+  { label: 'Coordinator', value: 'COORDINATOR' },
+  { label: 'Event Coordinator', value: 'EVENT_COORDINATOR' },
+  { label: 'Judge', value: 'JUDGE' },
+  { label: 'Mentor', value: 'MENTOR' },
+  { label: 'Speaker', value: 'SPEAKER' },
+  { label: 'Participant', value: 'PARTICIPANT' },
+] as const;
+
+const ENTITY_OPTIONS = [
+  { label: 'All entities', value: 'all' },
+  { label: 'Auth', value: 'Auth' },
+  { label: 'User', value: 'User' },
+  { label: 'Role', value: 'Role' },
+  { label: 'Permission', value: 'Permission' },
+  { label: 'Team', value: 'Team' },
+  { label: 'Team Invitation', value: 'TeamInvitation' },
+  { label: 'Event', value: 'Event' },
+  { label: 'Round', value: 'Round' },
+  { label: 'Rubric', value: 'Rubric' },
+  { label: 'Criterion', value: 'Criterion' },
+  { label: 'Submission', value: 'Submission' },
+  { label: 'Score Sheet', value: 'ScoreSheet' },
+  { label: 'Ranking', value: 'Ranking' },
+  { label: 'Finalist', value: 'Finalist' },
+  { label: 'AI Review', value: 'AiReview' },
+  { label: 'Repository', value: 'Repository' },
+  { label: 'GitHub', value: 'GitHub' },
+  { label: 'Media', value: 'Media' },
+  { label: 'Notification', value: 'Notification' },
+  { label: 'Workshop', value: 'Workshop' },
+  { label: 'System', value: 'System' },
+  { label: 'System Configuration', value: 'SystemConfiguration' },
 ] as const;
 
 function getActionColor(action: string): string {
@@ -115,6 +87,12 @@ function getActionColor(action: string): string {
     if (action.toUpperCase().includes(key)) return ACTION_COLORS[key];
   }
   return 'bg-gray-100 text-gray-800';
+}
+
+function getResultBadgeClass(result?: string | null): string {
+  const normalized = result || 'SUCCESS';
+  if (normalized === 'SUCCESS') return 'border-green-200 bg-green-50 text-green-700 hover:bg-green-50';
+  return '';
 }
 
 function getActorName(log: AuditLog) {
@@ -129,10 +107,6 @@ function stringify(value: unknown) {
   if (value === null || value === undefined) return '-';
   if (typeof value === 'string') return value;
   return JSON.stringify(value, null, 2);
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function JsonBlock({ value }: { value: unknown }) {
@@ -209,7 +183,12 @@ function AuditDetailsDialog({
               </div>
               <div className="min-w-0">
                 <p className="text-muted-foreground">Result</p>
-                <Badge className="max-w-full truncate" variant={log.result === 'FAILURE' ? 'destructive' : 'secondary'}>{log.result || 'SUCCESS'}</Badge>
+                <Badge
+                  className={`max-w-full truncate ${getResultBadgeClass(log.result)}`}
+                  variant={log.result === 'FAILURE' ? 'destructive' : 'outline'}
+                >
+                  {log.result || 'SUCCESS'}
+                </Badge>
               </div>
             </div>
             <div className="min-w-0">
@@ -246,12 +225,18 @@ export function AuditLogsView() {
   });
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
-  const query = useMemo(() => ({
-    ...filters,
-    result: filters.result || undefined,
-    page: filters.page || 1,
-    limit: filters.limit || 20,
-  }), [filters]);
+  const query = useMemo(() => {
+    const { action, sourceModule, ...visibleFilters } = filters;
+    void action;
+    void sourceModule;
+
+    return {
+      ...visibleFilters,
+      result: filters.result || undefined,
+      page: filters.page || 1,
+      limit: filters.limit || 20,
+    };
+  }, [filters]);
 
   const summaryQueryParams = useMemo(() => {
     const { page, limit, ...summaryFilters } = query;
@@ -276,22 +261,12 @@ export function AuditLogsView() {
   const totalItems = summary?.totalItems ?? summary?.totalLogs ?? 0;
   const actionBreakdown = summary?.actionBreakdown ?? summary?.byAction ?? [];
   const resultBreakdown = summary?.resultBreakdown ?? [];
-  const actionOptions = useMemo(
-    () => Array.from(new Set([
-      ...DEFAULT_ACTION_OPTIONS,
-      ...actionBreakdown.map((item) => item.action).filter(isNonEmptyString),
-      ...logs.map((log) => log.action).filter(isNonEmptyString),
-      filters.action,
-    ].filter(isNonEmptyString))).sort(),
-    [actionBreakdown, filters.action, logs],
-  );
-
   const updateFilter = (key: keyof ListAuditLogsQuery, value: string) => {
     setFilters((current) => ({ ...current, [key]: value, page: 1 }));
   };
 
   const clearFilters = () => {
-    setFilters({ page: 1, limit: 20, result: '' });
+    setFilters({ page: 1, limit: 20, result: '', userRole: '' });
   };
 
   const exportCsv = () => {
@@ -386,38 +361,38 @@ export function AuditLogsView() {
               <Label htmlFor="audit-search">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="audit-search" className="pl-9" placeholder="Action, user, request id..." value={filters.search || ''} onChange={(event) => updateFilter('search', event.target.value)} />
+                <Input id="audit-search" className="pl-9" placeholder="User, request id, entity..." value={filters.search || ''} onChange={(event) => updateFilter('search', event.target.value)} />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="action-filter">Action</Label>
-              <Select value={filters.action || 'all'} onValueChange={(value) => updateFilter('action', value === 'all' ? '' : value)}>
-                <SelectTrigger id="action-filter">
-                  <SelectValue placeholder="All actions" />
-                </SelectTrigger>
-                <SelectContent className="max-h-72">
-                  <SelectItem value="all">All actions</SelectItem>
-                  {actionOptions.map((action) => (
-                    <SelectItem key={action} value={action}>{action}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-filter">User</Label>
               <Input id="user-filter" placeholder="Email or username" value={filters.username || ''} onChange={(event) => updateFilter('username', event.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role-filter">Role</Label>
-              <Input id="role-filter" placeholder="ADMIN, JUDGE..." value={filters.userRole || ''} onChange={(event) => updateFilter('userRole', event.target.value)} />
+              <Label>Role</Label>
+              <Select value={filters.userRole || 'all'} onValueChange={(value) => updateFilter('userRole', value === 'all' ? '' : value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="resource-filter">Entity</Label>
-              <Input id="resource-filter" placeholder="Event, Team, User..." value={filters.resourceType || ''} onChange={(event) => updateFilter('resourceType', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="source-filter">Source Module</Label>
-              <Input id="source-filter" placeholder="auth, users, teams..." value={filters.sourceModule || ''} onChange={(event) => updateFilter('sourceModule', event.target.value)} />
+              <Label>Entity</Label>
+              <Select value={filters.resourceType || 'all'} onValueChange={(value) => updateFilter('resourceType', value === 'all' ? '' : value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ENTITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Result</Label>
@@ -505,7 +480,12 @@ export function AuditLogsView() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={log.result === 'FAILURE' ? 'destructive' : 'secondary'}>{log.result || 'SUCCESS'}</Badge>
+                      <Badge
+                        className={getResultBadgeClass(log.result)}
+                        variant={log.result === 'FAILURE' ? 'destructive' : 'outline'}
+                      >
+                        {log.result || 'SUCCESS'}
+                      </Badge>
                       {log.errorMessage && <p className="text-xs text-destructive mt-1 line-clamp-1">{log.errorMessage}</p>}
                     </TableCell>
                     <TableCell>
