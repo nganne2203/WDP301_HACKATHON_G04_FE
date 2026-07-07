@@ -1185,6 +1185,20 @@ export interface ParticipantTeamSummary {
   status?: string;
 }
 
+export interface GitHubUserProfile {
+  login: string;
+  id: number;
+  name?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  htmlUrl?: string | null;
+  bio?: string | null;
+  company?: string | null;
+  location?: string | null;
+  publicRepos?: number | null;
+  followers?: number | null;
+}
+
 export interface ParticipantEventSummary {
   id: string;
   title?: string;

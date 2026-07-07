@@ -91,6 +91,8 @@ export const queryKeys = {
   github: {
     all: ['github'] as const,
     config: (eventId?: string) => [...queryKeys.github.all, 'config', eventId] as const,
+    user: (username?: string) => [...queryKeys.github.all, 'user', username] as const,
+    userSearch: (query?: string) => [...queryKeys.github.all, 'user-search', query] as const,
   },
   judging: {
     all: ['judging'] as const,

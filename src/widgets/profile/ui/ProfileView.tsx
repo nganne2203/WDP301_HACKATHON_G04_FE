@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, Github, Loader2, Save, UserCircle } from 'lucide-react';
+import { AlertCircle, Link, Loader2, Save, Upload, UserCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
+import { GitHubUserPicker } from '@/features/github/user-picker/ui/GitHubUserPicker';
 import { queryKeys } from '@/lib/queryKeys';
 import { usersApi } from '@/shared/api/users';
 import { eventsApi } from '@/shared/api/events';
@@ -20,6 +21,8 @@ import { Label } from '@/shared/ui/label';
 import { Textarea } from '@/shared/ui/textarea';
 
 const githubPattern = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
+const avatarMaxSizeBytes = 10 * 1024 * 1024;
+const avatarAllowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 type ProfileForm = {
   fullName: string;
@@ -73,10 +76,29 @@ export function ProfileView() {
     bio: '',
     githubUsername: '',
   }));
+  const [githubValid, setGithubValid] = useState(true);
+  const [avatarMode, setAvatarMode] = useState<'url' | 'upload'>('url');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [avatarUploadProgress, setAvatarUploadProgress] = useState(0);
 
   useEffect(() => {
-    if (user) setForm(toProfileForm(user));
+    if (user) {
+      setForm(toProfileForm(user));
+      setGithubValid(true);
+    }
   }, [user]);
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreviewUrl(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(avatarFile);
+    setAvatarPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [avatarFile]);
 
   const eventsQuery = useQuery({
     queryKey: queryKeys.events.list({ page: 1, limit: 100 }),
@@ -118,13 +140,46 @@ export function ProfileView() {
     },
   });
 
+  const avatarUploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return usersApi.uploadAvatar(formData, setAvatarUploadProgress);
+    },
+    onSuccess: async (response) => {
+      setUser(response.data);
+      setForm(toProfileForm(response.data));
+      setAvatarFile(null);
+      setAvatarUploadProgress(0);
+      queryClient.setQueryData(queryKeys.auth.me(), response.data);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.auth.all });
+      toast.success('Avatar updated', {
+        description: 'Your uploaded avatar is now active.',
+      });
+    },
+    onError: (error: unknown) => {
+      setAvatarUploadProgress(0);
+      toast.error('Could not upload avatar', {
+        description: error instanceof ApiError ? error.firstError : 'Please choose another image.',
+      });
+    },
+  });
+
   const githubError = useMemo(() => {
     const value = form.githubUsername.trim();
     if (!value) return '';
     if (value.length > 39) return 'GitHub username must be 39 characters or fewer.';
     if (!githubPattern.test(value)) return 'Use a valid GitHub username format.';
+    if (!githubLocked && !githubValid) return 'Select a valid GitHub account before saving.';
     return '';
-  }, [form.githubUsername]);
+  }, [form.githubUsername, githubLocked, githubValid]);
+
+  const avatarFileError = useMemo(() => {
+    if (!avatarFile) return '';
+    if (!avatarAllowedTypes.has(avatarFile.type)) return 'Use a JPG, PNG, or WebP image.';
+    if (avatarFile.size > avatarMaxSizeBytes) return 'Avatar image must be 10MB or smaller.';
+    return '';
+  }, [avatarFile]);
 
   if (!user) {
     return (
@@ -156,6 +211,24 @@ export function ProfileView() {
     profileMutation.mutate(payload);
   };
 
+  const handleAvatarFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setAvatarFile(file);
+  };
+
+  const uploadAvatar = () => {
+    if (!avatarFile) {
+      toast.error('Select an avatar image first.');
+      return;
+    }
+    if (avatarFileError) {
+      toast.error('Avatar is not valid', { description: avatarFileError });
+      return;
+    }
+
+    avatarUploadMutation.mutate(avatarFile);
+  };
+
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
       <div className="flex flex-col gap-2">
@@ -173,7 +246,7 @@ export function ProfileView() {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4 text-center">
             <Avatar className="h-24 w-24">
-              {form.avatarUrl && <AvatarImage src={form.avatarUrl} alt={form.fullName} />}
+              {(avatarPreviewUrl || form.avatarUrl) && <AvatarImage src={avatarPreviewUrl || form.avatarUrl} alt={form.fullName} />}
               <AvatarFallback className="bg-blue-100 text-xl text-blue-900">
                 {getInitials(form.fullName || user.fullName || 'User') || <UserCircle className="h-8 w-8" />}
               </AvatarFallback>
@@ -225,17 +298,16 @@ export function ProfileView() {
 
               <div className="grid gap-2">
                 <Label htmlFor="githubUsername">GitHub username</Label>
-                <div className="relative">
-                  <Github className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="githubUsername"
-                    value={form.githubUsername}
-                    onChange={(event) => setForm((current) => ({ ...current, githubUsername: event.target.value }))}
-                    disabled={githubLocked || isCheckingRegistrations}
-                    className="pl-9"
-                    maxLength={39}
-                  />
-                </div>
+                <GitHubUserPicker
+                  id="githubUsername"
+                  value={form.githubUsername}
+                  onChange={(value) => setForm((current) => ({ ...current, githubUsername: value }))}
+                  onValidityChange={(valid) => {
+                    const unchanged = form.githubUsername.trim().toLowerCase() === (user.githubUsername || '').trim().toLowerCase();
+                    setGithubValid(valid || unchanged);
+                  }}
+                  disabled={githubLocked || isCheckingRegistrations}
+                />
                 {githubError && <p className="text-sm text-red-600">{githubError}</p>}
               </div>
 
@@ -250,13 +322,91 @@ export function ProfileView() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="avatarUrl">Avatar URL</Label>
-                <Input
-                  id="avatarUrl"
-                  value={form.avatarUrl}
-                  onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))}
-                  placeholder="https://..."
-                />
+                <Label>Avatar</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant={avatarMode === 'url' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAvatarMode('url')}
+                  >
+                    <Link className="mr-2 h-4 w-4" />
+                    Link
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={avatarMode === 'upload' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAvatarMode('upload')}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload
+                  </Button>
+                </div>
+
+                {avatarMode === 'url' ? (
+                  <Input
+                    id="avatarUrl"
+                    value={form.avatarUrl}
+                    onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))}
+                    placeholder="https://..."
+                  />
+                ) : (
+                  <div className="space-y-3 rounded-md border p-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <Input
+                        id="avatarFile"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleAvatarFileChange}
+                        disabled={avatarUploadMutation.isPending}
+                      />
+                      {avatarFile && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setAvatarFile(null)}
+                          disabled={avatarUploadMutation.isPending}
+                          aria-label="Remove avatar file"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {avatarFile && (
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          {avatarPreviewUrl && <AvatarImage src={avatarPreviewUrl} alt={avatarFile.name} />}
+                          <AvatarFallback>{getInitials(form.fullName || user.fullName || 'User')}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{avatarFile.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {(avatarFile.size / 1024 / 1024).toFixed(2)} MB
+                            {avatarUploadMutation.isPending && ` · ${avatarUploadProgress}%`}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {avatarFileError && <p className="text-sm text-red-600">{avatarFileError}</p>}
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={uploadAvatar}
+                        disabled={!avatarFile || Boolean(avatarFileError) || avatarUploadMutation.isPending}
+                      >
+                        {avatarUploadMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="mr-2 h-4 w-4" />
+                        )}
+                        Upload avatar
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-2">

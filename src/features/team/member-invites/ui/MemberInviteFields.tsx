@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Plus, X } from 'lucide-react';
+import { GitHubUserPicker } from '@/features/github/user-picker/ui/GitHubUserPicker';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -46,10 +47,14 @@ export function MemberInviteFields({
           </div>
           <div className="space-y-2">
             <Label htmlFor={`member-github-${row.id}`}>{index === 0 ? 'GitHub username' : 'GitHub username'}</Label>
-            <Input
+            <GitHubUserPicker
               id={`member-github-${row.id}`}
               value={row.githubUsername}
-              onChange={(event) => updateMemberRow(setRows, row.id, 'githubUsername', event.target.value)}
+              onChange={(value) => {
+                updateMemberRow(setRows, row.id, 'githubUsername', value);
+                updateMemberRow(setRows, row.id, 'githubUserValid', !value.trim());
+              }}
+              onValidityChange={(valid) => updateMemberRow(setRows, row.id, 'githubUserValid', valid)}
               placeholder="octocat"
               disabled={disabled}
             />

@@ -3,7 +3,7 @@ import type { Team, TeamInvitation, TeamInviteMember } from '@/shared/api/types'
 import { ApiError } from '@/shared/api/client';
 
 export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
-export type MemberInviteRow = TeamInviteMember & { id: string };
+export type MemberInviteRow = TeamInviteMember & { id: string; githubUserValid?: boolean };
 
 export function createMemberRow(): MemberInviteRow {
   return {
@@ -11,6 +11,7 @@ export function createMemberRow(): MemberInviteRow {
     fullName: '',
     email: '',
     githubUsername: '',
+    githubUserValid: true,
   };
 }
 
@@ -26,6 +27,11 @@ export function normalizeMemberRows(rows: MemberInviteRow[], leaderEmail?: strin
   const invalidRow = members.find((member) => !member.fullName || !member.email || !member.githubUsername);
   if (invalidRow) {
     throw new Error('Each invited member must include name, email, and GitHub username.');
+  }
+
+  const invalidGithubRow = rows.find((row) => row.githubUsername.trim() && row.githubUserValid === false);
+  if (invalidGithubRow) {
+    throw new Error('Select a valid GitHub account for each invited member.');
   }
 
   const normalizedLeaderEmail = leaderEmail?.trim().toLowerCase();
@@ -73,8 +79,8 @@ export function statusBadgeVariant(status: string): BadgeVariant {
 export function updateMemberRow(
   setRows: Dispatch<SetStateAction<MemberInviteRow[]>>,
   id: string,
-  field: 'fullName' | 'email' | 'githubUsername',
-  value: string
+  field: 'fullName' | 'email' | 'githubUsername' | 'githubUserValid',
+  value: string | boolean
 ) {
   setRows((current) => current.map((row) => (row.id === id ? { ...row, [field]: value } : row)));
 }
