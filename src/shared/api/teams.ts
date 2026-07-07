@@ -10,6 +10,7 @@ import type {
   ReplaceInvitationRequest,
   Team,
   TeamAvailability,
+  TeamInviteEligibility,
   TeamInvitation,
   UpdateTeamMentorsRequest,
 } from './types';
@@ -23,6 +24,9 @@ export const teamsApi = {
 
   checkAvailability: (query: { eventId: string; name: string }) =>
     api.get<TeamAvailability>('/teams/availability', { params: query }),
+
+  checkInviteEligibility: (query: { eventId: string; email: string; githubUsername?: string }) =>
+    api.get<TeamInviteEligibility>('/teams/invite-eligibility', { params: query }),
 
   getById: (id: string) =>
     api.get<Team>(`/teams/${id}`),

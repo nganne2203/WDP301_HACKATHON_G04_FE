@@ -21,6 +21,7 @@ type GitHubUserPickerProps = {
   onValidityChange?: (valid: boolean) => void;
   disabled?: boolean;
   placeholder?: string;
+  excludeSelf?: boolean;
 };
 
 function getLookupError(error: unknown) {
@@ -42,6 +43,7 @@ export function GitHubUserPicker({
   onValidityChange,
   disabled,
   placeholder = 'octocat',
+  excludeSelf = false,
 }: GitHubUserPickerProps) {
   const [selectedLogin, setSelectedLogin] = useState('');
   const trimmedValue = value.trim();
@@ -60,18 +62,49 @@ export function GitHubUserPicker({
   const results = searchQuery.data || [];
   const selectedProfile = results.find((profile) => profile.login.toLowerCase() === selectedLogin.toLowerCase()) || null;
   const selected = Boolean(selectedLogin && selectedLogin.toLowerCase() === trimmedValue.toLowerCase() && selectedFormatValid);
-  const hasError = Boolean(trimmedValue && (!formatValid || searchQuery.isError || (selectedLogin && !selectedFormatValid)));
+
+  const availabilityQuery = useQuery({
+    queryKey: queryKeys.github.usernameAvailability(selected ? trimmedValue : undefined, excludeSelf),
+    queryFn: async () => (await githubApi.checkUsernameAvailability(trimmedValue, excludeSelf)).data,
+    enabled: Boolean(selected && trimmedValue && !disabled),
+    retry: false,
+    staleTime: 10_000,
+  });
+
+  const availabilityError = availabilityQuery.data?.available === false
+    ? availabilityQuery.data.errors[0] || 'GitHub username is already used.'
+    : '';
+  const selectedAndAvailable = selected && availabilityQuery.data?.available !== false && !availabilityQuery.isError;
+  const hasError = Boolean(
+    trimmedValue &&
+    (!formatValid || searchQuery.isError || (selectedLogin && !selectedFormatValid) || availabilityError || availabilityQuery.isError)
+  );
 
   const helperText = useMemo(() => {
     if (!trimmedValue) return '';
     if (!formatValid) return 'Use username, name, or email characters only.';
     if (searchQuery.isFetching) return 'Searching GitHub...';
     if (searchQuery.isError) return getLookupError(searchQuery.error);
-    if (selected) return `Selected @${selectedLogin}.`;
+    if (selected && availabilityQuery.isFetching) return 'Checking GitHub username availability...';
+    if (selected && availabilityQuery.isError) return 'Could not check GitHub username availability.';
+    if (availabilityError) return availabilityError;
+    if (selected) return '';
     if (results.length > 0) return 'Select a GitHub account below to confirm.';
     if (debouncedQuery) return 'No GitHub users found.';
     return '';
-  }, [debouncedQuery, formatValid, results.length, searchQuery.error, searchQuery.isError, searchQuery.isFetching, selected, selectedLogin, trimmedValue]);
+  }, [
+    availabilityError,
+    availabilityQuery.isError,
+    availabilityQuery.isFetching,
+    debouncedQuery,
+    formatValid,
+    results.length,
+    searchQuery.error,
+    searchQuery.isError,
+    searchQuery.isFetching,
+    selected,
+    trimmedValue,
+  ]);
 
   useEffect(() => {
     if (selectedLogin && selectedLogin.toLowerCase() !== trimmedValue.toLowerCase()) {
@@ -80,8 +113,8 @@ export function GitHubUserPicker({
   }, [selectedLogin, trimmedValue]);
 
   useEffect(() => {
-    onValidityChange?.(!trimmedValue || selected);
-  }, [onValidityChange, selected, trimmedValue]);
+    onValidityChange?.(!trimmedValue || selectedAndAvailable);
+  }, [onValidityChange, selectedAndAvailable, trimmedValue]);
 
   const selectProfile = (profile: GitHubUserProfile) => {
     setSelectedLogin(profile.login);
@@ -103,9 +136,9 @@ export function GitHubUserPicker({
           maxLength={39}
           aria-invalid={hasError}
         />
-        {searchQuery.isFetching ? (
+        {searchQuery.isFetching || availabilityQuery.isFetching ? (
           <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-        ) : selected ? (
+        ) : selectedAndAvailable ? (
           <CheckCircle2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-green-600" />
         ) : hasError ? (
           <XCircle className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-red-600" />
@@ -113,13 +146,13 @@ export function GitHubUserPicker({
       </div>
 
       {helperText && (
-        <p className={`text-xs ${hasError ? 'text-red-600' : selected ? 'text-green-700' : 'text-muted-foreground'}`}>
+        <p className={`text-xs ${hasError ? 'text-red-600' : selectedAndAvailable ? 'text-green-700' : 'text-muted-foreground'}`}>
           {helperText}
         </p>
       )}
 
       {results.length > 0 && !selected && (
-        <div className="max-h-80 overflow-y-auto rounded-md border bg-white shadow-sm">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-md border bg-white shadow-lg">
           {results.map((profile) => (
             <button
               key={profile.id || profile.login}
@@ -143,20 +176,6 @@ export function GitHubUserPicker({
               </span>
             </button>
           ))}
-        </div>
-      )}
-
-      {selected && selectedProfile && (
-        <div className="flex items-center gap-3 rounded-md border bg-white p-3">
-          <Avatar className="h-10 w-10 border">
-            {selectedProfile.avatarUrl && <AvatarImage src={selectedProfile.avatarUrl} alt={selectedProfile.login} />}
-            <AvatarFallback>{selectedProfile.login.slice(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium">{selectedProfile.name || selectedProfile.login}</span>
-            <span className="block truncate text-xs text-muted-foreground">@{selectedProfile.login}</span>
-          </span>
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
         </div>
       )}
     </div>

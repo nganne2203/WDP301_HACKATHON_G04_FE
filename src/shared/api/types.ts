@@ -593,6 +593,16 @@ export interface TeamAvailability {
   errors: string[];
 }
 
+export interface TeamInviteEligibility {
+  eventId: string;
+  email: string;
+  available: boolean;
+  userExists: boolean;
+  hasTeam: boolean;
+  hasActiveInvitation: boolean;
+  errors: string[];
+}
+
 export interface TeamInviteMember {
   fullName: string;
   email: string;
@@ -1197,6 +1207,12 @@ export interface GitHubUserProfile {
   location?: string | null;
   publicRepos?: number | null;
   followers?: number | null;
+}
+
+export interface GitHubUsernameAvailability {
+  username: string;
+  available: boolean;
+  errors: string[];
 }
 
 export interface ParticipantEventSummary {

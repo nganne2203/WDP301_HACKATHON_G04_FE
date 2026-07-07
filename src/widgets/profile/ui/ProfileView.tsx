@@ -307,6 +307,7 @@ export function ProfileView() {
                     setGithubValid(valid || unchanged);
                   }}
                   disabled={githubLocked || isCheckingRegistrations}
+                  excludeSelf
                 />
                 {githubError && <p className="text-sm text-red-600">{githubError}</p>}
               </div>

@@ -5,6 +5,7 @@ import type {
   CreateGitHubRepositoryRequest,
   CreateGitHubRepositoryResult,
   GitHubConfig,
+  GitHubUsernameAvailability,
   GitHubUserProfile,
   InviteGitHubOrganizationMemberRequest,
   InviteGitHubOrganizationMemberResult,
@@ -26,6 +27,9 @@ export const githubApi = {
 
   searchUsers: (query: string, limit = 8) =>
     api.get<GitHubUserProfile[]>('/github/users', { params: { query, limit } }),
+
+  checkUsernameAvailability: (username: string, excludeSelf = false) =>
+    api.get<GitHubUsernameAvailability>('/github/username-availability', { params: { username, excludeSelf } }),
 
   getConfig: (eventId: string) =>
     api.get<GitHubConfig>('/github/config', { params: { eventId } }),

@@ -91,6 +91,7 @@ export function ParticipantTeam() {
 
       {!teamQuery.isLoading && !team && (
         <CreateTeamCard
+          activeEventId={activeEventId}
           createPending={createTeamMutation.isPending || createValidationPending}
           invitedMembers={invitedMembers}
           onCreateTeam={handleCreateTeam}

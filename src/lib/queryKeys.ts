@@ -36,6 +36,8 @@ export const queryKeys = {
     list: (query?: QueryParams) => [...queryKeys.teams.lists(), params(query)] as const,
     availability: (eventId?: string, name?: string) =>
       [...queryKeys.teams.all, 'availability', eventId, name] as const,
+    inviteEligibility: (eventId?: string, email?: string, githubUsername?: string) =>
+      [...queryKeys.teams.all, 'invite-eligibility', eventId, email, githubUsername] as const,
     my: (eventId?: string) => [...queryKeys.teams.all, 'my', eventId] as const,
   },
   users: {
@@ -93,6 +95,8 @@ export const queryKeys = {
     config: (eventId?: string) => [...queryKeys.github.all, 'config', eventId] as const,
     user: (username?: string) => [...queryKeys.github.all, 'user', username] as const,
     userSearch: (query?: string) => [...queryKeys.github.all, 'user-search', query] as const,
+    usernameAvailability: (username?: string, excludeSelf?: boolean) =>
+      [...queryKeys.github.all, 'username-availability', username, excludeSelf] as const,
   },
   judging: {
     all: ['judging'] as const,

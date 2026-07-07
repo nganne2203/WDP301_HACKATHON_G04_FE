@@ -8,6 +8,7 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 
 interface CreateTeamCardProps {
+  activeEventId: string;
   createPending: boolean;
   invitedMembers: MemberInviteRow[];
   onCreateTeam: () => void;
@@ -22,6 +23,7 @@ interface CreateTeamCardProps {
 }
 
 export function CreateTeamCard({
+  activeEventId,
   createPending,
   invitedMembers,
   onCreateTeam,
@@ -83,7 +85,12 @@ export function CreateTeamCard({
 
         <div className="space-y-2">
           <Label>Team members</Label>
-          <MemberInviteFields rows={invitedMembers} setRows={setInvitedMembers} disabled={!registrationOpen} />
+          <MemberInviteFields
+            activeEventId={activeEventId}
+            rows={invitedMembers}
+            setRows={setInvitedMembers}
+            disabled={!registrationOpen}
+          />
         </div>
 
         <Button onClick={onCreateTeam} disabled={!registrationOpen || createPending || teamNameChecking || hasTeamNameError}>
