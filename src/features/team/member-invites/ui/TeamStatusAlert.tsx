@@ -25,6 +25,18 @@ export function TeamStatusAlert({ team }: { team: Team }) {
     );
   }
 
+  if (team.status === 'CANCELLED') {
+    return (
+      <Alert variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle>Team cancelled</AlertTitle>
+        <AlertDescription>
+          {team.cancellationReason || 'This team was cancelled. It no longer occupies an event slot.'}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   if (team.status === 'WAITLISTED') {
     return (
       <Alert>

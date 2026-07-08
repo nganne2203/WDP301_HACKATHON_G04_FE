@@ -12,6 +12,7 @@ import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 
 const githubUsernamePattern = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
 const searchPattern = /^[A-Za-z0-9@._ -]+$/;
+const GITHUB_LOOKUP_DEBOUNCE_MS = 900;
 
 type GitHubUserPickerProps = {
   id: string;
@@ -22,6 +23,7 @@ type GitHubUserPickerProps = {
   disabled?: boolean;
   placeholder?: string;
   excludeSelf?: boolean;
+  checkAvailability?: boolean;
 };
 
 function getLookupError(error: unknown) {
@@ -44,10 +46,11 @@ export function GitHubUserPicker({
   disabled,
   placeholder = 'octocat',
   excludeSelf = false,
+  checkAvailability = true,
 }: GitHubUserPickerProps) {
   const [selectedLogin, setSelectedLogin] = useState('');
   const trimmedValue = value.trim();
-  const debouncedQuery = useDebouncedValue(trimmedValue, 350);
+  const debouncedQuery = useDebouncedValue(trimmedValue, GITHUB_LOOKUP_DEBOUNCE_MS);
   const formatValid = !trimmedValue || searchPattern.test(trimmedValue);
   const selectedFormatValid = !trimmedValue || githubUsernamePattern.test(trimmedValue);
 
@@ -66,7 +69,7 @@ export function GitHubUserPicker({
   const availabilityQuery = useQuery({
     queryKey: queryKeys.github.usernameAvailability(selected ? trimmedValue : undefined, excludeSelf),
     queryFn: async () => (await githubApi.checkUsernameAvailability(trimmedValue, excludeSelf)).data,
-    enabled: Boolean(selected && trimmedValue && !disabled),
+    enabled: Boolean(checkAvailability && selected && trimmedValue && !disabled),
     retry: false,
     staleTime: 10_000,
   });
@@ -74,7 +77,7 @@ export function GitHubUserPicker({
   const availabilityError = availabilityQuery.data?.available === false
     ? availabilityQuery.data.errors[0] || 'GitHub username is already used.'
     : '';
-  const selectedAndAvailable = selected && availabilityQuery.data?.available !== false && !availabilityQuery.isError;
+  const selectedAndAvailable = selected && (!checkAvailability || (availabilityQuery.data?.available !== false && !availabilityQuery.isError));
   const hasError = Boolean(
     trimmedValue &&
     (!formatValid || searchQuery.isError || (selectedLogin && !selectedFormatValid) || availabilityError || availabilityQuery.isError)
@@ -85,8 +88,8 @@ export function GitHubUserPicker({
     if (!formatValid) return 'Use username, name, or email characters only.';
     if (searchQuery.isFetching) return 'Searching GitHub...';
     if (searchQuery.isError) return getLookupError(searchQuery.error);
-    if (selected && availabilityQuery.isFetching) return 'Checking GitHub username availability...';
-    if (selected && availabilityQuery.isError) return 'Could not check GitHub username availability.';
+    if (checkAvailability && selected && availabilityQuery.isFetching) return 'Checking GitHub username availability...';
+    if (checkAvailability && selected && availabilityQuery.isError) return 'Could not check GitHub username availability.';
     if (availabilityError) return availabilityError;
     if (selected) return '';
     if (results.length > 0) return 'Select a GitHub account below to confirm.';
@@ -94,6 +97,7 @@ export function GitHubUserPicker({
     return '';
   }, [
     availabilityError,
+    checkAvailability,
     availabilityQuery.isError,
     availabilityQuery.isFetching,
     debouncedQuery,

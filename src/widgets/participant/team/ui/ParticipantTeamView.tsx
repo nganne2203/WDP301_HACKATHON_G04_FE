@@ -13,6 +13,7 @@ export function ParticipantTeam() {
   const {
     activeEventId,
     canChangeInvitations,
+    canLeaveTeam,
     cancelMutation,
     createValidationPending,
     createTeamMutation,
@@ -22,6 +23,8 @@ export function ParticipantTeam() {
     handleInvite,
     inviteMutation,
     invitedMembers,
+    isLeader,
+    leaveTeamMutation,
     newInvitedMembers,
     registrationOpen,
     replacementEmails,
@@ -109,7 +112,11 @@ export function ParticipantTeam() {
           <TeamOverviewCard
             team={team}
             eventTitle={selectedEvent?.title}
+            isLeader={isLeader}
+            leavePending={leaveTeamMutation.isPending}
             minTeamMembers={selectedEvent?.minTeamMembers}
+            onLeaveTeam={() => leaveTeamMutation.mutate(team.id)}
+            canLeaveTeam={canLeaveTeam}
           />
 
           <TeamInvitationsCard

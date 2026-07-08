@@ -1,14 +1,30 @@
-import { Clock, Mail, Users } from 'lucide-react';
+import { Clock, LogOut, Mail, Trash2, Users } from 'lucide-react';
 
 import { getInitials, statusBadgeVariant } from '@/features/team/member-invites/model/helpers';
 import type { Team } from '@/shared/api/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/shared/ui/alert-dialog';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
 interface TeamOverviewCardProps {
+  canLeaveTeam?: boolean;
   eventTitle?: string;
+  isLeader?: boolean;
+  leavePending?: boolean;
   minTeamMembers?: number;
+  onLeaveTeam?: () => void;
   team: Team;
 }
 
@@ -20,38 +36,23 @@ function getConfirmedMemberCount(team: Team) {
 }
 
 function getTotalMemberCount(team: Team) {
-  const participantEmails = new Set(
-    (team.participants || [])
-      .map((participant) => participant.user?.email?.trim().toLowerCase())
-      .filter(Boolean)
-  );
-  const participantIds = new Set(
-    (team.participants || [])
-      .map((participant) => participant.user?.id)
-      .filter(Boolean)
-  );
-
-  let total = (team.participants || []).length;
-
-  for (const invitation of team.invitations || []) {
-    const invitedEmail = invitation.invitedEmail?.trim().toLowerCase();
-    const invitedUserId = invitation.invitedUserId;
-    const invitedUserEmail = invitation.invitedUser?.email?.trim().toLowerCase();
-
-    const matchesParticipant =
-      (invitedUserId && participantIds.has(invitedUserId)) ||
-      (invitedUserEmail && participantEmails.has(invitedUserEmail)) ||
-      (invitedEmail && participantEmails.has(invitedEmail));
-
-    if (!matchesParticipant) {
-      total += 1;
-    }
-  }
-
-  return total || (team.members?.length || 0);
+  const joinedCount = getConfirmedMemberCount(team);
+  const pendingInviteCount = (team.invitations || []).filter((invitation) => invitation.status === 'PENDING').length;
+  return joinedCount + pendingInviteCount;
 }
 
-export function TeamOverviewCard({ eventTitle, minTeamMembers, team }: TeamOverviewCardProps) {
+export function TeamOverviewCard({
+  canLeaveTeam = false,
+  eventTitle,
+  isLeader = false,
+  leavePending = false,
+  minTeamMembers,
+  onLeaveTeam,
+  team,
+}: TeamOverviewCardProps) {
+  const leaveLabel = isLeader ? 'Cancel team' : 'Leave team';
+  const LeaveIcon = isLeader ? Trash2 : LogOut;
+
   return (
     <>
       <Card>
@@ -61,7 +62,38 @@ export function TeamOverviewCard({ eventTitle, minTeamMembers, team }: TeamOverv
               <CardTitle>{team.name}</CardTitle>
               <CardDescription>{eventTitle}</CardDescription>
             </div>
-            <Badge variant={statusBadgeVariant(team.status)}>{team.status.replaceAll('_', ' ')}</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={statusBadgeVariant(team.status)}>{team.status.replaceAll('_', ' ')}</Badge>
+              {canLeaveTeam && onLeaveTeam && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={leavePending}>
+                      <LeaveIcon className="mr-2 h-4 w-4" />
+                      {leaveLabel}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{isLeader ? 'Cancel team?' : 'Leave team?'}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {isLeader
+                          ? 'This cancels the current team, withdraws all active members, cancels pending invitations, and releases any occupied slot. This can only be done while registration is open.'
+                          : 'You will be withdrawn from this team. If the team falls below the minimum member count, it will return to waiting for member confirmations and release its slot.'}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={onLeaveTeam}
+                      >
+                        {leaveLabel}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -85,7 +117,7 @@ export function TeamOverviewCard({ eventTitle, minTeamMembers, team }: TeamOverv
           <CardTitle className="text-base">Confirmed members</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {team.participants.map((participant) => (
+          {team.participants.filter((participant) => participant.status === 'JOINED' && participant.user).map((participant) => (
             <div key={participant.id} className="flex items-center gap-3 rounded-md border p-3">
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-blue-100 text-sm text-blue-700">

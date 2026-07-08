@@ -56,6 +56,7 @@ export function TeamInvitationConfirmation() {
   const accepted = result?.status === 'ACCEPTED';
   const declined = result?.status === 'DECLINED';
   const rejected = result?.status === 'REJECTED';
+  const cancelled = result?.status === 'CANCELLED';
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -92,12 +93,14 @@ export function TeamInvitationConfirmation() {
                 {accepted && 'Invitation accepted'}
                 {declined && 'Invitation declined'}
                 {rejected && 'Team registration rejected'}
-                {!accepted && !declined && !rejected && `Invitation status: ${result.status}`}
+                {cancelled && 'Team invitation cancelled'}
+                {!accepted && !declined && !rejected && !cancelled && `Invitation status: ${result.status}`}
               </AlertTitle>
               <AlertDescription>
                 {accepted && `You joined ${result.team?.name || 'the team'}. You can sign in to view your team.`}
                 {declined && 'The team leader has been notified.'}
                 {rejected && 'The required number of confirmed teams has already been reached.'}
+                {cancelled && 'This team is no longer accepting invitation confirmations.'}
               </AlertDescription>
             </Alert>
           )}

@@ -18,6 +18,7 @@ import {
 } from '@/features/team/member-invites/model/helpers';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INVITE_ELIGIBILITY_DEBOUNCE_MS = 900;
 
 function getEmailEligibilityMessage(row: MemberInviteRow, duplicated: boolean) {
   const email = row.email.trim();
@@ -48,7 +49,7 @@ function MemberInviteRowFields({
 }) {
   const normalizedEmail = row.email.trim().toLowerCase();
   const githubUsername = row.githubUsername.trim();
-  const debouncedEmail = useDebouncedValue(normalizedEmail, 400);
+  const debouncedEmail = useDebouncedValue(normalizedEmail, INVITE_ELIGIBILITY_DEBOUNCE_MS);
   const emailFormatValid = !normalizedEmail || emailPattern.test(normalizedEmail);
 
   const eligibilityQuery = useQuery({
@@ -138,7 +139,7 @@ function MemberInviteRowFields({
   return (
     <div className="grid grid-cols-1 gap-2 items-start md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_2.5rem]">
       <div className="space-y-2">
-        <Label htmlFor={`member-name-${row.id}`}>{index === 0 ? 'Member name' : 'Name'}</Label>
+        <Label htmlFor={`member-name-${row.id}`}>Name</Label>
         <Input
           id={`member-name-${row.id}`}
           value={row.fullName}
@@ -148,7 +149,7 @@ function MemberInviteRowFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`member-email-${row.id}`}>{index === 0 ? 'Member email' : 'Email'}</Label>
+        <Label htmlFor={`member-email-${row.id}`}>Email</Label>
         <div className="relative">
           <Input
             id={`member-email-${row.id}`}
@@ -183,6 +184,7 @@ function MemberInviteRowFields({
           onValidityChange={(valid) => updateMemberRow(setRows, row.id, 'githubUserValid', valid && !duplicatedGithubUsername)}
           placeholder="octocat"
           disabled={disabled}
+          checkAvailability={false}
         />
         {duplicatedGithubUsername && (
           <p className="text-xs text-red-600">This GitHub username is duplicated in the invite list.</p>

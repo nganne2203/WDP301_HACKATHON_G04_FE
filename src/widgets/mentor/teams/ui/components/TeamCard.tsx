@@ -37,7 +37,7 @@ export function TeamCard({ team, isSpeaker, footer }: TeamCardProps) {
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Badge variant={team.status === 'CONFIRMED' ? 'default' : 'secondary'}>
+            <Badge variant={team.status === 'REJECTED' || team.status === 'CANCELLED' ? 'destructive' : team.status === 'CONFIRMED' ? 'default' : 'secondary'}>
               {team.status}
             </Badge>
           </div>

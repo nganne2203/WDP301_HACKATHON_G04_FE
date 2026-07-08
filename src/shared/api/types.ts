@@ -488,7 +488,8 @@ export type TeamStatus =
   | 'WAITING_FOR_MEMBERS'
   | 'WAITLISTED'
   | 'CONFIRMED'
-  | 'REJECTED';
+  | 'REJECTED'
+  | 'CANCELLED';
 
 export type TeamInvitationStatus =
   | 'PENDING'
@@ -575,6 +576,8 @@ export interface Team {
   confirmedAt?: string | null;
   rejectedAt?: string | null;
   rejectionReason?: string | null;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
   participants: TeamParticipant[];
   invitations: TeamInvitation[];
   createdAt: string;

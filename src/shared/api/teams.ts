@@ -34,6 +34,9 @@ export const teamsApi = {
   getMyTeam: (eventId: string) =>
     api.get<Team>('/teams/my', { params: { eventId } }),
 
+  leave: (teamId: string) =>
+    api.post<Team>(`/teams/${teamId}/leave`),
+
   updateMentors: (teamId: string, data: UpdateTeamMentorsRequest) =>
     api.patch<Team>(`/teams/${teamId}/mentors`, data),
 

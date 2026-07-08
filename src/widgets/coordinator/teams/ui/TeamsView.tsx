@@ -25,7 +25,7 @@ type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
 function statusBadgeVariant(status: string): BadgeVariant {
   if (status === 'CONFIRMED') return 'default';
-  if (status === 'REJECTED') return 'destructive';
+  if (status === 'REJECTED' || status === 'CANCELLED') return 'destructive';
   return 'secondary';
 }
 

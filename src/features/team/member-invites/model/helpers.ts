@@ -135,5 +135,5 @@ export function removeMemberRow(
 }
 
 export function canManageInvitation(team: Team | null | undefined, invitation: TeamInvitation, isLeader: boolean, registrationOpen: boolean) {
-  return isLeader && registrationOpen && team?.status !== 'REJECTED' && invitation.status === 'PENDING';
+  return isLeader && registrationOpen && !['REJECTED', 'CANCELLED'].includes(team?.status || '') && invitation.status === 'PENDING';
 }

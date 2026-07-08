@@ -146,7 +146,22 @@ export function useParticipantTeamView() {
   });
 
   const isLeader = Boolean(team && user && team.leaderId === user.id);
-  const canChangeInvitations = Boolean(isLeader && registrationOpen && team?.status !== 'REJECTED');
+  const activeTeamStatus = Boolean(team && !['REJECTED', 'CANCELLED'].includes(team.status));
+  const currentParticipant = team?.participants.find((participant) => participant.user?.id === user?.id);
+  const canLeaveTeam = Boolean(team && user && registrationOpen && activeTeamStatus && (isLeader || currentParticipant?.status === 'JOINED'));
+  const canChangeInvitations = Boolean(isLeader && registrationOpen && activeTeamStatus);
+
+  const leaveTeamMutation = useMutation({
+    mutationFn: async (teamId: string) => {
+      const response = await teamsApi.leave(teamId);
+      return response.data;
+    },
+    onSuccess: async () => {
+      toast.success(isLeader ? 'Team cancelled' : 'You left the team');
+      await invalidateTeam();
+    },
+    onError: (error) => toast.error(isLeader ? 'Could not cancel team' : 'Could not leave team', { description: getApiErrorMessage(error) }),
+  });
 
   async function handleCreateTeam() {
     if (!trimmedTeamName) {
@@ -197,6 +212,7 @@ export function useParticipantTeamView() {
   return {
     activeEventId,
     canChangeInvitations,
+    canLeaveTeam,
     cancelMutation,
     createValidationPending,
     createTeamMutation,
@@ -206,6 +222,8 @@ export function useParticipantTeamView() {
     handleInvite,
     inviteMutation,
     invitedMembers,
+    isLeader,
+    leaveTeamMutation,
     newInvitedMembers,
     registrationOpen,
     replacementEmails,
