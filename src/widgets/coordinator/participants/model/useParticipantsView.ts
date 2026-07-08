@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { usersApi } from '@/entities/user/api';
@@ -36,7 +36,6 @@ export function useParticipantsView() {
   const debouncedSearchQuery = useDebouncedValue(searchQuery.trim(), 300);
   const [activeFilter, setActiveFilter] = useState<ParticipantFilterType>('all');
   const [page, setPage] = useState(1);
-  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const statusFilter = activeFilter === 'all' ? undefined : activeFilter;
 
   useEffect(() => {
@@ -61,6 +60,32 @@ export function useParticipantsView() {
 
   const allUsers = usersQuery.data?.data || [];
   const pagination = usersQuery.data?.pagination;
+  const statusCountQueries = useQueries({
+    queries: [
+      { key: 'all', status: undefined },
+      { key: 'PENDING', status: 'PENDING' as const },
+      { key: 'ACTIVE', status: 'ACTIVE' as const },
+      { key: 'REJECTED', status: 'REJECTED' as const },
+      { key: 'SUSPENDED', status: 'SUSPENDED' as const },
+    ].map(({ key, status }) => ({
+      queryKey: queryKeys.users.list({
+        page: 1,
+        limit: 1,
+        status,
+        search: debouncedSearchQuery || undefined,
+      }),
+      queryFn: async () => usersApi.list({
+        page: 1,
+        limit: 1,
+        status,
+        search: debouncedSearchQuery || undefined,
+      }),
+      staleTime: 30_000,
+      select: (response: Awaited<ReturnType<typeof usersApi.list>>) => response.pagination?.totalItems || 0,
+      enabled: !usersQuery.isLoading,
+      meta: { countKey: key },
+    })),
+  });
 
   const showStatusToast = (user: User, successMessage: string) => {
     const notification = user.emailNotification;
@@ -83,11 +108,11 @@ export function useParticipantsView() {
   const approveMutation = useMutation({
     mutationFn: (id: string) => usersApi.approve(id),
     onSuccess: async (response) => {
-      showStatusToast(response.data, 'User approved');
+      showStatusToast(response.data, 'User activated');
       await queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to approve user', {
+      toast.error('Failed to activate user', {
         description: getParticipantErrorMessage(error),
       });
     },
@@ -170,14 +195,17 @@ export function useParticipantsView() {
   const allSelected = filteredUsers.length > 0 && selectedIds.length === filteredUsers.length;
   const someSelected = selectedIds.length > 0 && !allSelected;
 
-  const filterCounts = useMemo(() => ({
-    all: allUsers.length,
-    PENDING: allUsers.filter((user) => user.status === 'PENDING').length,
-    APPROVED: allUsers.filter((user) => user.status === 'APPROVED').length,
-    ACTIVE: allUsers.filter((user) => user.status === 'ACTIVE').length,
-    REJECTED: allUsers.filter((user) => user.status === 'REJECTED').length,
-    SUSPENDED: allUsers.filter((user) => user.status === 'SUSPENDED').length,
-  }), [allUsers]);
+  const filterCounts = useMemo(() => {
+    const [allCount, pendingCount, activeCount, rejectedCount, suspendedCount] = statusCountQueries;
+
+    return {
+      all: allCount.data || 0,
+      PENDING: pendingCount.data || 0,
+      ACTIVE: activeCount.data || 0,
+      REJECTED: rejectedCount.data || 0,
+      SUSPENDED: suspendedCount.data || 0,
+    };
+  }, [statusCountQueries]);
 
   const toggleAll = () => {
     if (allSelected) {
@@ -302,8 +330,6 @@ export function useParticipantsView() {
     },
     page,
     setPage,
-    filterSheetOpen,
-    setFilterSheetOpen,
     usersQuery,
     allUsers,
     filteredUsers,

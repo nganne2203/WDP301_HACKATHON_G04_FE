@@ -37,7 +37,6 @@ export function AssignedTeamsPanel({
             >
               <div className="min-w-0">
                 <p className="font-medium text-sm truncate">{team.name}</p>
-                {team.projectName && <p className="text-xs text-muted-foreground truncate">{team.projectName}</p>}
               </div>
               {done ? (
                 <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />

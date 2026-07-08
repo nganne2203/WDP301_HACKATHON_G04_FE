@@ -69,7 +69,7 @@ export function MentorDashboardView() {
   const teams = teamsQuery.data || [];
 
   const activeWorkshops = workshops.filter((workshop) => workshop.status === 'LIVE' || workshop.status === 'SCHEDULED');
-  const confirmedTeams = teams.filter((team) => team.status === 'CONFIRMED' || team.status === 'ACTIVE');
+  const confirmedTeams = teams.filter((team) => team.status === 'CONFIRMED');
   const latestWorkshops = [...workshops]
     .sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime())
     .slice(0, 3);
@@ -169,7 +169,7 @@ export function MentorDashboardView() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold">{confirmedTeams.length}</p>
-            <p className="text-sm text-muted-foreground mt-1">Confirmed or active teams in your mentoring scope</p>
+            <p className="text-sm text-muted-foreground mt-1">Confirmed teams in your mentoring scope</p>
           </CardContent>
         </Card>
         )}

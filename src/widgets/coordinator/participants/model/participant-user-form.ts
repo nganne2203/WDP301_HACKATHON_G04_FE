@@ -2,7 +2,6 @@ import type { CreateUserRequest, UpdateUserRequest, User, UserRoleName, UserStat
 
 export const participantUserRoleOptions: UserRoleName[] = [
   'PARTICIPANT',
-  'USER',
   'MENTOR',
   'SPEAKER',
   'JUDGE',
@@ -11,7 +10,7 @@ export const participantUserRoleOptions: UserRoleName[] = [
   'ADMIN',
 ];
 
-export const participantUserStatusOptions: UserStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'];
+export const participantUserStatusOptions: UserStatus[] = ['PENDING', 'ACTIVE', 'REJECTED', 'SUSPENDED'];
 
 export interface ParticipantUserFormState {
   email: string;
@@ -33,7 +32,7 @@ export function createEmptyParticipantUserForm(): ParticipantUserFormState {
     password: '',
     fullName: '',
     roles: ['PARTICIPANT'],
-    status: 'PENDING',
+    status: 'ACTIVE',
     phone: '',
     bio: '',
     githubUsername: '',
@@ -49,7 +48,7 @@ function normalizeOptionalText(value: string) {
 }
 
 export function userNeedsStudentInfo(form: Pick<ParticipantUserFormState, 'roles'>) {
-  return form.roles.some((role) => role === 'USER' || role === 'PARTICIPANT');
+  return form.roles.includes('PARTICIPANT');
 }
 
 export function mapUserToParticipantUserForm(user: User): ParticipantUserFormState {

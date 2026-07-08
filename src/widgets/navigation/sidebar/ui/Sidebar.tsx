@@ -14,18 +14,22 @@ export const Sidebar = memo(function Sidebar() {
 
   const navItems = useMemo(() => {
     const baseItems = getNavigationItems(appRole);
-    if (selectedEvent?.id && (appRole === 'mentor' || appRole === 'speaker')) {
+    const eventGalleryMatch = location.pathname.match(/^\/events\/([^/]+)\/gallery$/);
+    const eventGalleryEventId = eventGalleryMatch?.[1] || selectedEvent?.id;
+
+    if (appRole === 'mentor' || appRole === 'speaker') {
       return [
         ...baseItems,
         {
           icon: Images,
           label: 'Event Gallery',
-          href: `/events/${selectedEvent.id}/gallery`,
+          href: eventGalleryEventId ? `/events/${eventGalleryEventId}/gallery` : '',
+          disabled: !eventGalleryEventId,
         },
       ];
     }
     return baseItems;
-  }, [appRole, selectedEvent]);
+  }, [appRole, location.pathname, selectedEvent?.id]);
 
   const displayName = user?.fullName || 'User';
   const primaryRole = appRole || 'participant';
@@ -56,21 +60,40 @@ export const Sidebar = memo(function Sidebar() {
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.href;
+          const isActive = !item.disabled && location.pathname === item.href;
 
-          return (
+          const itemClassName = cn(
+            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+            item.disabled
+              ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
+              : isActive
+                ? 'bg-blue-50 text-blue-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+          );
+
+          const content = (
+            <>
+              <Icon className="w-5 h-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </>
+          );
+
+          return item.disabled ? (
+            <div
+              key={`disabled-${item.label}`}
+              aria-disabled="true"
+              className={itemClassName}
+              title="Select an event to open the gallery"
+            >
+              {content}
+            </div>
+          ) : (
             <Link
               key={item.href}
               to={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                isActive
-                  ? 'bg-blue-50 text-blue-700 font-medium'
-                  : 'text-gray-700 hover:bg-gray-100'
-              )}
+              className={itemClassName}
             >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span>{item.label}</span>}
+              {content}
             </Link>
           );
         })}

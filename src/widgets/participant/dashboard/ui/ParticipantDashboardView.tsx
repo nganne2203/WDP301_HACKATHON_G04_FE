@@ -81,7 +81,7 @@ export function ParticipantDashboard() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <div className="flex items-center gap-3">
-              {view.user && ['APPROVED', 'ACTIVE'].includes(view.user.status) ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <AlertCircle className="w-5 h-5 text-amber-500" />}
+              {view.user?.status === 'ACTIVE' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <AlertCircle className="w-5 h-5 text-amber-500" />}
               <div className="flex-1">
                 <p className="font-medium">Account Status</p>
                 <p className="text-xs text-muted-foreground">{view.user?.status || 'Unknown'}</p>
@@ -138,7 +138,7 @@ export function ParticipantDashboard() {
                       {view.team.leaderId === view.user?.id ? 'Leader' : 'Member'}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{view.team.projectName || view.selectedEvent?.title}</p>
+                  <p className="text-sm text-muted-foreground">{view.selectedEvent?.title}</p>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">

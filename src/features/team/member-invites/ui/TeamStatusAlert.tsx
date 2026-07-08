@@ -3,7 +3,7 @@ import type { Team } from '@/shared/api/types';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 
 export function TeamStatusAlert({ team }: { team: Team }) {
-  if (team.status === 'CONFIRMED' || team.status === 'ACTIVE') {
+  if (team.status === 'CONFIRMED') {
     return (
       <Alert className="bg-green-50 border-green-200">
         <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -21,6 +21,28 @@ export function TeamStatusAlert({ team }: { team: Team }) {
         <AlertDescription>
           {team.rejectionReason || 'The required number of confirmed teams has already been reached.'}
         </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (team.status === 'CANCELLED') {
+    return (
+      <Alert variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle>Team cancelled</AlertTitle>
+        <AlertDescription>
+          {team.cancellationReason || 'This team was cancelled. It no longer occupies an event slot.'}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (team.status === 'WAITLISTED') {
+    return (
+      <Alert>
+        <Clock className="h-4 w-4" />
+        <AlertTitle>Team waitlisted</AlertTitle>
+        <AlertDescription>Your team is confirmed but waiting for an available slot in the selected track or board.</AlertDescription>
       </Alert>
     );
   }
