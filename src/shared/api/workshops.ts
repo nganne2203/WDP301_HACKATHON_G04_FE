@@ -1,10 +1,12 @@
 import { api } from './client';
 import type {
+  ApiSuccessResponse,
   Workshop,
   WorkshopQuestion,
   WorkshopRating,
   WorkshopFeedback,
   WorkshopRatingStats,
+  WorkshopRatingsResult,
 } from './types';
 
 export interface ListWorkshopsQuery {
@@ -68,10 +70,15 @@ export const workshopsApi = {
     api.post<WorkshopRating>(`/workshops/${id}/ratings`, data),
 
   listRatings: (id: string, query?: { page?: number; limit?: number }) =>
-    api.get<WorkshopRating[]>(`/workshops/${id}/ratings`, { params: query as Record<string, string | number | undefined> }),
+    api.get<WorkshopRatingsResult>(`/workshops/${id}/ratings`, { params: query as Record<string, string | number | undefined> }),
 
-  getRatingStats: (id: string) =>
-    api.get<WorkshopRatingStats>(`/workshops/${id}/ratings/stats`),
+  getRatingStats: async (id: string): Promise<ApiSuccessResponse<WorkshopRatingStats>> => {
+    const response = await api.get<WorkshopRatingsResult>(`/workshops/${id}/ratings`, { params: { limit: 1 } });
+    return {
+      ...response,
+      data: response.data.stats,
+    };
+  },
 
   createFeedback: (id: string, data: { comment: string }) =>
     api.post<WorkshopFeedback>(`/workshops/${id}/feedback`, data),

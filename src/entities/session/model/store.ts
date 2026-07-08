@@ -56,6 +56,7 @@ interface AuthState {
   fetchCurrentUser: () => Promise<void>;
   setSelectedEvent: (event: SelectedEvent | null) => void;
   toggleSidebar: () => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   setAuthLoading: (loading: boolean) => void;
 }
 
@@ -125,6 +126,7 @@ export const useStore = create<AuthState>((set, get) => ({
 
   setSelectedEvent: (event) => set({ selectedEvent: event }),
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
   setAuthLoading: (loading) => set({ isAuthLoading: loading }),
 }));
 

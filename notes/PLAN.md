@@ -1,5 +1,30 @@
 # Triển Khai Thông Báo Thiết Yếu
 
+## Status Update - 2026-07-08
+
+- Implemented safe core pieces:
+  - BE notification `dedupeKey` support with unique sparse index.
+  - `notifyUser` reuses an existing in-app notification when the same `dedupeKey` is used.
+  - BE emits notification socket events to the authenticated user's private socket room.
+  - FE listens for `notification_created`, `notification_read`, and `notifications_read_all`.
+  - FE topbar unread badge now uses `GET /notifications?status=UNREAD&limit=1` pagination total instead of counting only dropdown items.
+  - FE topbar dropdown now shows only the latest 5 notifications.
+  - FE notification dropdown polls every 5 minutes while socket is connected, and falls back to 45 seconds when disconnected.
+  - FE notification click can navigate by `metadata.targetPath`.
+  - Mobile navigation is off-canvas so participant screens keep the full viewport width.
+  - Submission `ACCEPTED` / `REJECTED` now creates in-app notification for team leader and members.
+  - Result publication now creates in-app notification for ranked team leader and members.
+  - Board mentor assignment now creates one in-app notification per newly assigned mentor and one corresponding in-app notification for each joined participant on the board teams.
+- Existing team invitation behavior is preserved:
+  - Unknown invitees still receive email invitation.
+  - Existing users still receive in-app team invitation notification with accept/decline dialog.
+  - Accept/decline still calls the existing team invitation APIs and invalidates team/notification queries.
+- Intentionally not implemented in this scope:
+  - Background reminder processor for event/workshop/round/submission deadlines. Current essential notifications are event-driven to avoid extra polling/load.
+- Not implemented yet:
+  - Immediate notifications for judge assignment.
+  - Dedicated `/notifications` full inbox page.
+
 ## Summary
 - Dùng module `notifications` hiện có làm inbox chính, không viết lại từ đầu.
 - Bổ sung các nghiệp vụ tạo notification còn thiếu: nhắc lịch sắp tới, deadline nộp bài, phân công judge/mentor, publish kết quả.
@@ -33,7 +58,7 @@
 ## Frontend Changes
 - Tách UI thông báo khỏi `Topbar` thành component riêng để dễ bảo trì.
 - Query:
-  - `GET /notifications?limit=8` lấy danh sách gần nhất.
+  - `GET /notifications?limit=5` lấy danh sách gần nhất.
   - `GET /notifications?status=UNREAD&limit=1` lấy `pagination.totalItems` làm badge unread chính xác.
   - Refetch mỗi 30-60 giây khi user đang đăng nhập.
 - Dropdown:
@@ -55,11 +80,11 @@
   - Submission accepted/rejected tạo notification cho team.
 - FE verification:
   - `npm run build` pass.
-  - Badge unread hiển thị đúng từ pagination, không chỉ từ 8 item dropdown.
+  - Badge unread hiển thị đúng từ pagination, không chỉ từ 5 item dropdown.
   - Mark read / mark all read cập nhật badge.
   - Click notification điều hướng đúng màn.
 
 ## Assumptions
-- Vì bạn chưa chọn lại trong câu hỏi, mặc định dùng scope “thiết yếu” và polling REST.
+- Scope hiện tại dùng notification thiết yếu theo sự kiện nghiệp vụ, có socket realtime và polling fallback nhẹ.
 - Reminder chỉ in-app, không email, để nút chuông là trung tâm thông báo.
-- Chưa thêm push/browser notification và chưa dùng socket realtime trong phiên bản này.
+- Chưa thêm push/browser notification; socket realtime hiện dùng cho in-app notification.

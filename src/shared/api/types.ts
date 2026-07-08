@@ -161,6 +161,7 @@ export interface Notification {
   message?: string | null;
   type: NotificationType;
   status: NotificationStatus;
+  dedupeKey?: string | null;
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -1432,6 +1433,11 @@ export interface WorkshopRating {
 export interface WorkshopRatingStats {
   averageRating: number;
   totalRatings: number;
+}
+
+export interface WorkshopRatingsResult {
+  ratings: WorkshopRating[];
+  stats: WorkshopRatingStats;
 }
 
 export interface WorkshopFeedback {
