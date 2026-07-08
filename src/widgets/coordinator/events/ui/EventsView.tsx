@@ -1,6 +1,6 @@
 import { AlertCircle, Calendar, Loader2, MoreVertical, Plus } from 'lucide-react';
 
-import { formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
+import { describeAdvancementRule, formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
 import { ApiError } from '@/shared/api/client';
 import {
   AlertDialog,
@@ -53,7 +53,7 @@ export function Events() {
               Create Event
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Event</DialogTitle>
               <DialogDescription>Fill in the details below to create a new hackathon event.</DialogDescription>
@@ -90,37 +90,54 @@ export function Events() {
 
       {!view.eventsQuery.isLoading && !view.eventsQuery.error && (
         <Card>
-          <Table>
+          <Table className="table-fixed">
+            <colgroup>
+              <col className="w-[40%]" />
+              <col className="w-[13%]" />
+              <col className="w-[12%]" />
+              <col className="w-[22%]" />
+              <col className="w-[10rem]" />
+              <col className="w-12" />
+            </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>Event</TableHead>
                 <TableHead>Semester</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Advancement Rule</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead className="w-12"></TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {view.events.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     No events found. Create your first event to get started.
                   </TableCell>
                 </TableRow>
               ) : (
-                view.events.map((event) => (
+                view.events.map((event) => {
+                  const advancementRule = describeAdvancementRule(event);
+
+                  return (
                   <TableRow key={event.id}>
-                    <TableCell>
+                    <TableCell className="overflow-hidden">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
                           <Calendar className="w-4 h-4 text-blue-600" />
                         </div>
-                        <span className="font-medium">{event.title}</span>
+                        <span className="truncate font-medium">{event.title}</span>
                       </div>
                     </TableCell>
                     <TableCell>{event.semester || '-'}</TableCell>
                     <TableCell>
                       <StatusBadge status={mapEventStatus(event.status) as never} />
+                    </TableCell>
+                    <TableCell className="overflow-hidden text-sm text-muted-foreground">
+                      <div className="truncate" title={advancementRule}>
+                        {advancementRule}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {formatEventDate(event.startDate)} - {formatEventDate(event.endDate)}
@@ -149,7 +166,8 @@ export function Events() {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -163,7 +181,7 @@ export function Events() {
       />
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
             <DialogDescription>Update the event information below.</DialogDescription>

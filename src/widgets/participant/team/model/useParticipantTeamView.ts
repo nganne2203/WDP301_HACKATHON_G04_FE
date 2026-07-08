@@ -14,6 +14,7 @@ import {
 import type { TeamAvailability, TeamInvitation } from '@/shared/api/types';
 import { useEventsQuery, useMyTeamQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
+import { CHAT_ROOMS_QUERY_KEY } from '@/shared/lib/chatRoomCache';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 
 function getTeamAvailabilityMessage(availability?: TeamAvailability | null) {
@@ -28,7 +29,6 @@ export function useParticipantTeamView() {
   const user = useStore((state) => state.user);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [teamName, setTeamName] = useState('');
-  const [projectName, setProjectName] = useState('');
   const [invitedMembers, setInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [newInvitedMembers, setNewInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [replacementEmails, setReplacementEmails] = useState<Record<string, string>>({});
@@ -81,7 +81,10 @@ export function useParticipantTeamView() {
   );
 
   const invalidateTeam = async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.teams.my(activeEventId) });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.teams.my(activeEventId) }),
+      queryClient.invalidateQueries({ queryKey: CHAT_ROOMS_QUERY_KEY }),
+    ]);
   };
 
   const createTeamMutation = useMutation({
@@ -91,7 +94,6 @@ export function useParticipantTeamView() {
       const response = await teamsApi.create({
         eventId: activeEventId,
         name: teamName.trim(),
-        projectName: projectName.trim(),
         invitedMembers: members,
       });
       return response.data;
@@ -99,7 +101,6 @@ export function useParticipantTeamView() {
     onSuccess: async () => {
       toast.success('Team created and invitations sent');
       setTeamName('');
-      setProjectName('');
       setInvitedMembers([createMemberRow()]);
       await invalidateTeam();
     },
@@ -149,7 +150,22 @@ export function useParticipantTeamView() {
   });
 
   const isLeader = Boolean(team && user && team.leaderId === user.id);
-  const canChangeInvitations = Boolean(isLeader && registrationOpen && team?.status !== 'REJECTED');
+  const activeTeamStatus = Boolean(team && !['REJECTED', 'CANCELLED'].includes(team.status));
+  const currentParticipant = team?.participants.find((participant) => participant.user?.id === user?.id);
+  const canLeaveTeam = Boolean(team && user && registrationOpen && activeTeamStatus && (isLeader || currentParticipant?.status === 'JOINED'));
+  const canChangeInvitations = Boolean(isLeader && registrationOpen && activeTeamStatus);
+
+  const leaveTeamMutation = useMutation({
+    mutationFn: async (teamId: string) => {
+      const response = await teamsApi.leave(teamId);
+      return response.data;
+    },
+    onSuccess: async () => {
+      toast.success(isLeader ? 'Team cancelled' : 'You left the team');
+      await invalidateTeam();
+    },
+    onError: (error) => toast.error(isLeader ? 'Could not cancel team' : 'Could not leave team', { description: getApiErrorMessage(error) }),
+  });
 
   async function handleCreateTeam() {
     if (!trimmedTeamName) {
@@ -200,6 +216,7 @@ export function useParticipantTeamView() {
   return {
     activeEventId,
     canChangeInvitations,
+    canLeaveTeam,
     cancelMutation,
     createValidationPending,
     createTeamMutation,
@@ -209,8 +226,9 @@ export function useParticipantTeamView() {
     handleInvite,
     inviteMutation,
     invitedMembers,
+    isLeader,
+    leaveTeamMutation,
     newInvitedMembers,
-    projectName,
     registrationOpen,
     replacementEmails,
     replaceMutation,
@@ -218,7 +236,6 @@ export function useParticipantTeamView() {
     selectedEventId,
     setInvitedMembers,
     setNewInvitedMembers,
-    setProjectName,
     setReplacementEmails,
     setSelectedEventId,
     setTeamName,

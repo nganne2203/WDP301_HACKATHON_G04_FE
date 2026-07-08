@@ -2,9 +2,11 @@ import { api } from './client';
 import type {
   AuthData,
   ChangePasswordRequest,
+  ForgotPasswordRequest,
   GoogleLoginRequest,
   LoginRequest,
   RegisterRequest,
+  ResetPasswordRequest,
   User,
 } from './types';
 
@@ -26,6 +28,12 @@ export const authApi = {
 
   changePassword: (data: ChangePasswordRequest) =>
     api.post<User>('/auth/change-password', data),
+
+  forgotPassword: (data: ForgotPasswordRequest) =>
+    api.post<{ sent: boolean }>('/auth/forgot-password', data, { auth: false }),
+
+  resetPassword: (data: ResetPasswordRequest) =>
+    api.post<{ reset: boolean }>('/auth/reset-password', data, { auth: false }),
 
   logout: () =>
     api.post<null>('/auth/logout'),

@@ -41,6 +41,12 @@ function getInitials(value?: string | null) {
 export function Judging() {
   const view = useJudgingView();
   const previewBoards = view.randomizationPreview?.boards || [];
+  const previewGridClassName =
+    previewBoards.length <= 1
+      ? 'grid-cols-1'
+      : previewBoards.length === 2
+        ? 'grid-cols-2'
+        : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
 
   return (
     <div className="space-y-6 p-6">
@@ -236,7 +242,11 @@ export function Judging() {
       </AlertDialog>
 
       <Dialog open={view.showRandomizationPreview} onOpenChange={view.setShowRandomizationPreview}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent
+          className="flex max-h-[92vh] !w-[min(90vw,1040px)] !max-w-[1040px] flex-col overflow-hidden p-0"
+          style={{ width: 'min(90vw, 1040px)', maxWidth: '1040px' }}
+        >
+          <div className="flex-shrink-0 px-5 pt-5 sm:px-6 sm:pt-6">
           <DialogHeader>
             <DialogTitle>Preview Board Lineup</DialogTitle>
             <DialogDescription>
@@ -245,9 +255,11 @@ export function Judging() {
                 : 'No preview data available.'}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          <div className={`grid w-full items-stretch gap-4 ${previewGridClassName}`}>
             {previewBoards.map((board) => (
-              <Card key={board.boardNumber}>
+              <Card key={board.boardNumber} className="min-w-0 w-full">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">{board.name}</CardTitle>
@@ -263,7 +275,7 @@ export function Judging() {
                         <span className="font-medium">{team.name}</span>
                         <span className="text-xs text-muted-foreground">Slot {team.placementSlot}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{team.projectName || team.chapterName || team.id}</p>
+                      <p className="text-xs text-muted-foreground">{team.chapterName || team.id}</p>
                     </div>
                   ))}
                   {board.teams.length === 0 && (
@@ -273,7 +285,8 @@ export function Judging() {
               </Card>
             ))}
           </div>
-          <div className="flex justify-end gap-2">
+          </div>
+          <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-5 py-4 sm:px-6">
             <Button
               variant="outline"
               onClick={() => view.randomizePreviewMutation.mutate()}

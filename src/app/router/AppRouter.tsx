@@ -1,5 +1,5 @@
 import { Suspense, lazy, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
 import { Loader2 } from 'lucide-react';
 import { AppShell } from '@/app/layouts/AppShell';
 import { resolveHomePathForRole } from '@/entities/session/lib/navigation';
@@ -9,7 +9,9 @@ import { useAuthBootstrapQuery } from '@/hooks/queries/useAuthQueries';
 
 const Login = lazy(async () => ({ default: (await import('@/pages/Login')).Login }));
 const Register = lazy(async () => ({ default: (await import('@/pages/Register')).Register }));
+const ResetPassword = lazy(async () => ({ default: (await import('@/pages/ResetPassword')).ResetPassword }));
 const ChangePassword = lazy(async () => ({ default: (await import('@/pages/ChangePassword')).ChangePassword }));
+const Profile = lazy(async () => ({ default: (await import('@/pages/Profile')).Profile }));
 const TeamInvitationConfirmation = lazy(async () => ({
   default: (await import('@/pages/TeamInvitationConfirmation')).TeamInvitationConfirmation,
 }));
@@ -27,6 +29,9 @@ const Participants = lazy(async () => ({
   default: (await import('@/pages/coordinator/Participants')).Participants,
 }));
 const Teams = lazy(async () => ({ default: (await import('@/pages/coordinator/Teams')).Teams }));
+const MentorAssignments = lazy(async () => ({
+  default: (await import('@/pages/coordinator/MentorAssignments')).MentorAssignments,
+}));
 const Checkin = lazy(async () => ({ default: (await import('@/pages/coordinator/Checkin')).Checkin }));
 const Repositories = lazy(async () => ({
   default: (await import('@/pages/coordinator/Repositories')).Repositories,
@@ -39,6 +44,7 @@ const AdminOperations = lazy(async () => ({ default: (await import('@/pages/admi
 const AdminRbac = lazy(async () => ({ default: (await import('@/pages/admin/Rbac')).AdminRbac }));
 const JudgeDashboard = lazy(async () => ({ default: (await import('@/pages/judge/Dashboard')).JudgeDashboard }));
 const JudgeScoring = lazy(async () => ({ default: (await import('@/pages/judge/Scoring')).JudgeScoring }));
+const JudgeCodeReviews = lazy(async () => ({ default: (await import('@/pages/judge/CodeReviews')).JudgeCodeReviews }));
 const AdminSettings = lazy(async () => ({ default: (await import('@/pages/admin/Settings')).Settings }));
 const ParticipantDashboard = lazy(async () => ({
   default: (await import('@/pages/participant/Dashboard')).ParticipantDashboard,
@@ -46,8 +52,20 @@ const ParticipantDashboard = lazy(async () => ({
 const ParticipantTeam = lazy(async () => ({
   default: (await import('@/pages/participant/Team')).ParticipantTeam,
 }));
+const ParticipantChats = lazy(async () => ({
+  default: (await import('@/pages/participant/Chats')).ParticipantChats,
+}));
+const ParticipantChatsHome = lazy(async () => ({
+  default: (await import('@/pages/participant/ChatsIndex')).ParticipantChatsHome,
+}));
+const ParticipantChatRoom = lazy(async () => ({
+  default: (await import('@/pages/participant/ChatRoom')).ParticipantChatRoom,
+}));
 const ParticipantSubmissions = lazy(async () => ({
   default: (await import('@/pages/participant/Submissions')).ParticipantSubmissions,
+}));
+const ParticipantRounds = lazy(async () => ({
+  default: (await import('@/pages/participant/Rounds')).ParticipantRounds,
 }));
 const ParticipantResults = lazy(async () => ({
   default: (await import('@/pages/participant/Results')).ParticipantResults,
@@ -62,6 +80,7 @@ const MentorDashboard = lazy(async () => ({
   default: (await import('@/pages/mentor/Dashboard')).MentorDashboard,
 }));
 const MentorTeams = lazy(async () => ({ default: (await import('@/pages/mentor/Teams')).MentorTeams }));
+const MentorWorkshops = lazy(async () => ({ default: (await import('@/pages/mentor/Workshops')).MentorWorkshops }));
 
 function AuthLoading() {
   return (
@@ -122,6 +141,7 @@ export function AppRouter() {
           <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/team-invitations/confirm" element={<TeamInvitationConfirmation />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -130,6 +150,15 @@ export function AppRouter() {
             element={
               <ProtectedRoute>
                 <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />
@@ -207,6 +236,14 @@ export function AppRouter() {
             }
           />
           <Route
+            path="/coordinator/mentor-assignments"
+            element={
+              <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
+                <MentorAssignments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/coordinator/checkin"
             element={
               <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
@@ -263,6 +300,22 @@ export function AppRouter() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/judge/code-reviews"
+            element={
+              <ProtectedRoute allowedRoles={['judge', 'admin']}>
+                <JudgeCodeReviews />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/judge/results"
+            element={
+              <ProtectedRoute allowedRoles={['judge', 'admin']}>
+                <Results />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/participant"
@@ -281,10 +334,29 @@ export function AppRouter() {
             }
           />
           <Route
+            path="/participant/chats"
+            element={
+              <ProtectedRoute allowedRoles={['participant', 'admin']}>
+                <ParticipantChats />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<ParticipantChatsHome />} />
+            <Route path=":chatRoomId" element={<ParticipantChatRoom />} />
+          </Route>
+          <Route
             path="/participant/submissions"
             element={
               <ProtectedRoute allowedRoles={['participant', 'admin']}>
                 <ParticipantSubmissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/participant/rounds"
+            element={
+              <ProtectedRoute allowedRoles={['participant', 'admin']}>
+                <ParticipantRounds />
               </ProtectedRoute>
             }
           />
@@ -383,6 +455,14 @@ export function AppRouter() {
             element={
               <ProtectedRoute allowedRoles={['mentor', 'admin']}>
                 <MentorTeams />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mentor/workshops"
+            element={
+              <ProtectedRoute allowedRoles={['mentor', 'speaker', 'admin']}>
+                <MentorWorkshops />
               </ProtectedRoute>
             }
           />

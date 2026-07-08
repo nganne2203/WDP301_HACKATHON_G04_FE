@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
-import { Crown } from 'lucide-react';
+import { Crown, UserRound } from 'lucide-react';
 import type { Team } from '@/shared/api/types';
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
@@ -17,20 +17,48 @@ function getInitials(value?: string) {
 }
 
 function statusBadgeVariant(status: string): BadgeVariant {
-  if (status === 'CONFIRMED' || status === 'ACTIVE') return 'default';
-  if (status === 'REJECTED' || status === 'DISQUALIFIED') return 'destructive';
+  if (status === 'CONFIRMED' || status === 'JOINED' || status === 'ACTIVE' || status === 'ACCEPTED') return 'default';
+  if (status === 'REJECTED' || status === 'DECLINED' || status === 'CANCELLED') return 'destructive';
   return 'secondary';
 }
 
 function getConfirmedMemberCount(team: Team) {
   const activeParticipants = team.participants
-    ? team.participants.filter((participant) => participant.status === 'ACTIVE')
+    ? team.participants.filter((participant) => participant.status === 'JOINED')
     : [];
   return activeParticipants.length || (team.members?.length || 0);
 }
 
 function getTotalMemberCount(team: Team) {
-  return (team.participants?.length) || (team.members?.length || 0);
+  const participantEmails = new Set(
+    (team.participants || [])
+      .map((participant) => participant.user?.email?.trim().toLowerCase())
+      .filter(Boolean)
+  );
+  const participantIds = new Set(
+    (team.participants || [])
+      .map((participant) => participant.user?.id)
+      .filter(Boolean)
+  );
+
+  let total = (team.participants || []).length;
+
+  for (const invitation of team.invitations || []) {
+    const invitedEmail = invitation.invitedEmail?.trim().toLowerCase();
+    const invitedUserId = invitation.invitedUserId;
+    const invitedUserEmail = invitation.invitedUser?.email?.trim().toLowerCase();
+
+    const matchesParticipant =
+      (invitedUserId && participantIds.has(invitedUserId)) ||
+      (invitedUserEmail && participantEmails.has(invitedUserEmail)) ||
+      (invitedEmail && participantEmails.has(invitedEmail));
+
+    if (!matchesParticipant) {
+      total += 1;
+    }
+  }
+
+  return total || (team.members?.length || 0);
 }
 
 interface TeamDetailProps {
@@ -82,6 +110,32 @@ export function TeamDetail({ team }: TeamDetailProps) {
                 <p className="text-xs text-muted-foreground truncate">{participant.user?.email}</p>
               </div>
               <Badge variant={statusBadgeVariant(participant.status)}>{participant.status}</Badge>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-medium mb-3">Assigned Mentors</h3>
+        <div className="space-y-2">
+          {(team.assignedMentors || []).length === 0 && (
+            <p className="rounded-md border border-dashed px-4 py-3 text-sm text-muted-foreground">No mentors assigned yet.</p>
+          )}
+          {(team.assignedMentors || []).map((mentor) => (
+            <div key={mentor.id} className="flex items-center gap-3 rounded-md border px-4 py-3">
+              <div className="relative">
+                <Avatar className="w-9 h-9">
+                  <AvatarFallback className="bg-emerald-100 text-emerald-700 text-sm">
+                    {getInitials(mentor.fullName || mentor.email)}
+                  </AvatarFallback>
+                </Avatar>
+                <UserRound className="w-4 h-4 text-emerald-600 absolute -bottom-1 -right-1 rounded-full bg-white p-0.5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{mentor.fullName || mentor.email}</p>
+                <p className="text-xs text-muted-foreground truncate">{mentor.email}</p>
+              </div>
+              {mentor.status && <Badge variant={statusBadgeVariant(mentor.status)}>{mentor.status}</Badge>}
             </div>
           ))}
         </div>

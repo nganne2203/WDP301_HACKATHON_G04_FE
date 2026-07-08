@@ -160,14 +160,14 @@ export function useParticipantDashboardView() {
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(selectedEvent?.id, undefined),
-    enabled: Boolean(selectedEvent?.id && appRole !== 'participant'),
+    enabled: Boolean(selectedEvent?.id && appRole),
     queryFn: async () => (await rankingsApi.list({ eventId: selectedEvent?.id, limit: 50 })).data,
   });
   const rankings = rankingsQuery.data || [];
 
   const finalistsQuery = useQuery({
     queryKey: queryKeys.finalists.list(selectedEvent?.id, undefined),
-    enabled: Boolean(selectedEvent?.id && appRole !== 'participant'),
+    enabled: Boolean(selectedEvent?.id && appRole),
     queryFn: async () => (await finalistsApi.list({ eventId: selectedEvent?.id, limit: 50 })).data,
   });
   const finalists = finalistsQuery.data || [];
