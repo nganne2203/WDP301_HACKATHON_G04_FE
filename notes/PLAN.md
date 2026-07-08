@@ -15,6 +15,7 @@
   - Submission `ACCEPTED` / `REJECTED` now creates in-app notification for team leader and members.
   - Result publication now creates in-app notification for ranked team leader and members.
   - Board mentor assignment now creates one in-app notification per newly assigned mentor and one corresponding in-app notification for each joined participant on the board teams.
+  - Dedicated `/notifications` inbox page now shows all notifications with status/type filters and pagination.
 - Existing team invitation behavior is preserved:
   - Unknown invitees still receive email invitation.
   - Existing users still receive in-app team invitation notification with accept/decline dialog.
@@ -23,7 +24,6 @@
   - Background reminder processor for event/workshop/round/submission deadlines. Current essential notifications are event-driven to avoid extra polling/load.
 - Not implemented yet:
   - Immediate notifications for judge assignment.
-  - Dedicated `/notifications` full inbox page.
 
 ## Summary
 - Dùng module `notifications` hiện có làm inbox chính, không viết lại từ đầu.
@@ -66,7 +66,7 @@
   - Hiển thị title, message, type badge, thời gian tương đối.
   - Click notification: mark read, invalidate query, navigate theo `metadata.targetPath` nếu có.
   - Có nút `Mark all read`.
-- Thêm trang `/notifications` nếu cần xem đầy đủ:
+- Thêm trang `/notifications` để xem đầy đủ:
   - Danh sách có phân trang.
   - Filter `All / Unread`.
   - Mark từng item hoặc mark all.

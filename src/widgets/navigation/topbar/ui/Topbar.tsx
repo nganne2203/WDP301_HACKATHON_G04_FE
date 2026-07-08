@@ -265,15 +265,24 @@ export const Topbar = memo(function Topbar() {
           <DropdownMenuContent align="end" className="max-h-[min(30rem,calc(100vh-5rem))] w-[calc(100vw-1rem)] max-w-sm overflow-y-auto sm:w-80">
             <DropdownMenuLabel className="flex items-center justify-between gap-3">
               <span>Notifications</span>
-              {unreadCount > 0 && (
+              <span className="flex items-center gap-2">
                 <button
                   type="button"
                   className="text-xs font-normal text-blue-600 hover:text-blue-700"
-                  onClick={handleMarkAllNotificationsRead}
+                  onClick={() => navigate('/notifications')}
                 >
-                  Mark all read
+                  View all
                 </button>
-              )}
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    className="text-xs font-normal text-blue-600 hover:text-blue-700"
+                    onClick={handleMarkAllNotificationsRead}
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {notificationsQuery.isLoading ? (
