@@ -14,6 +14,7 @@ import {
 import type { TeamAvailability, TeamInvitation } from '@/shared/api/types';
 import { useEventsQuery, useMyTeamQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
+import { CHAT_ROOMS_QUERY_KEY } from '@/shared/lib/chatRoomCache';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 
 function getTeamAvailabilityMessage(availability?: TeamAvailability | null) {
@@ -80,7 +81,10 @@ export function useParticipantTeamView() {
   );
 
   const invalidateTeam = async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.teams.my(activeEventId) });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.teams.my(activeEventId) }),
+      queryClient.invalidateQueries({ queryKey: CHAT_ROOMS_QUERY_KEY }),
+    ]);
   };
 
   const createTeamMutation = useMutation({
