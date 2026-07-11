@@ -161,6 +161,7 @@ export interface Notification {
   message?: string | null;
   type: NotificationType;
   status: NotificationStatus;
+  dedupeKey?: string | null;
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -1294,6 +1295,7 @@ export interface ListParticipantsQuery {
   eventId?: string;
   userId?: string;
   teamId?: string;
+  confirmedTeamsOnly?: boolean;
   checkInStatus?: CheckInStatus;
   status?: ParticipantStatus;
   eligibilityStatus?: EligibilityStatus;

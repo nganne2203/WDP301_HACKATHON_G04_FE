@@ -85,7 +85,7 @@ export function Login() {
         }
       } else {
         toast.error('Login failed', {
-          description: 'Could not connect to server. Please try again.',
+          description: 'Connection failed. Please try again.',
         });
       }
     }

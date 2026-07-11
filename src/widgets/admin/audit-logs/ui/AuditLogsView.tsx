@@ -301,7 +301,7 @@ export function AuditLogsView() {
             Audit Logs
           </h1>
           <p className="text-sm text-muted-foreground">
-            Chronological security and business activity trail with request context and change details.
+            Review account activity, security events, and system changes.
           </p>
         </div>
         <div className="flex gap-2">
@@ -438,7 +438,7 @@ export function AuditLogsView() {
             <Alert>
               <Loader2 className="h-4 w-4 animate-spin" />
               <AlertTitle>Loading audit logs...</AlertTitle>
-              <AlertDescription>Fetching records from the backend.</AlertDescription>
+              <AlertDescription>Loading activity logs.</AlertDescription>
             </Alert>
           ) : logs.length === 0 ? (
             <Alert>

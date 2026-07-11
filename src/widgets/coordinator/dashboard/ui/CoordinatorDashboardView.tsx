@@ -308,11 +308,11 @@ export function CoordinatorDashboard() {
         </CardHeader>
         <CardContent>
           {timelinesQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading event timeline...</p>
+            <p className="text-sm text-muted-foreground">Loading event schedule...</p>
           ) : lifecycleSteps.length > 0 ? (
             <EventStepper steps={lifecycleSteps} />
           ) : (
-            <p className="text-sm text-muted-foreground">No timeline items configured for this event.</p>
+            <p className="text-sm text-muted-foreground">No schedule items yet.</p>
           )}
         </CardContent>
       </Card>

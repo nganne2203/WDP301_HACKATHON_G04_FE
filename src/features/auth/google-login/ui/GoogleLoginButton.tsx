@@ -15,7 +15,7 @@ interface GoogleCredentialPayload {
 
 function decodeGoogleCredential(credential: string): GoogleCredentialPayload {
   const payload = credential.split('.')[1];
-  if (!payload) throw new Error('Google returned an invalid credential.');
+  if (!payload) throw new Error('Google sign-in failed. Please try again.');
 
   const base64 = payload.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(payload.length / 4) * 4, '=');
   const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
@@ -36,7 +36,7 @@ export function GoogleLoginButton() {
     let profile: GoogleCredentialPayload | null = null;
 
     try {
-      if (!response.credential) throw new Error('Google did not return a credential.');
+      if (!response.credential) throw new Error('Google sign-in failed. Please try again.');
 
       profile = decodeGoogleCredential(response.credential);
       const authResponse = await googleSignInMutation.mutateAsync({

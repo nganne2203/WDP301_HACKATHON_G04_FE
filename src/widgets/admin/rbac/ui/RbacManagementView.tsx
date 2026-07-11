@@ -457,7 +457,7 @@ export function RbacManagementView() {
                         <DialogContent className="max-w-xl">
                           <DialogHeader>
                             <DialogTitle>Edit Role</DialogTitle>
-                            <DialogDescription>Update metadata for {selectedRole.name}.</DialogDescription>
+                            <DialogDescription>Update the name and description for {selectedRole.name}.</DialogDescription>
                           </DialogHeader>
                           <RoleForm form={editForm} onChange={setEditForm} />
                           <div className="flex justify-end gap-2">
@@ -486,8 +486,8 @@ export function RbacManagementView() {
                 ) : selectedRole.name === 'ADMIN' ? (
                   <Alert>
                     <ShieldCheck className="h-4 w-4" />
-                    <AlertTitle>ADMIN is seed-managed</AlertTitle>
-                    <AlertDescription>ADMIN receives all permissions automatically from the backend seed process.</AlertDescription>
+                    <AlertTitle>Administrator permissions</AlertTitle>
+                    <AlertDescription>Administrators always have all permissions.</AlertDescription>
                   </Alert>
                 ) : null}
 
@@ -558,7 +558,7 @@ export function RbacManagementView() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Permission Catalog</CardTitle>
-              <CardDescription>Permission codes come from the backend constants; metadata and active state are editable.</CardDescription>
+              <CardDescription>Review permission details and enable or disable access.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {permissionsQuery.isLoading ? (
@@ -571,7 +571,7 @@ export function RbacManagementView() {
                   <div key={group.module} className="rounded-md border">
                     <div className="border-b px-4 py-3">
                       <p className="font-medium">{group.module}</p>
-                      <p className="text-xs text-muted-foreground">{group.permissions.length} permission records</p>
+                      <p className="text-xs text-muted-foreground">{group.permissions.length} permissions</p>
                     </div>
                     <div className="divide-y">
                       {group.permissions.map((permission) => {
@@ -641,7 +641,7 @@ export function RbacManagementView() {
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate role</AlertDialogTitle>
             <AlertDialogDescription>
-              Deactivate {selectedRole?.name}? The backend will reject this if users are still assigned to the role.
+              Deactivate {selectedRole?.name}? First remove this role from all assigned users.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

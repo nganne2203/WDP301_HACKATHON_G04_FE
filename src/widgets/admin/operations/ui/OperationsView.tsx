@@ -170,7 +170,7 @@ export function OperationsView() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading metrics…</AlertTitle>
-          <AlertDescription>Fetching operational data from the backend.</AlertDescription>
+          <AlertDescription>Loading system activity.</AlertDescription>
         </Alert>
       ) : m ? (
         <>
