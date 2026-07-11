@@ -248,7 +248,7 @@ export function ParticipantDashboard() {
           ) : view.timelineItems.length === 0 ? (
             <Alert>
               <AlertTitle>No timeline items</AlertTitle>
-              <AlertDescription>The event timeline has not been configured yet.</AlertDescription>
+              <AlertDescription>The event schedule is not available yet.</AlertDescription>
             </Alert>
           ) : (
             <div className="space-y-4">

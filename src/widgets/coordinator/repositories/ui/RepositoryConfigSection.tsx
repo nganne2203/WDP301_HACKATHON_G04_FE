@@ -36,7 +36,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading GitHub configuration</AlertTitle>
-          <AlertDescription>Reading event-specific integration settings from the database.</AlertDescription>
+          <AlertDescription>Loading GitHub settings for this event.</AlertDescription>
         </Alert>
       ) : (
         <Alert className={view.config?.enabled ? 'border-green-200 bg-green-50' : undefined}>
@@ -61,7 +61,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
               <Github className="h-5 w-5" />
               GitHub Config
             </CardTitle>
-            <CardDescription>One encrypted configuration record is stored per event; saved tokens are never displayed.</CardDescription>
+            <CardDescription>Connect this event to your GitHub Organization. Saved tokens stay hidden.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -95,7 +95,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
             <div className="flex items-center justify-between rounded-md border p-3">
               <div>
                 <p className="text-sm font-medium">Enabled</p>
-                <p className="text-xs text-muted-foreground">Allow backend GitHub API operations.</p>
+                <p className="text-xs text-muted-foreground">Allow repository and member management.</p>
               </div>
               <Switch checked={view.enabled} onCheckedChange={view.setEnabled} />
             </div>
@@ -175,7 +175,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                 Link Existing Repository
               </DialogTitle>
               <DialogDescription>
-                Use this exception flow only for a repository created outside SEAL. The normal workflow is bulk provisioning repositories in the organizer's GitHub Organization.
+                Use this only for a repository created outside SEAL. Team repositories are normally created from the bulk actions.
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

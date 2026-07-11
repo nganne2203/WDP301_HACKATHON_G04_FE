@@ -35,7 +35,7 @@ export function RepositoryDangerZoneCard({ view }: { view: RepositoriesViewModel
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Destructive action</AlertTitle>
           <AlertDescription>
-            This calls GitHub and removes organization members. It skips only the configured owner: {view.ownerUsername || 'not configured'}.
+            This removes all Organization members except the owner: {view.ownerUsername || 'not set'}.
           </AlertDescription>
         </Alert>
 

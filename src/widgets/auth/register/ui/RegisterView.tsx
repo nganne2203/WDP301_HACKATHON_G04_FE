@@ -95,7 +95,7 @@ export function Register() {
         }
       } else {
         toast.error('Registration failed', {
-          description: 'Could not connect to the server. Please try again.',
+          description: 'Connection failed. Please try again.',
         });
       }
     }

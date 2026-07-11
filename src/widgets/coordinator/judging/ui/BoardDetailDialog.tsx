@@ -223,7 +223,7 @@ export function BoardDetailDialog({
             <Alert>
               <Loader2 className="h-4 w-4 animate-spin" />
               <AlertTitle>Loading submissions</AlertTitle>
-              <AlertDescription>Fetching team submission status for this round...</AlertDescription>
+              <AlertDescription>Loading team submissions for this round.</AlertDescription>
             </Alert>
           )}
         </div>

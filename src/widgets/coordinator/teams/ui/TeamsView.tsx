@@ -136,7 +136,7 @@ export function Teams() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading teams</AlertTitle>
-          <AlertDescription>Reading team registrations for the selected event.</AlertDescription>
+          <AlertDescription>Loading team registrations for this event.</AlertDescription>
         </Alert>
       )}
 

@@ -338,14 +338,14 @@ export function MediaViewModal({
         <DialogHeader>
           <DialogTitle>{media?.title || media?.originalFileName || 'Media preview'}</DialogTitle>
           <DialogDescription>
-            Signed access refreshes when this viewer opens.
+            This preview link is private and expires automatically.
           </DialogDescription>
         </DialogHeader>
         <div className="min-h-72">
           {loading && (
             <div className="flex h-72 items-center justify-center text-muted-foreground">
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Loading signed URL...
+              Preparing preview...
             </div>
           )}
           {!loading && media && signedUrl && media.mediaType === 'IMAGE' && (

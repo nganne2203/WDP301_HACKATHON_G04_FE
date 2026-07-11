@@ -73,7 +73,7 @@ export function RepositoryDetailDialog({
             {repository.repositoryFullName}
           </DialogTitle>
           <DialogDescription>
-            Monitor webhook status, commit evidence, static analysis, and AI reviews for this repository.
+            Review connection status, commits, code checks, and AI reviews.
           </DialogDescription>
         </DialogHeader>
 
@@ -116,12 +116,12 @@ export function RepositoryDetailDialog({
             {commitsQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Loading commit evidence</AlertTitle>
-                <AlertDescription>Fetching the latest commits from the backend.</AlertDescription>
+                <AlertTitle>Loading commits</AlertTitle>
+                <AlertDescription>Loading recent commits.</AlertDescription>
               </Alert>
             ) : commits.length === 0 ? (
               <Alert>
-                <AlertTitle>No commit evidence available</AlertTitle>
+                <AlertTitle>No commits available</AlertTitle>
                 <AlertDescription>This repository has not synced commits to the system yet.</AlertDescription>
               </Alert>
             ) : (
@@ -146,13 +146,13 @@ export function RepositoryDetailDialog({
             {diffQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Loading diff evidence</AlertTitle>
-                <AlertDescription>The backend is fetching the latest diffs for this repository.</AlertDescription>
+                <AlertTitle>Loading code changes</AlertTitle>
+                <AlertDescription>Loading recent code changes.</AlertDescription>
               </Alert>
             ) : diffs.length === 0 ? (
               <Alert>
-                <AlertTitle>No diff evidence available</AlertTitle>
-                <AlertDescription>Please sync commits or wait for webhooks to process.</AlertDescription>
+                <AlertTitle>No code changes available</AlertTitle>
+                <AlertDescription>Sync commits or try again later.</AlertDescription>
               </Alert>
             ) : (
               diffs.map((diff) => (
@@ -182,13 +182,13 @@ export function RepositoryDetailDialog({
             {analysisQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Loading static analysis</AlertTitle>
-                <AlertDescription>Fetching the latest static analysis results.</AlertDescription>
+                <AlertTitle>Loading code checks</AlertTitle>
+                <AlertDescription>Loading the latest code check results.</AlertDescription>
               </Alert>
             ) : analyses.length === 0 ? (
               <Alert>
                 <AlertTitle>No static analysis results</AlertTitle>
-                <AlertDescription>No analysis records found for this repository.</AlertDescription>
+                <AlertDescription>No code check results yet.</AlertDescription>
               </Alert>
             ) : (
               analyses.map((item) => (
@@ -210,13 +210,13 @@ export function RepositoryDetailDialog({
             {impactQuery.isLoading ? (
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <AlertTitle>Loading impact decisions</AlertTitle>
-                <AlertDescription>Fetching commit impact evaluations.</AlertDescription>
+                <AlertTitle>Loading impact results</AlertTitle>
+                <AlertDescription>Loading change impact results.</AlertDescription>
               </Alert>
             ) : impacts.length === 0 ? (
               <Alert>
                 <AlertTitle>No impact decisions</AlertTitle>
-                <AlertDescription>No impact data found for this repository.</AlertDescription>
+                <AlertDescription>No impact results yet.</AlertDescription>
               </Alert>
             ) : (
               impacts.map((item) => (
@@ -241,7 +241,7 @@ export function RepositoryDetailDialog({
               <Alert>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <AlertTitle>Loading AI reviews</AlertTitle>
-                <AlertDescription>Fetching the repository's AI audit history.</AlertDescription>
+                <AlertDescription>Loading AI review history.</AlertDescription>
               </Alert>
             ) : aiReviews.length === 0 ? (
               <Alert>

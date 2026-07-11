@@ -197,7 +197,7 @@ export function Rubrics() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Rubric</DialogTitle>
-            <DialogDescription>Update rubric metadata. Criteria are managed separately.</DialogDescription>
+            <DialogDescription>Update the rubric details. Scoring criteria are managed separately.</DialogDescription>
           </DialogHeader>
           <RubricForm form={view.editForm} onChange={view.setEditForm} rounds={view.rounds} />
           <div className="flex justify-end gap-2">
@@ -232,7 +232,7 @@ export function Rubrics() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete rubric</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete "{view.selectedRubric?.title}"? This removes it from future FE selections.
+              Delete "{view.selectedRubric?.title}"? It will no longer be available for scoring.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

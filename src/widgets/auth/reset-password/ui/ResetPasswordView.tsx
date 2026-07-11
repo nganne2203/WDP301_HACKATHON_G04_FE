@@ -51,7 +51,7 @@ export function ResetPasswordView() {
       if (error instanceof ApiError) {
         toast.error('Could not reset password', { description: error.firstError });
       } else {
-        toast.error('Could not connect to server.');
+        toast.error('Connection failed. Please try again.');
       }
     } finally {
       setSubmitting(false);

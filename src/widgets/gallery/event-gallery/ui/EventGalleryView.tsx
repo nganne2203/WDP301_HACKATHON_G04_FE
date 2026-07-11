@@ -75,7 +75,7 @@ export function EventGallery() {
     onSuccess: (response) => setSignedUrl(response.data.signedUrl),
     onError: (error: unknown) => {
       toast.error('Could not open media', {
-        description: error instanceof ApiError ? error.firstError : 'Signed URL request failed.',
+        description: error instanceof ApiError ? error.firstError : 'Please try again.',
       });
     },
   });
@@ -110,7 +110,7 @@ export function EventGallery() {
       <Card className="rounded-lg">
         <CardHeader>
           <CardTitle>Approved Media</CardTitle>
-          <CardDescription>Private media is opened through a temporary signed URL.</CardDescription>
+          <CardDescription>View approved photos, videos, and documents from this event.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr]">

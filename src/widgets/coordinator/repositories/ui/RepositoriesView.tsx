@@ -16,7 +16,7 @@ export function Repositories() {
         <div>
           <h1 className="mb-1 text-2xl font-semibold">Repository Management</h1>
           <p className="text-sm text-muted-foreground">
-            Manage GitHub configuration, repository linkage, collaborator access, and evidence pipeline per event.
+            Create team repositories, manage access, and review code activity.
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">

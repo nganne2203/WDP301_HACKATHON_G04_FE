@@ -200,7 +200,7 @@ export function Timelines() {
           <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Edit Timeline Item</DialogTitle>
-            <DialogDescription>Keep the website schedule consistent with backend data.</DialogDescription>
+            <DialogDescription>Update the event schedule and visibility.</DialogDescription>
           </DialogHeader>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6">

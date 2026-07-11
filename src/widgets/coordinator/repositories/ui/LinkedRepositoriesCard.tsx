@@ -48,7 +48,7 @@ export function LinkedRepositoriesCard({ view }: { view: RepositoriesViewModel }
         <div>
           <CardTitle>Linked Repositories</CardTitle>
           <CardDescription>
-            Monitor repository access, webhook health, and evidence processing for every team.
+            Review repository access, connection status, and code activity for every team.
           </CardDescription>
         </div>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -99,7 +99,7 @@ export function LinkedRepositoriesCard({ view }: { view: RepositoriesViewModel }
           <Alert>
             <Loader2 className="h-4 w-4 animate-spin" />
             <AlertTitle>Loading repositories</AlertTitle>
-            <AlertDescription>Reading linked repositories from the backend.</AlertDescription>
+            <AlertDescription>Loading linked repositories.</AlertDescription>
           </Alert>
         ) : view.repositories.length === 0 ? (
           <Alert>
@@ -107,7 +107,7 @@ export function LinkedRepositoriesCard({ view }: { view: RepositoriesViewModel }
             <AlertDescription>
               {view.repositorySearch || view.repositoryStatus !== 'all' || view.repositoryAccessState !== 'all'
                 ? 'Try changing the search text or filters.'
-                : 'Create repositories in bulk to start the GitHub workflow for this event.'}
+                : 'Create team repositories to get started.'}
             </AlertDescription>
           </Alert>
         ) : (

@@ -189,7 +189,7 @@ export function MentorAssignmentsView() {
         <div className="max-w-2xl">
           <h1 className="text-2xl font-semibold mb-1">Mentor Assignments</h1>
           <p className="text-sm text-muted-foreground">
-            Assign active mentor accounts to teams and surface ownership clearly.
+            Assign active mentors to confirmed teams.
           </p>
         </div>
         <div className="grid w-full gap-3 xl:w-auto xl:grid-cols-[minmax(280px,420px)_minmax(180px,240px)_auto]">
@@ -248,7 +248,7 @@ export function MentorAssignmentsView() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading mentor assignment data</AlertTitle>
-          <AlertDescription>Fetching teams and active mentor accounts for the selected event.</AlertDescription>
+          <AlertDescription>Loading confirmed teams and active mentors.</AlertDescription>
         </Alert>
       )}
 
