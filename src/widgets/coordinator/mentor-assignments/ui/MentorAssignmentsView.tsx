@@ -83,12 +83,12 @@ export function MentorAssignmentsView() {
   const updateMentorsMutation = useMutation({
     mutationFn: ({ teamId, mentorIds }: { teamId: string; mentorIds: string[] }) =>
       teamsApi.updateMentors(teamId, { mentorIds }),
-    onSuccess: async (response) => {
+    onSuccess: (response) => {
       const updatedTeam = response.data;
       toast.success('Mentor assignments saved', { description: updatedTeam.name });
-      setEditingTeam(updatedTeam);
-      setSelectedMentorIds(updatedTeam.mentorIds || []);
-      await Promise.all([
+      setEditingTeam(null);
+      setSelectedMentorIds([]);
+      void Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.teams.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.users.all }),
       ]);
@@ -101,13 +101,13 @@ export function MentorAssignmentsView() {
   const assignBoardMentorsMutation = useMutation({
     mutationFn: ({ eventId, boardNumber, mentorIds }: { eventId: string; boardNumber: number; mentorIds: string[] }) =>
       teamsApi.assignMentorsByBoard({ eventId, boardNumber, mentorIds }),
-    onSuccess: async (response) => {
+    onSuccess: (response) => {
       toast.success('Board mentor assignment saved', {
         description: `${response.data.updatedCount} team(s) updated in board ${response.data.boardNumber}.`,
       });
       setBulkAssignOpen(false);
       setSelectedMentorIds([]);
-      await Promise.all([
+      void Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.teams.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.users.all }),
       ]);

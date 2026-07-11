@@ -9,6 +9,12 @@ import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Workshop } from '@/shared/api/types';
 
+function canSubmitQuestionForWorkshop(workshop: Workshop | null) {
+  if (!workshop || !['SCHEDULED', 'LIVE'].includes(workshop.status)) return false;
+  const endTime = new Date(workshop.endTime);
+  return !Number.isNaN(endTime.getTime()) && new Date() <= endTime;
+}
+
 export function useParticipantWorkshopsView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
@@ -60,7 +66,7 @@ export function useParticipantWorkshopsView() {
     queryFn: () => workshopsApi.list({ eventId: activeEvent?.id }),
   });
 
-  const workshops = workshopsQuery.data?.data || workshopsQuery.data || [];
+  const workshops = workshopsQuery.data?.data || [];
 
   const workshopQuestionsQuery = useQuery({
     queryKey: queryKeys.workshops.questions(selectedWorkshop?.id, { page: 1, limit: 50 }),
@@ -68,7 +74,22 @@ export function useParticipantWorkshopsView() {
     queryFn: () => workshopsApi.listQuestions(selectedWorkshop!.id, { page: 1, limit: 50 }),
   });
 
-  const workshopQuestions = workshopQuestionsQuery.data?.data || workshopQuestionsQuery.data || [];
+  const workshopQuestions = workshopQuestionsQuery.data?.data || [];
+  const ownRatingQuery = useQuery({
+    queryKey: queryKeys.workshops.ratings(selectedWorkshop?.id, { page: 1, limit: 1, mine: true }),
+    enabled: isDetailOpen && Boolean(selectedWorkshop?.id),
+    queryFn: () => workshopsApi.listRatings(selectedWorkshop!.id, { page: 1, limit: 1, mine: true }),
+  });
+
+  const ownFeedbackQuery = useQuery({
+    queryKey: queryKeys.workshops.feedback(selectedWorkshop?.id, { page: 1, limit: 1, mine: true }),
+    enabled: isDetailOpen && Boolean(selectedWorkshop?.id),
+    queryFn: () => workshopsApi.listFeedback(selectedWorkshop!.id, { page: 1, limit: 1, mine: true }),
+  });
+
+  const ownRating = ownRatingQuery.data?.data?.ratings?.[0] || null;
+  const ownFeedback = ownFeedbackQuery.data?.data?.[0] || null;
+  const canSubmitQuestionForSelectedWorkshop = canSubmitQuestionForWorkshop(selectedWorkshop);
   const canCreateQuestion = userPermissions.includes('WORKSHOP_QUESTION_CREATE');
   const canVoteQuestion = userPermissions.includes('WORKSHOP_QUESTION_VOTE');
   const canCreateRating = userPermissions.includes('WORKSHOP_RATING_CREATE');
@@ -111,6 +132,9 @@ export function useParticipantWorkshopsView() {
       workshopsApi.createRating(workshopId, { rating }),
     onSuccess: () => {
       toast.success('Thank you for rating this workshop!');
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.workshops.ratings(selectedWorkshop?.id, { page: 1, limit: 1, mine: true }),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.workshops.lists() });
     },
     onError: (error: unknown) => {
@@ -126,6 +150,9 @@ export function useParticipantWorkshopsView() {
     onSuccess: () => {
       toast.success('Feedback submitted successfully');
       setFeedbackContent('');
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.workshops.feedback(selectedWorkshop?.id, { page: 1, limit: 1, mine: true }),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.workshops.lists() });
     },
     onError: (error: unknown) => {
@@ -210,8 +237,13 @@ export function useParticipantWorkshopsView() {
     canCreateQuestion,
     workshopQuestions,
     workshopQuestionsQuery,
+    ownRating,
+    ownRatingQuery,
+    ownFeedback,
+    ownFeedbackQuery,
     voteQuestionMutation,
     canVoteQuestion,
+    canSubmitQuestionForSelectedWorkshop,
     ratingValue,
     setRatingValue,
     handleRateWorkshop,

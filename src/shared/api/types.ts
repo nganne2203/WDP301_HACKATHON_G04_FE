@@ -1434,6 +1434,11 @@ export interface WorkshopRatingStats {
   totalRatings: number;
 }
 
+export interface WorkshopRatingListData {
+  ratings: WorkshopRating[];
+  stats: WorkshopRatingStats;
+}
+
 export interface WorkshopFeedback {
   id: string;
   workshopId: string;
