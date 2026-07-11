@@ -18,17 +18,99 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { participantsApi, workshopsApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
-import type { Workshop } from '@/shared/api/types';
+import type { Participant, Workshop } from '@/shared/api/types';
 import { useStore } from '@/entities/session/model/store';
 import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { EventCheckInQrPanel } from './EventCheckInQrPanel';
+
+const EXPORT_PAGE_SIZE = 100;
+
+function escapeExcelCell(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatExportDate(value?: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}
+
+function normalizeExportFilename(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'event';
+}
+
+function downloadFile(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function buildAttendanceExcel(eventTitle: string, participants: Participant[]) {
+  const headers = [
+    'Participant',
+    'Email',
+    'Team',
+    'Team Role',
+    'Check-in Status',
+    'Checked In At',
+    'Participant Status',
+    'Eligibility Status',
+    'GitHub Access Status',
+    'Joined At',
+  ];
+  const rows = participants.map((participant) => [
+    participant.user?.fullName || '-',
+    participant.user?.email || '-',
+    participant.team?.name || 'No team',
+    participant.teamRole || '',
+    participant.checkInStatus === 'CHECKED_IN' ? 'Checked In' : 'Not Checked In',
+    formatExportDate(participant.checkedInAt),
+    participant.status || '',
+    participant.eligibilityStatus || '',
+    participant.githubAccessStatus || '',
+    formatExportDate(participant.joinedAt),
+  ]);
+  const tableRows = [
+    `<tr><th colspan="${headers.length}">Attendance List - ${escapeExcelCell(eventTitle)}</th></tr>`,
+    `<tr><td colspan="${headers.length}">Exported at ${escapeExcelCell(new Date().toLocaleString())}</td></tr>`,
+    `<tr>${headers.map((header) => `<th>${escapeExcelCell(header)}</th>`).join('')}</tr>`,
+    ...rows.map((row) => `<tr>${row.map((value) => `<td>${escapeExcelCell(value)}</td>`).join('')}</tr>`),
+  ].join('');
+
+  return [
+    '<html>',
+    '<head><meta charset="UTF-8" /></head>',
+    '<body>',
+    '<table border="1">',
+    tableRows,
+    '</table>',
+    '</body>',
+    '</html>',
+  ].join('');
+}
 
 export function Checkin() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((s) => s.selectedEvent);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [page, setPage] = useState(1);
+  const [isExporting, setIsExporting] = useState(false);
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -96,6 +178,59 @@ export function Checkin() {
   });
 
   const workshops = workshopsResponse?.data || [];
+
+  async function handleExportAttendance() {
+    if (!activeEvent?.id) {
+      toast.error('Select an event before exporting attendance.');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const firstPage = await participantsApi.list({
+        eventId: activeEvent.id,
+        page: 1,
+        limit: EXPORT_PAGE_SIZE,
+      });
+      const totalPages = firstPage.pagination?.totalPages || 1;
+      const remainingPages = totalPages > 1
+        ? await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) => participantsApi.list({
+            eventId: activeEvent.id,
+            page: index + 2,
+            limit: EXPORT_PAGE_SIZE,
+          }))
+        )
+        : [];
+      const allParticipants = [
+        ...(firstPage.data || []),
+        ...remainingPages.flatMap((response) => response.data || []),
+      ];
+
+      if (allParticipants.length === 0) {
+        toast.error('No attendance records to export.');
+        return;
+      }
+
+      const content = buildAttendanceExcel(activeEvent.title, allParticipants);
+      const eventSlug = normalizeExportFilename(activeEvent.title);
+      const dateSlug = new Date().toISOString().slice(0, 10);
+      downloadFile(
+        `attendance-${eventSlug}-${dateSlug}.xls`,
+        content,
+        'application/vnd.ms-excel;charset=utf-8'
+      );
+      toast.success('Attendance exported', {
+        description: `Exported ${allParticipants.length} participant(s) to Excel.`,
+      });
+    } catch (error) {
+      toast.error('Could not export attendance', {
+        description: error instanceof ApiError ? error.firstError : 'Unknown error',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -245,9 +380,18 @@ export function Checkin() {
           <div className="flex items-center justify-between">
             <CardTitle>Attendance List</CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Export
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportAttendance}
+                disabled={!activeEvent?.id || participantsLoading || isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                {isExporting ? 'Exporting' : 'Export'}
               </Button>
             </div>
           </div>
