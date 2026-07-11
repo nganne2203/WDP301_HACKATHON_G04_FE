@@ -28,13 +28,17 @@ export function useWorkshopsView() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [selectedQuestionsWorkshop, setSelectedQuestionsWorkshop] = useState<Workshop | null>(null);
+  const [selectedReviewsWorkshop, setSelectedReviewsWorkshop] = useState<Workshop | null>(null);
   const [questionContent, setQuestionContent] = useState('');
   const [createForm, setCreateForm] = useState<WorkshopFormState>(createEmptyWorkshopForm());
   const [editForm, setEditForm] = useState<WorkshopFormState>(createEmptyWorkshopForm());
   const canCreateWorkshopQuestions = useStore((state) => state.hasPermission('WORKSHOP_QUESTION_CREATE'));
   const canVoteWorkshopQuestions = useStore((state) => state.hasPermission('WORKSHOP_QUESTION_VOTE'));
+  const canViewWorkshopRatings = useStore((state) => state.hasPermission('WORKSHOP_RATING_VIEW'));
+  const canViewWorkshopFeedback = useStore((state) => state.hasPermission('WORKSHOP_FEEDBACK_VIEW'));
 
   const eventsQuery = useEventsQuery();
 
@@ -75,6 +79,18 @@ export function useWorkshopsView() {
     queryKey: queryKeys.workshops.questions(selectedQuestionsWorkshop?.id, { page: 1, limit: 50 }),
     enabled: questionsOpen && Boolean(selectedQuestionsWorkshop?.id),
     queryFn: () => workshopsApi.listQuestions(selectedQuestionsWorkshop!.id, { page: 1, limit: 50 }),
+  });
+
+  const workshopRatingsQuery = useQuery({
+    queryKey: queryKeys.workshops.ratings(selectedReviewsWorkshop?.id, { page: 1, limit: 100 }),
+    enabled: reviewsOpen && Boolean(selectedReviewsWorkshop?.id) && canViewWorkshopRatings,
+    queryFn: () => workshopsApi.listRatings(selectedReviewsWorkshop!.id, { page: 1, limit: 100 }),
+  });
+
+  const workshopFeedbackQuery = useQuery({
+    queryKey: queryKeys.workshops.feedback(selectedReviewsWorkshop?.id, { page: 1, limit: 100 }),
+    enabled: reviewsOpen && Boolean(selectedReviewsWorkshop?.id) && canViewWorkshopFeedback,
+    queryFn: () => workshopsApi.listFeedback(selectedReviewsWorkshop!.id, { page: 1, limit: 100 }),
   });
 
   const createMutation = useMutation({
@@ -199,6 +215,11 @@ export function useWorkshopsView() {
     setQuestionsOpen(true);
   };
 
+  const openReviewsDialog = (workshop: Workshop) => {
+    setSelectedReviewsWorkshop(workshop);
+    setReviewsOpen(true);
+  };
+
   const canSubmitWorkshopQuestion = selectedQuestionsWorkshop ? canSubmitQuestionForWorkshop(selectedQuestionsWorkshop) : false;
 
   const handleCreateQuestion = () => {
@@ -232,12 +253,17 @@ export function useWorkshopsView() {
     liveCount,
     openEditDialog,
     openQuestionsDialog,
+    openReviewsDialog,
     questionsOpen,
+    reviewsOpen,
     selectedWorkshop,
     selectedQuestionsWorkshop,
+    selectedReviewsWorkshop,
     canCreateWorkshopQuestions,
     canSubmitWorkshopQuestion,
     canVoteWorkshopQuestions,
+    canViewWorkshopFeedback,
+    canViewWorkshopRatings,
     createQuestionMutation,
     questionContent,
     setCreateForm,
@@ -251,6 +277,12 @@ export function useWorkshopsView() {
       if (!open) {
         setSelectedQuestionsWorkshop(null);
         setQuestionContent('');
+      }
+    },
+    setReviewsOpen: (open: boolean) => {
+      setReviewsOpen(open);
+      if (!open) {
+        setSelectedReviewsWorkshop(null);
       }
     },
     setSelectedEventId: (eventId: string) => {
@@ -268,6 +300,11 @@ export function useWorkshopsView() {
     workshops,
     workshopQuestions: workshopQuestionsQuery.data?.data || [],
     workshopQuestionsQuery,
+    workshopRatings: workshopRatingsQuery.data?.data?.ratings || [],
+    workshopRatingStats: workshopRatingsQuery.data?.data?.stats || { averageRating: 0, totalRatings: 0 },
+    workshopRatingsQuery,
+    workshopFeedback: workshopFeedbackQuery.data?.data || [],
+    workshopFeedbackQuery,
     workshopsQuery,
     updateMutation,
     voteQuestionMutation,
