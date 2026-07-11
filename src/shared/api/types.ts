@@ -1435,7 +1435,7 @@ export interface WorkshopRatingStats {
   totalRatings: number;
 }
 
-export interface WorkshopRatingsResult {
+export interface WorkshopRatingListData {
   ratings: WorkshopRating[];
   stats: WorkshopRatingStats;
 }

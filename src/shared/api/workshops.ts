@@ -5,6 +5,7 @@ import type {
   WorkshopQuestion,
   WorkshopRating,
   WorkshopFeedback,
+  WorkshopRatingListData,
   WorkshopRatingStats,
   WorkshopRatingsResult,
 } from './types';
@@ -69,8 +70,10 @@ export const workshopsApi = {
   createRating: (id: string, data: { rating: number }) =>
     api.post<WorkshopRating>(`/workshops/${id}/ratings`, data),
 
-  listRatings: (id: string, query?: { page?: number; limit?: number }) =>
-    api.get<WorkshopRatingsResult>(`/workshops/${id}/ratings`, { params: query as Record<string, string | number | undefined> }),
+  listRatings: (id: string, query?: { page?: number; limit?: number; mine?: boolean }) =>
+    api.get<WorkshopRatingListData>(`/workshops/${id}/ratings`, {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
 
   getRatingStats: async (id: string): Promise<ApiSuccessResponse<WorkshopRatingStats>> => {
     const response = await api.get<WorkshopRatingsResult>(`/workshops/${id}/ratings`, { params: { limit: 1 } });
@@ -83,6 +86,8 @@ export const workshopsApi = {
   createFeedback: (id: string, data: { comment: string }) =>
     api.post<WorkshopFeedback>(`/workshops/${id}/feedback`, data),
 
-  listFeedback: (id: string, query?: { page?: number; limit?: number }) =>
-    api.get<WorkshopFeedback[]>(`/workshops/${id}/feedback`, { params: query as Record<string, string | number | undefined> }),
+  listFeedback: (id: string, query?: { page?: number; limit?: number; mine?: boolean }) =>
+    api.get<WorkshopFeedback[]>(`/workshops/${id}/feedback`, {
+      params: query as Record<string, string | number | boolean | undefined>,
+    }),
 };
