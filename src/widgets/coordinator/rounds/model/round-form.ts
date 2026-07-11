@@ -206,9 +206,14 @@ export function isJudgeUser(user: User) {
   return roleNames.includes('JUDGE') || roleNames.includes('ADMIN');
 }
 
+const ROUND_ASSIGNABLE_TEAM_STATUSES: Team['status'][] = ['CONFIRMED'];
+
 export function filterTeamsByTrack(teams: Team[], trackId: string) {
-  if (trackId === 'none') return teams;
-  return teams.filter((team) => team.trackId === trackId);
+  return teams.filter((team) => {
+    const hasAssignableStatus = ROUND_ASSIGNABLE_TEAM_STATUSES.includes(team.status);
+    const matchesTrack = trackId === 'none' || team.trackId === trackId;
+    return hasAssignableStatus && matchesTrack;
+  });
 }
 
 export function getRoundErrorMessage(error: unknown) {
