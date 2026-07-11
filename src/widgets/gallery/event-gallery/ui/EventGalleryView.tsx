@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router';
-import { ArrowLeft, Loader2, Search } from 'lucide-react';
+import { useParams } from 'react-router';
+import { Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { eventsApi } from '@/entities/event/api';
+import { useStore } from '@/entities/session/model/store';
 import { mediaApi } from '@/entities/media/api';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { MediaItem, MediaType } from '@/shared/api/types';
-import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
@@ -18,6 +18,8 @@ const MEDIA_TYPES: MediaType[] = ['IMAGE', 'VIDEO', 'DOCUMENT'];
 
 export function EventGallery() {
   const { eventId = '' } = useParams();
+  const selectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
   const [mediaType, setMediaType] = useState('ALL');
   const [search, setSearch] = useState('');
   const [viewMedia, setViewMedia] = useState<MediaItem | null>(null);
@@ -41,6 +43,28 @@ export function EventGallery() {
   });
 
   const gallery = galleryResponse?.data;
+
+  useEffect(() => {
+    const event = eventResponse?.data;
+    if (!event) return;
+
+    if (
+      selectedEvent?.id === event.id &&
+      selectedEvent.title === event.title &&
+      selectedEvent.semester === (event.semester || '') &&
+      selectedEvent.status === event.status
+    ) {
+      return;
+    }
+
+    setSelectedEvent({
+      id: event.id,
+      title: event.title,
+      semester: event.semester || '',
+      status: event.status,
+    });
+  }, [eventResponse?.data, selectedEvent, setSelectedEvent]);
+
   const allItems = useMemo(() => {
     if (!gallery) return [];
     return [...gallery.images, ...gallery.videos, ...gallery.documents];
@@ -66,12 +90,6 @@ export function EventGallery() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <Button asChild variant="ghost" className="-ml-3 mb-2">
-            <Link to="/participant/media">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to media
-            </Link>
-          </Button>
           <h1 className="text-2xl font-semibold">Event Gallery</h1>
           <p className="text-sm text-muted-foreground">
             {eventResponse?.data.title || 'Approved event media'}

@@ -13,7 +13,9 @@ export function ParticipantTeam() {
   const {
     activeEventId,
     canChangeInvitations,
+    canLeaveTeam,
     cancelMutation,
+    createValidationPending,
     createTeamMutation,
     events,
     eventsQuery,
@@ -21,25 +23,27 @@ export function ParticipantTeam() {
     handleInvite,
     inviteMutation,
     invitedMembers,
+    isLeader,
+    leaveTeamMutation,
     newInvitedMembers,
-    projectName,
     registrationOpen,
     replacementEmails,
     replaceMutation,
     selectedEvent,
     setInvitedMembers,
     setNewInvitedMembers,
-    setProjectName,
     setReplacementEmails,
     setSelectedEventId,
     setTeamName,
     team,
+    teamNameChecking,
+    teamNameValidationMessage,
     teamName,
     teamQuery,
   } = useParticipantTeamView();
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold mb-1">My Team</h1>
@@ -88,14 +92,15 @@ export function ParticipantTeam() {
 
       {!teamQuery.isLoading && !team && (
         <CreateTeamCard
-          createPending={createTeamMutation.isPending}
+          activeEventId={activeEventId}
+          createPending={createTeamMutation.isPending || createValidationPending}
           invitedMembers={invitedMembers}
           onCreateTeam={handleCreateTeam}
-          projectName={projectName}
           registrationOpen={registrationOpen}
           setInvitedMembers={setInvitedMembers}
-          setProjectName={setProjectName}
           setTeamName={setTeamName}
+          teamNameChecking={teamNameChecking}
+          teamNameValidationMessage={teamNameValidationMessage}
           teamName={teamName}
         />
       )}
@@ -107,7 +112,11 @@ export function ParticipantTeam() {
           <TeamOverviewCard
             team={team}
             eventTitle={selectedEvent?.title}
+            isLeader={isLeader}
+            leavePending={leaveTeamMutation.isPending}
             minTeamMembers={selectedEvent?.minTeamMembers}
+            onLeaveTeam={() => leaveTeamMutation.mutate(team.id)}
+            canLeaveTeam={canLeaveTeam}
           />
 
           <TeamInvitationsCard

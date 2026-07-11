@@ -7,11 +7,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui/table';
+import type { MediaStatistics } from '@/shared/api/types';
+
+function getParticipantLabel(item: MediaStatistics['mostActiveParticipants'][number]) {
+  return item.participant?.fullName || item.participant?.email || item.participantId;
+}
+
+function getMediaLabel(item: MediaStatistics['mostViewedMedia'][number]) {
+  return item.media?.title || item.media?.originalFileName || item.mediaId;
+}
 
 export function AdminMediaLeadersCard({
   statistics,
 }: {
-  statistics: any;
+  statistics?: MediaStatistics;
 }) {
   return (
     <Card className="rounded-lg">
@@ -30,9 +39,14 @@ export function AdminMediaLeadersCard({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(statistics?.mostActiveParticipants || []).slice(0, 5).map((item: any) => (
+              {(statistics?.mostActiveParticipants || []).slice(0, 5).map((item) => (
                 <TableRow key={item.participantId}>
-                  <TableCell className="max-w-[220px] truncate">{item.participantId}</TableCell>
+                  <TableCell className="max-w-[220px]">
+                    <span className="block truncate font-medium">{getParticipantLabel(item)}</span>
+                    {item.participant?.email && item.participant.email !== getParticipantLabel(item) && (
+                      <span className="block truncate text-xs text-muted-foreground">{item.participant.email}</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">{item.uploads}</TableCell>
                 </TableRow>
               ))}
@@ -49,9 +63,14 @@ export function AdminMediaLeadersCard({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(statistics?.mostViewedMedia || []).slice(0, 5).map((item: any) => (
+              {(statistics?.mostViewedMedia || []).slice(0, 5).map((item) => (
                 <TableRow key={item.mediaId}>
-                  <TableCell className="max-w-[220px] truncate">{item.mediaId}</TableCell>
+                  <TableCell className="max-w-[220px]">
+                    <span className="block truncate font-medium">{getMediaLabel(item)}</span>
+                    {item.media?.originalFileName && item.media.originalFileName !== getMediaLabel(item) && (
+                      <span className="block truncate text-xs text-muted-foreground">{item.media.originalFileName}</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">{item.views}</TableCell>
                 </TableRow>
               ))}

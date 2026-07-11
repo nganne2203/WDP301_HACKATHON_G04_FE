@@ -95,7 +95,7 @@ export function Rounds() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={() => view.activeEvent && view.createMutation.mutate(view.buildCreateRoundPayload(view.createForm, view.activeEvent.id))}
+                  onClick={view.submitCreateRound}
                   disabled={view.createMutation.isPending || !view.createForm.name.trim()}
                 >
                   {view.createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Round'}
@@ -235,7 +235,7 @@ export function Rounds() {
               Cancel
             </Button>
             <Button
-              onClick={() => view.selectedRound && view.updateMutation.mutate({ id: view.selectedRound.id, payload: view.buildUpdateRoundPayload(view.editForm) })}
+              onClick={view.submitUpdateRound}
               disabled={view.updateMutation.isPending || !view.editForm.name.trim()}
             >
               {view.updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}

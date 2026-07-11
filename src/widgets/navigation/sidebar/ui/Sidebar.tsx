@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 import { cn } from '@/shared/lib/cn';
-import { Award, UserCircle } from 'lucide-react';
+import { UserCircle, Images } from 'lucide-react';
 import { useStore } from '@/entities/session/model/store';
 import { getNavigationItems } from '@/widgets/navigation/model/navigation';
 
@@ -10,8 +10,26 @@ export const Sidebar = memo(function Sidebar() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
   const sidebarCollapsed = useStore((state) => state.sidebarCollapsed);
+  const selectedEvent = useStore((state) => state.selectedEvent);
 
-  const navItems = useMemo(() => getNavigationItems(appRole), [appRole]);
+  const navItems = useMemo(() => {
+    const baseItems = getNavigationItems(appRole);
+    const eventGalleryMatch = location.pathname.match(/^\/events\/([^/]+)\/gallery$/);
+    const eventGalleryEventId = eventGalleryMatch?.[1] || selectedEvent?.id;
+
+    if (appRole === 'mentor' || appRole === 'speaker') {
+      return [
+        ...baseItems,
+        {
+          icon: Images,
+          label: 'Event Gallery',
+          href: eventGalleryEventId ? `/events/${eventGalleryEventId}/gallery` : '',
+          disabled: !eventGalleryEventId,
+        },
+      ];
+    }
+    return baseItems;
+  }, [appRole, location.pathname, selectedEvent?.id]);
 
   const displayName = user?.fullName || 'User';
   const primaryRole = appRole || 'participant';
@@ -24,8 +42,12 @@ export const Sidebar = memo(function Sidebar() {
       )}
     >
       <div className="flex items-center gap-3 h-16 px-4 border-b border-border">
-        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-white">
-          <Award className="w-6 h-6" />
+        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-black shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden">
+          <img
+            src="/assets/Logo1.png"
+            alt="SEAL logo"
+            className="h-7 w-7 scale-150 object-contain"
+          />
         </div>
         {!sidebarCollapsed && (
           <div>
@@ -38,21 +60,40 @@ export const Sidebar = memo(function Sidebar() {
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.href;
+          const isActive = !item.disabled && location.pathname === item.href;
 
-          return (
+          const itemClassName = cn(
+            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+            item.disabled
+              ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
+              : isActive
+                ? 'bg-blue-50 text-blue-700 font-medium'
+                : 'text-gray-700 hover:bg-gray-100'
+          );
+
+          const content = (
+            <>
+              <Icon className="w-5 h-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </>
+          );
+
+          return item.disabled ? (
+            <div
+              key={`disabled-${item.label}`}
+              aria-disabled="true"
+              className={itemClassName}
+              title="Select an event to open the gallery"
+            >
+              {content}
+            </div>
+          ) : (
             <Link
               key={item.href}
               to={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                isActive
-                  ? 'bg-blue-50 text-blue-700 font-medium'
-                  : 'text-gray-700 hover:bg-gray-100'
-              )}
+              className={itemClassName}
             >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span>{item.label}</span>}
+              {content}
             </Link>
           );
         })}

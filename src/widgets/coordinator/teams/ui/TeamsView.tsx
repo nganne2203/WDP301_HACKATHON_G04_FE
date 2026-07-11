@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Crown, Loader2, Mail, Users } from 'lucide-react';
+import { Loader2, Mail, UserRound, Users } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Progress } from '@/shared/ui/progress';
@@ -17,98 +16,56 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/shared/ui/sheet';
-import { teamsApi } from '@/entities/team/api';
+import { TeamDetail, teamsApi } from '@/entities/team';
 import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Team } from '@/shared/api/types';
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
-function getInitials(value?: string) {
-  return (value || '?')
-    .split(/[.\s@_-]+/)
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
-
 function statusBadgeVariant(status: string): BadgeVariant {
-  if (status === 'CONFIRMED' || status === 'ACTIVE') return 'default';
-  if (status === 'REJECTED' || status === 'DISQUALIFIED') return 'destructive';
+  if (status === 'CONFIRMED') return 'default';
+  if (status === 'REJECTED' || status === 'CANCELLED') return 'destructive';
   return 'secondary';
 }
 
 function getConfirmedMemberCount(team: Team) {
-  const activeParticipants = team.participants.filter((participant) => participant.status === 'ACTIVE');
-  return activeParticipants.length || team.members.length;
+  const activeParticipants = team.participants
+    ? team.participants.filter((participant) => participant.status === 'JOINED')
+    : [];
+  return activeParticipants.length || (team.members?.length || 0);
 }
 
 function getTotalMemberCount(team: Team) {
-  return team.participants.length || team.members.length;
-}
-
-function TeamDetail({ team }: { team: Team }) {
-  const confirmedMemberCount = getConfirmedMemberCount(team);
-  const totalMemberCount = getTotalMemberCount(team);
-
-  return (
-    <div className="mt-6 space-y-6 px-1 pb-6">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-md border p-4">
-          <p className="text-xs text-muted-foreground">Confirmed members</p>
-          <p className="text-lg font-semibold">{confirmedMemberCount}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{totalMemberCount} total member(s)</p>
-        </div>
-        <div className="rounded-md border p-4">
-          <p className="text-xs text-muted-foreground">Pending invites</p>
-          <p className="text-lg font-semibold">
-            {team.invitations.filter((invitation) => invitation.status === 'PENDING').length}
-          </p>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-medium mb-3">Members</h3>
-        <div className="space-y-2">
-          {team.participants.map((participant) => (
-            <div key={participant.id} className="flex items-center gap-3 rounded-md border px-4 py-3">
-              <Avatar className="w-9 h-9">
-                <AvatarFallback className="bg-blue-100 text-blue-700 text-sm">
-                  {getInitials(participant.user?.fullName || participant.user?.email)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{participant.user?.fullName || participant.user?.email}</p>
-                <p className="text-xs text-muted-foreground truncate">{participant.user?.email}</p>
-              </div>
-              <Badge variant={statusBadgeVariant(participant.status)}>{participant.status}</Badge>
-              {participant.teamRole === 'LEADER' && <Crown className="w-4 h-4 text-yellow-500" />}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-medium mb-3">Invitations</h3>
-        <div className="space-y-2">
-          {team.invitations.length === 0 && (
-            <p className="rounded-md border border-dashed px-4 py-3 text-sm text-muted-foreground">No invitations recorded.</p>
-          )}
-          {team.invitations.map((invitation) => (
-            <div key={invitation.id} className="flex items-center justify-between gap-3 rounded-md border px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{invitation.invitedEmail}</p>
-                <p className="text-xs text-muted-foreground">Expires {new Date(invitation.expiresAt).toLocaleString()}</p>
-              </div>
-              <Badge variant={statusBadgeVariant(invitation.status)}>{invitation.status}</Badge>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+  const participantEmails = new Set(
+    (team.participants || [])
+      .map((participant) => participant.user?.email?.trim().toLowerCase())
+      .filter(Boolean)
   );
+  const participantIds = new Set(
+    (team.participants || [])
+      .map((participant) => participant.user?.id)
+      .filter(Boolean)
+  );
+
+  let total = (team.participants || []).length;
+
+  for (const invitation of team.invitations || []) {
+    const invitedEmail = invitation.invitedEmail?.trim().toLowerCase();
+    const invitedUserId = invitation.invitedUserId;
+    const invitedUserEmail = invitation.invitedUser?.email?.trim().toLowerCase();
+
+    const matchesParticipant =
+      (invitedUserId && participantIds.has(invitedUserId)) ||
+      (invitedUserEmail && participantEmails.has(invitedUserEmail)) ||
+      (invitedEmail && participantEmails.has(invitedEmail));
+
+    if (!matchesParticipant) {
+      total += 1;
+    }
+  }
+
+  return total || (team.members?.length || 0);
 }
 
 export function Teams() {
@@ -124,14 +81,14 @@ export function Teams() {
   }, [events, selectedEventId]);
 
   const teamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, page, limit: 10 }),
+    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, page, limit: 12 }),
     enabled: Boolean(activeEvent?.id),
-    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
+    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, page, limit: 12 }),
   });
 
   const teams = teamsQuery.data?.data || [];
   const pagination = teamsQuery.data?.pagination;
-  const confirmedTeams = teams.filter((team) => team.status === 'CONFIRMED' || team.status === 'ACTIVE').length;
+  const confirmedTeams = teams.filter((team) => team.status === 'CONFIRMED').length;
   const maxTeams = activeEvent?.maxTeams || 30;
   const capacityPercent = maxTeams > 0 ? Math.min(Math.round((confirmedTeams / maxTeams) * 100), 100) : 0;
 
@@ -191,20 +148,22 @@ export function Teams() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {teams.map((team) => (
           <Sheet key={team.id}>
             <SheetTrigger asChild>
               <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <CardTitle className="text-lg truncate">{team.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground truncate mt-1">
-                        {team.projectName || team.event?.title}
+                <CardHeader className="space-y-3">
+                  <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-lg break-words">{team.name}</CardTitle>
+                      <p className="mt-1 text-sm text-muted-foreground break-words">
+                        {team.event?.title}
                       </p>
                     </div>
-                    <Badge variant={statusBadgeVariant(team.status)}>{team.status.replaceAll('_', ' ')}</Badge>
+                    <Badge className="w-fit shrink-0 self-start" variant={statusBadgeVariant(team.status)}>
+                      {team.status.replaceAll('_', ' ')}
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -215,6 +174,10 @@ export function Teams() {
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <span>{team.invitations.filter((invitation) => invitation.status === 'PENDING').length} pending invite(s)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <UserRound className="w-4 h-4 text-muted-foreground" />
+                    <span>{team.assignedMentors?.length || 0} mentor(s) assigned</span>
                   </div>
                   <div className="pt-2">
                     <Progress value={Math.min((getConfirmedMemberCount(team) / (team.event?.minTeamMembers || 3)) * 100, 100)} />

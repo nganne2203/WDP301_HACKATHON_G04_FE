@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
@@ -9,7 +10,7 @@ import { repositoriesApi } from '@/entities/repository/api';
 import { rubricsApi } from '@/entities/rubric/api';
 import { scoringApi } from '@/entities/score-sheet/api';
 import { submissionsApi } from '@/entities/submission/api';
-import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { useEventsQuery, useRoundsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Criterion, JudgingBoard, Round, ScoreSheet } from '@/shared/api/types';
 
@@ -22,10 +23,28 @@ export function getJudgeScoringErrorMessage(error: unknown) {
 export function useJudgeScoringView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
+  const [searchParams] = useSearchParams();
 
-  const [selectedEventId, setSelectedEventId] = useState('');
-  const [selectedRoundId, setSelectedRoundId] = useState('');
-  const [selectedTeamId, setSelectedTeamId] = useState('');
+  const urlEventId = searchParams.get('eventId') || '';
+  const urlRoundId = searchParams.get('roundId') || '';
+  const urlTeamId = searchParams.get('teamId') || '';
+
+  const [selectedEventId, setSelectedEventId] = useState(urlEventId);
+  const [selectedRoundId, setSelectedRoundId] = useState(urlRoundId);
+  const [selectedTeamId, setSelectedTeamId] = useState(urlTeamId);
+
+  useEffect(() => {
+    if (urlEventId) setSelectedEventId(urlEventId);
+  }, [urlEventId]);
+
+  useEffect(() => {
+    if (urlRoundId) setSelectedRoundId(urlRoundId);
+  }, [urlRoundId]);
+
+  useEffect(() => {
+    if (urlTeamId) setSelectedTeamId(urlTeamId);
+  }, [urlTeamId]);
+
   const [scores, setScores] = useState<Record<string, number>>({});
   const [comments, setComments] = useState<Record<string, string>>({});
   const [generalComment, setGeneralComment] = useState('');
@@ -33,11 +52,26 @@ export function useJudgeScoringView() {
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => events.find((event) => event.id === selectedEventId) || events[0] || null, [events, selectedEventId]);
+  
+  const activeEvent = useMemo(() => {
+    if (selectedEventId) {
+      return events.find((event) => event.id === selectedEventId) || null;
+    }
+    return selectDefaultEvent(events);
+  }, [events, selectedEventId]);
 
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
   const rounds: Round[] = roundsQuery.data || [];
-  const activeRound = useMemo(() => rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null, [rounds, selectedRoundId]);
+  
+  const activeRound = useMemo(() => {
+    if (selectedRoundId) {
+      return rounds.find((round) => round.id === selectedRoundId) || null;
+    }
+    const ongoingRound = rounds.find(
+      (round) => round.status?.toUpperCase() === 'ONGOING' || round.status?.toUpperCase() === 'ACTIVE'
+    );
+    return ongoingRound || rounds[0] || null;
+  }, [rounds, selectedRoundId]);
 
   const boardQuery = useQuery({
     queryKey: queryKeys.judging.boards(activeRound?.id),

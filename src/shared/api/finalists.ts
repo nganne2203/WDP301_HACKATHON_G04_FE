@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { ListRankingsQuery, Ranking, SelectFinalistsRequest, SelectFinalistsResult } from './types';
+import type { ListRankingsQuery, Ranking, SelectFinalistsRequest, SelectFinalistsResult, SelectManualFinalistsRequest } from './types';
 
 export const finalistsApi = {
   list: (query?: ListRankingsQuery) =>
@@ -7,4 +7,7 @@ export const finalistsApi = {
 
   select: (data: SelectFinalistsRequest) =>
     api.post<SelectFinalistsResult>('/finalists/select', data),
+
+  selectManual: (data: SelectManualFinalistsRequest) =>
+    api.post<SelectFinalistsResult>('/finalists/manual', data),
 };

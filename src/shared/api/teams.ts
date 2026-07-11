@@ -1,5 +1,7 @@
 import { api } from './client';
 import type {
+  AssignMentorsByBoardRequest,
+  AssignMentorsByBoardResult,
   CreateTeamRequest,
   InvitationDecisionResult,
   InviteMembersRequest,
@@ -7,7 +9,10 @@ import type {
   ListTeamsQuery,
   ReplaceInvitationRequest,
   Team,
+  TeamAvailability,
+  TeamInviteEligibility,
   TeamInvitation,
+  UpdateTeamMentorsRequest,
 } from './types';
 
 export const teamsApi = {
@@ -17,11 +22,26 @@ export const teamsApi = {
   create: (data: CreateTeamRequest) =>
     api.post<Team>('/teams', data),
 
+  checkAvailability: (query: { eventId: string; name: string }) =>
+    api.get<TeamAvailability>('/teams/availability', { params: query }),
+
+  checkInviteEligibility: (query: { eventId: string; email: string; githubUsername?: string }) =>
+    api.get<TeamInviteEligibility>('/teams/invite-eligibility', { params: query }),
+
   getById: (id: string) =>
     api.get<Team>(`/teams/${id}`),
 
   getMyTeam: (eventId: string) =>
     api.get<Team>('/teams/my', { params: { eventId } }),
+
+  leave: (teamId: string) =>
+    api.post<Team>(`/teams/${teamId}/leave`),
+
+  updateMentors: (teamId: string, data: UpdateTeamMentorsRequest) =>
+    api.patch<Team>(`/teams/${teamId}/mentors`, data),
+
+  assignMentorsByBoard: (data: AssignMentorsByBoardRequest) =>
+    api.patch<AssignMentorsByBoardResult>('/teams/mentor-assignments/by-board', data),
 
   inviteMembers: (teamId: string, data: InviteMembersRequest) =>
     api.post<InviteMembersResult>(`/teams/${teamId}/invitations`, data),

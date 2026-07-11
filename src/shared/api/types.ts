@@ -117,6 +117,7 @@ export interface User {
   id: string;
   email: string;
   authProvider: 'LOCAL' | 'GOOGLE';
+  registrationSource: 'FORM' | 'GOOGLE';
   fullName: string;
   status: UserStatus;
   mustChangePassword: boolean;
@@ -136,7 +137,7 @@ export interface User {
   updatedAt: string;
 }
 
-export type UserStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+export type UserStatus = 'PENDING' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED';
 
 export interface EmailDeliveryResult {
   sent: boolean;
@@ -150,6 +151,33 @@ export interface EmailDeliveryResult {
 
 export type UserEmailNotification = EmailDeliveryResult;
 
+export type NotificationType = 'DEADLINE' | 'WORKSHOP' | 'RESULT' | 'FEEDBACK' | 'SYSTEM';
+export type NotificationStatus = 'UNREAD' | 'READ';
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message?: string | null;
+  type: NotificationType;
+  status: NotificationStatus;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListNotificationsQuery {
+  page?: number;
+  limit?: number;
+  status?: NotificationStatus;
+  type?: NotificationType;
+}
+
+export interface MarkAllNotificationsReadResult {
+  matchedCount: number;
+  modifiedCount: number;
+}
+
 export type UserRoleName =
   | 'ADMIN'
   | 'EVENT_COORDINATOR'
@@ -157,7 +185,6 @@ export type UserRoleName =
   | 'JUDGE'
   | 'MENTOR'
   | 'SPEAKER'
-  | 'USER'
   | 'PARTICIPANT';
 
 export interface TokenPair {
@@ -176,6 +203,13 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface GoogleLoginRequest {
+  googleId: string;
+  email: string;
+  name: string;
+  avatar: string | null;
+}
+
 export interface RegisterRequest {
   email: string;
   password: string;
@@ -192,6 +226,15 @@ export interface RefreshTokenRequest {
 
 export interface ChangePasswordRequest {
   currentPassword: string;
+  newPassword: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
   newPassword: string;
 }
 
@@ -234,10 +277,26 @@ export interface Event {
   maxTeamMembers?: number;
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
+  competitionConfig?: CompetitionConfig;
   status: EventStatus;
   createdBy?: EventCreator | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type FinalistSelectionMode = 'FIXED_PER_BOARD' | 'TOP_PER_BOARD_WITH_WILDCARD' | 'OVERALL_SCORE' | 'CUSTOM';
+
+export interface CompetitionConfig {
+  boardCount?: number;
+  trackCount?: number;
+  maxTeamsPerBoard?: number;
+  finalistCount?: number;
+  finalistsPerBoard?: number;
+  finalistSelectionMode?: FinalistSelectionMode;
+  fillRemainingFinalistsByOverallScore?: boolean;
+  rankingScopes?: string[];
+  tieBreakRule?: string;
+  tieBreakDurationMinutes?: number;
 }
 
 export interface CreateEventRequest {
@@ -257,6 +316,7 @@ export interface CreateEventRequest {
   maxTeamMembers?: number;
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
+  competitionConfig?: CompetitionConfig;
   status?: EventStatus;
 }
 
@@ -408,8 +468,16 @@ export interface MediaStatistics {
   uploadsByWeek: Array<{ week: string; count: number }>;
   uploadsByMonth: Array<{ month: string; count: number }>;
   uploadsByMediaType: Array<{ mediaType: MediaType; count: number }>;
-  mostActiveParticipants: Array<{ participantId: string; uploads: number }>;
-  mostViewedMedia: Array<{ mediaId: string; views: number }>;
+  mostActiveParticipants: Array<{
+    participantId: string;
+    participant: { id: string; email?: string; fullName?: string } | null;
+    uploads: number;
+  }>;
+  mostViewedMedia: Array<{
+    mediaId: string;
+    media: { id: string; title?: string; originalFileName?: string; mediaType?: MediaType } | null;
+    views: number;
+  }>;
 }
 
 // ============================================================
@@ -417,13 +485,11 @@ export interface MediaStatistics {
 // ============================================================
 
 export type TeamStatus =
-  | 'PENDING'
   | 'WAITING_FOR_MEMBERS'
+  | 'WAITLISTED'
   | 'CONFIRMED'
   | 'REJECTED'
-  | 'ACTIVE'
-  | 'INACTIVE'
-  | 'DISQUALIFIED';
+  | 'CANCELLED';
 
 export type TeamInvitationStatus =
   | 'PENDING'
@@ -467,7 +533,7 @@ export interface TeamParticipant {
   teamId: string;
   user: TeamUserSummary | null;
   teamRole: 'LEADER' | 'MEMBER';
-  status: string;
+  status: ParticipantStatus;
   joinedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -510,6 +576,8 @@ export interface Team {
   confirmedAt?: string | null;
   rejectedAt?: string | null;
   rejectionReason?: string | null;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
   participants: TeamParticipant[];
   invitations: TeamInvitation[];
   createdAt: string;
@@ -521,9 +589,28 @@ export interface CreateTeamRequest {
   name: string;
   trackId?: string | null;
   chapterName?: string;
-  projectName?: string;
   invitedEmails?: string[];
   invitedMembers?: TeamInviteMember[];
+}
+
+export interface TeamAvailability {
+  eventId: string;
+  name: string;
+  normalizedName: string;
+  available: boolean;
+  nameAvailable: boolean;
+  leaderAvailable: boolean;
+  errors: string[];
+}
+
+export interface TeamInviteEligibility {
+  eventId: string;
+  email: string;
+  available: boolean;
+  userExists: boolean;
+  hasTeam: boolean;
+  hasActiveInvitation: boolean;
+  errors: string[];
 }
 
 export interface TeamInviteMember {
@@ -552,11 +639,86 @@ export interface InvitationDecisionResult {
   invitation: TeamInvitation;
 }
 
+export interface UpdateTeamMentorsRequest {
+  mentorIds: string[];
+}
+
+export interface AssignMentorsByBoardRequest {
+  eventId: string;
+  boardNumber: number;
+  mentorIds: string[];
+}
+
+export interface AssignMentorsByBoardResult {
+  eventId: string;
+  boardNumber: number;
+  mentorIds: string[];
+  updatedCount: number;
+  teamIds: string[];
+  teams: Team[];
+}
+
 export interface ListTeamsQuery {
   eventId?: string;
+  boardNumber?: number;
   status?: TeamStatus;
   page?: number;
   limit?: number;
+}
+
+export type ChatParticipantRole = 'member' | 'mentor';
+
+export type ChatMessageType = 'text' | 'image' | 'file';
+
+export interface ChatMessageSender {
+  id: string;
+  email?: string;
+  fullName?: string;
+  avatarUrl?: string | null;
+}
+
+export interface ChatTeamSummary {
+  id: string;
+  eventId?: string;
+  name: string;
+  projectName?: string | null;
+  status?: TeamStatus | string;
+}
+
+export interface ChatMessage {
+  id: string;
+  chatRoomId: string;
+  teamId: string;
+  senderId: string;
+  sender: ChatMessageSender | null;
+  senderRole: ChatParticipantRole | string;
+  message: string;
+  messageType: ChatMessageType;
+  clientMessageId?: string | null;
+  isSeen: boolean;
+  createdAt: string;
+  updatedAt: string;
+  status?: 'sending' | 'sent' | 'failed';
+}
+
+export interface ChatRoom {
+  id: string;
+  teamId: string;
+  roomKey: string;
+  team?: ChatTeamSummary | null;
+  participantRole?: ChatParticipantRole | string | null;
+  unreadCount: number;
+  lastMessage?: ChatMessage | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SendChatMessageRequest {
+  teamId: string;
+  chatRoomId?: string;
+  message: string;
+  messageType?: ChatMessageType;
+  clientMessageId?: string;
 }
 
 // ============================================================
@@ -927,6 +1089,7 @@ export interface ListUsersQuery {
   limit?: number;
   status?: UserStatus;
   search?: string;
+  roles?: UserRoleName[];
 }
 
 export interface CreateUserRequest {
@@ -943,6 +1106,8 @@ export interface CreateUserRequest {
   studentId?: string;
   schoolName?: string;
 }
+
+export type UpdateUserRequest = Partial<Omit<CreateUserRequest, 'password' | 'status'>>;
 
 export interface UpdateProfileRequest {
   fullName?: string;
@@ -1016,7 +1181,7 @@ export interface ListTracksQuery {
 // Participant Types
 // ============================================================
 
-export type ParticipantStatus = 'INVITED' | 'ACTIVE' | 'WITHDRAWN';
+export type ParticipantStatus = 'INVITED' | 'JOINED' | 'WITHDRAWN';
 export type CheckInStatus = 'NOT_CHECKED_IN' | 'CHECKED_IN';
 export type GitHubAccessStatus = 'NOT_GRANTED' | 'GRANTED' | 'REVOKED';
 export type EligibilityStatus = 'PENDING' | 'ELIGIBLE' | 'INELIGIBLE';
@@ -1040,9 +1205,41 @@ export interface ParticipantTeamSummary {
   status?: string;
 }
 
+export interface GitHubUserProfile {
+  login: string;
+  id: number;
+  name?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
+  htmlUrl?: string | null;
+  bio?: string | null;
+  company?: string | null;
+  location?: string | null;
+  publicRepos?: number | null;
+  followers?: number | null;
+}
+
+export interface GitHubUsernameAvailability {
+  username: string;
+  available: boolean;
+  errors: string[];
+}
+
+export interface ParticipantEventSummary {
+  id: string;
+  title?: string;
+  semester?: string | null;
+  season?: string | null;
+  year?: number | null;
+  status?: EventStatus;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
 export interface Participant {
   id: string;
   eventId: string;
+  event?: ParticipantEventSummary | null;
   user: ParticipantUserSummary | null;
   team: ParticipantTeamSummary | null;
   chapterName?: string | null;
@@ -1052,11 +1249,20 @@ export interface Participant {
   eligibilityStatus: EligibilityStatus;
   attendedActivities: AttendedActivity[];
   checkInStatus: CheckInStatus;
+  checkedInAt?: string | null;
+  checkedInBy?: string | null;
   githubAccessStatus: GitHubAccessStatus;
   status: ParticipantStatus;
   joinedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CheckInQr {
+  eventId: string;
+  qrCodeDataUrl: string;
+  qrPayload: string;
+  expiresAt: string;
 }
 
 export interface CreateParticipantRequest {
@@ -1253,6 +1459,8 @@ export interface Round {
   rubric: { id: string; title: string; totalScore: number | null } | null;
   name: string;
   roundType: RoundType;
+  problemStatement?: string | null;
+  examDriveUrl?: string | null;
   status: RoundStatus;
   startTime: string | null;
   endTime: string | null;
@@ -1294,6 +1502,8 @@ export interface CreateRoundRequest {
   eventId: string;
   name: string;
   roundType?: RoundType;
+  problemStatement?: string | null;
+  examDriveUrl?: string | null;
   trackId?: string | null;
   assignedTeamIds?: string[];
   promotedTeamIds?: string[];
@@ -1711,8 +1921,12 @@ export interface GenerateRankingsRequest {
 }
 
 export interface GenerateRankingsResult {
-  generated: number;
   rankings: Ranking[];
+  summary?: {
+    generatedCount?: number;
+    source?: string;
+    tiedGroups?: unknown[];
+  };
 }
 
 // ============================================================
@@ -1723,9 +1937,19 @@ export interface SelectFinalistsRequest {
   roundId: string;
 }
 
+export interface SelectManualFinalistsRequest extends SelectFinalistsRequest {
+  teamIds: string[];
+  selectionReason?: string | null;
+}
+
 export interface SelectFinalistsResult {
-  selected: number;
-  rankings: Ranking[];
+  finalists: Ranking[];
+  summary?: {
+    finalistSelectionMode?: string;
+    finalistCount?: number;
+    promotedTeamIds?: string[];
+    source?: string;
+  };
 }
 
 // ============================================================
@@ -1740,8 +1964,12 @@ export interface PublishResultsRequest {
 }
 
 export interface PublishResultsResult {
-  published: number;
-  repositoryAccessAction: RepositoryAccessAction;
+  publishedAt: string;
+  rankings: Ranking[];
+  repositoryAccessAction: {
+    action: RepositoryAccessAction;
+    affectedRepositories: number;
+  };
   notified?: number;
 }
 

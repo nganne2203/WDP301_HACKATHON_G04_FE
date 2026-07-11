@@ -22,7 +22,7 @@ export function JudgeScoring() {
   const view = useJudgeScoringView();
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold mb-1">Score Teams</h1>
         <p className="text-sm text-muted-foreground">Evaluate teams assigned to your judging board</p>

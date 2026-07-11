@@ -34,12 +34,21 @@ export const queryKeys = {
     all: ['teams'] as const,
     lists: () => [...queryKeys.teams.all, 'list'] as const,
     list: (query?: QueryParams) => [...queryKeys.teams.lists(), params(query)] as const,
+    availability: (eventId?: string, name?: string) =>
+      [...queryKeys.teams.all, 'availability', eventId, name] as const,
+    inviteEligibility: (eventId?: string, email?: string, githubUsername?: string) =>
+      [...queryKeys.teams.all, 'invite-eligibility', eventId, email, githubUsername] as const,
     my: (eventId?: string) => [...queryKeys.teams.all, 'my', eventId] as const,
   },
   users: {
     all: ['users'] as const,
     lists: () => [...queryKeys.users.all, 'list'] as const,
     list: (query?: QueryParams) => [...queryKeys.users.lists(), params(query)] as const,
+  },
+  notifications: {
+    all: ['notifications'] as const,
+    lists: () => [...queryKeys.notifications.all, 'list'] as const,
+    list: (query?: QueryParams) => [...queryKeys.notifications.lists(), params(query)] as const,
   },
   participants: {
     all: ['participants'] as const,
@@ -84,6 +93,10 @@ export const queryKeys = {
   github: {
     all: ['github'] as const,
     config: (eventId?: string) => [...queryKeys.github.all, 'config', eventId] as const,
+    user: (username?: string) => [...queryKeys.github.all, 'user', username] as const,
+    userSearch: (query?: string) => [...queryKeys.github.all, 'user-search', query] as const,
+    usernameAvailability: (username?: string, excludeSelf?: boolean) =>
+      [...queryKeys.github.all, 'username-availability', username, excludeSelf] as const,
   },
   judging: {
     all: ['judging'] as const,

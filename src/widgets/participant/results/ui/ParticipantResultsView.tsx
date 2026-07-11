@@ -19,6 +19,7 @@ const PLACE_LABELS = ['1st Place', '2nd Place', '3rd Place'];
 
 export function ParticipantResultsView() {
   const user = useStore((state) => state.user);
+  const appRole = useStore((state) => state.appRole);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedRoundId, setSelectedRoundId] = useState('');
 
@@ -37,14 +38,14 @@ export function ParticipantResultsView() {
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(activeEventId, activeRoundId),
-    enabled: Boolean(activeEventId && activeRoundId),
+    enabled: Boolean(activeEventId && activeRoundId && appRole),
     queryFn: async () => (await rankingsApi.list({ eventId: activeEventId, roundId: activeRoundId, limit: 50 })).data,
   });
   const rankings = rankingsQuery.data || [];
 
   const finalistsQuery = useQuery({
     queryKey: queryKeys.finalists.list(activeEventId, activeRoundId),
-    enabled: Boolean(activeEventId && activeRoundId),
+    enabled: Boolean(activeEventId && activeRoundId && appRole),
     queryFn: async () => (await finalistsApi.list({ eventId: activeEventId, roundId: activeRoundId, limit: 50 })).data,
   });
   const finalists = finalistsQuery.data || [];
@@ -54,7 +55,7 @@ export function ParticipantResultsView() {
   const podium = rankings.slice(0, 3);
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold mb-1">Results</h1>

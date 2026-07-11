@@ -15,7 +15,7 @@ export function ParticipantSubmissions() {
   const view = useParticipantSubmissionsView();
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold mb-1">Submissions</h1>
@@ -64,7 +64,7 @@ export function ParticipantSubmissions() {
         <Card>
           <CardHeader>
             <CardTitle>{view.team.name}</CardTitle>
-            <CardDescription>{view.team.projectName || view.selectedEvent?.title}</CardDescription>
+            <CardDescription>{view.selectedEvent?.title}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3 text-sm">
             <div>Leader: {view.user?.fullName || view.user?.email}</div>

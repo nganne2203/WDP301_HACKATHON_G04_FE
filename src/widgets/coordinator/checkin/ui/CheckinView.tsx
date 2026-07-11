@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
-import { QrCode, Download, CheckCircle, Clock, Loader2, AlertCircle } from 'lucide-react';
+import { Download, CheckCircle, Clock, Loader2, AlertCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -23,14 +22,13 @@ import type { Workshop } from '@/shared/api/types';
 import { useStore } from '@/entities/session/model/store';
 import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
+import { EventCheckInQrPanel } from './EventCheckInQrPanel';
 
 export function Checkin() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((s) => s.selectedEvent);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [page, setPage] = useState(1);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const participantIdParam = searchParams.get('participantId');
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
@@ -89,49 +87,6 @@ export function Checkin() {
       });
     },
   });
-
-  // Auto check-in if participantId is present in URL query params
-  useEffect(() => {
-    if (participantIdParam) {
-      checkInMutation.mutate(participantIdParam, {
-        onSuccess: () => {
-          const nextParams = new URLSearchParams(searchParams);
-          nextParams.delete('participantId');
-          setSearchParams(nextParams, { replace: true });
-        },
-        onError: () => {
-          const nextParams = new URLSearchParams(searchParams);
-          nextParams.delete('participantId');
-          setSearchParams(nextParams, { replace: true });
-        }
-      });
-    }
-  }, [participantIdParam]);
-
-  const qrCodeUrl = activeEvent
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-        `${window.location.origin}/coordinator/checkin?eventId=${activeEvent.id}`
-      )}`
-    : '';
-
-  const handleDownloadQR = async () => {
-    if (!activeEvent || !qrCodeUrl) return;
-    try {
-      const response = await fetch(qrCodeUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `checkin-qr-${activeEvent.title.replace(/\s+/g, '-').toLowerCase()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast.success('QR Code downloaded successfully');
-    } catch (error) {
-      toast.error('Failed to download QR Code');
-    }
-  };
 
   // Fetch real workshops from backend
   const { data: workshopsResponse, isLoading: workshopsLoading, error: workshopsError } = useQuery({
@@ -211,29 +166,10 @@ export function Checkin() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">QR Code Check-in</CardTitle>
+            <CardTitle className="text-base">Event check-in QR</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center p-4">
-              {activeEvent ? (
-                <img
-                  src={qrCodeUrl}
-                  alt="Check-in QR Code"
-                  className="w-full h-full object-contain bg-white rounded p-2"
-                />
-              ) : (
-                <QrCode className="w-32 h-32 text-gray-400" />
-              )}
-            </div>
-            <Button
-              className="w-full"
-              variant="outline"
-              disabled={!activeEvent}
-              onClick={handleDownloadQR}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download QR Code
-            </Button>
+          <CardContent className="space-y-4">
+            <EventCheckInQrPanel eventId={activeEvent?.id} eventTitle={activeEvent?.title} />
           </CardContent>
         </Card>
 
@@ -342,7 +278,7 @@ export function Checkin() {
                   <TableHead>Participant</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Team</TableHead>
-                  <TableHead>Status</TableHead>
+                      <TableHead>Check-in</TableHead>
                   <TableHead className="w-32">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -378,7 +314,7 @@ export function Checkin() {
                         ) : (
                           <Badge variant="secondary">
                             <Clock className="w-3 h-3 mr-1" />
-                            Pending
+                            Not Checked In
                           </Badge>
                         )}
                       </TableCell>
