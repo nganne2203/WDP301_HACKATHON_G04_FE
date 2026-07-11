@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import { useStore } from '@/entities/session/model/store';
 import { judgingBoardsApi } from '@/entities/judging-board/api';
-import { repositoriesApi } from '@/entities/repository/api';
 import { rubricsApi } from '@/entities/rubric/api';
 import { scoringApi } from '@/entities/score-sheet/api';
 import { submissionsApi } from '@/entities/submission/api';
@@ -123,72 +122,6 @@ export function useJudgeDashboardView() {
   const criteria: Criterion[] = rubricQuery.data?.data?.criteria || [];
   const maxScore = criteria.reduce((sum, criterion) => sum + criterion.maxScore, 0);
 
-  // Fetch static analysis results in parallel using useQueries
-  const staticAnalysisQueries = useQueries({
-    queries: assignedTeams.map((team) => {
-      const sub = submissionByTeam[team.id];
-      const repoId = sub?.repositoryId;
-      return {
-        queryKey: queryKeys.repositories.analysis(repoId),
-        queryFn: async () => {
-          if (!repoId) return [];
-          try {
-            const res = await repositoriesApi.listStaticAnalysis(repoId, 1, 5);
-            return Array.isArray(res.data) ? res.data : [];
-          } catch (err) {
-            console.warn(`Failed to load static analysis for repository ${repoId}`, err);
-            return [];
-          }
-        },
-        enabled: Boolean(repoId),
-      };
-    }),
-  });
-
-  const staticAnalysisByTeamId = useMemo(() => {
-    const map = new Map<string, any>();
-    assignedTeams.forEach((team, idx) => {
-      const queryResult = staticAnalysisQueries[idx];
-      if (queryResult?.data) {
-        map.set(team.id, queryResult.data);
-      }
-    });
-    return map;
-  }, [assignedTeams, staticAnalysisQueries]);
-
-  // Fetch AI reviews in parallel
-  const aiReviewsQueries = useQueries({
-    queries: assignedTeams.map((team) => {
-      const sub = submissionByTeam[team.id];
-      const repoId = sub?.repositoryId;
-      return {
-        queryKey: queryKeys.repositories.aiReviews(repoId),
-        queryFn: async () => {
-          if (!repoId) return null;
-          try {
-            const res = await repositoriesApi.listAiReviews(repoId, 1, 3);
-            return res.data;
-          } catch (err) {
-            console.warn(`Failed to load AI reviews for repository ${repoId}`, err);
-            return null;
-          }
-        },
-        enabled: Boolean(repoId),
-      };
-    }),
-  });
-
-  const aiReviewsByTeamId = useMemo(() => {
-    const map = new Map<string, any>();
-    assignedTeams.forEach((team, idx) => {
-      const queryResult = aiReviewsQueries[idx];
-      if (queryResult?.data) {
-        map.set(team.id, queryResult.data);
-      }
-    });
-    return map;
-  }, [assignedTeams, aiReviewsQueries]);
-
   // Calculate metrics
   const totalTeamsCount = assignedTeams.length;
   const scoredTeamsCount = assignedTeams.filter((team) => {
@@ -228,8 +161,6 @@ export function useJudgeDashboardView() {
     rubricName: rubricQuery.data?.data?.name || 'Round Rubric',
     criteriaCount: criteria.length,
     maxScore,
-    staticAnalysisByTeamId,
-    aiReviewsByTeamId,
     totalTeamsCount,
     scoredTeamsCount,
     draftTeamsCount,

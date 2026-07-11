@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { AlertCircle, Ban, CheckCircle, Download, Filter, Loader2, Pencil, Plus, Search, XCircle } from 'lucide-react';
+import { AlertCircle, Ban, CheckCircle, Download, Loader2, Pencil, Plus, Search, X, XCircle } from 'lucide-react';
 
 import { ApiError } from '@/shared/api/client';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -42,7 +42,6 @@ import {
   type ParticipantFilterType,
 } from '../model/participants-view.utils';
 import { useParticipantsView } from '../model/useParticipantsView';
-import { ParticipantFiltersSheet } from './ParticipantFiltersSheet';
 
 export function Participants() {
   const view = useParticipantsView();
@@ -51,9 +50,9 @@ export function Participants() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Participants</h1>
+          <h1 className="text-2xl font-semibold mb-1">Users</h1>
           <p className="text-sm text-muted-foreground">
-            Manage participant registration and status
+            Manage user accounts, assigned roles, and activation status
             {view.selectedIds.length > 0 && ` - ${view.selectedIds.length} selected`}
             {view.pagination && ` - ${view.pagination.totalItems} total`}
           </p>
@@ -75,19 +74,25 @@ export function Participants() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by name or email..."
-            className="pl-9"
+            className="pl-9 pr-10"
             value={view.searchQuery}
             onChange={(event) => view.setSearchQuery(event.target.value)}
           />
+          {view.searchQuery ? (
+            <button
+              type="button"
+              onClick={() => view.setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
         </div>
-        <Button variant="outline" onClick={() => view.setFilterSheetOpen(true)}>
-          <Filter className="w-4 h-4 mr-2" />
-          Filters
-        </Button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'PENDING', 'APPROVED', 'ACTIVE', 'REJECTED', 'SUSPENDED'] as ParticipantFilterType[]).map((filter) => (
+        {(['all', 'PENDING', 'ACTIVE', 'REJECTED', 'SUSPENDED'] as ParticipantFilterType[]).map((filter) => (
           <Badge
             key={filter}
             variant={view.activeFilter === filter ? 'secondary' : 'outline'}
@@ -102,7 +107,7 @@ export function Participants() {
       {view.usersQuery.isLoading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-blue-600 mr-2" />
-          <span className="text-muted-foreground">Loading participants...</span>
+          <span className="text-muted-foreground">Loading users...</span>
         </div>
       )}
 
@@ -110,7 +115,7 @@ export function Participants() {
         <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
           <AlertCircle className="w-5 h-5 text-red-500" />
           <p className="text-sm text-red-700">
-            {view.usersQuery.error instanceof ApiError ? view.usersQuery.error.firstError : 'Failed to load participants'}
+            {view.usersQuery.error instanceof ApiError ? view.usersQuery.error.firstError : 'Failed to load users'}
           </p>
         </div>
       )}
@@ -202,7 +207,7 @@ export function Participants() {
                                 disabled={view.approveMutation.isPending}
                               >
                                 <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                                Approve
+                                Activate
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => view.rejectMutation.mutate(user.id)}
@@ -214,7 +219,7 @@ export function Participants() {
                               </DropdownMenuItem>
                             </>
                           )}
-                          {(user.status === 'APPROVED' || user.status === 'ACTIVE') && (
+                          {user.status === 'ACTIVE' && (
                             <DropdownMenuItem
                               onClick={() => view.suspendMutation.mutate(user.id)}
                               disabled={view.suspendMutation.isPending}
@@ -230,7 +235,7 @@ export function Participants() {
                               disabled={view.approveMutation.isPending}
                             >
                               <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                              Approve
+                              Activate
                             </DropdownMenuItem>
                           )}
                           {user.registrationSource === 'FORM' && user.status === 'SUSPENDED' && (
@@ -262,14 +267,6 @@ export function Participants() {
           <ListPagination page={view.page} pagination={view.pagination} onPageChange={view.setPage} />
         </Card>
       )}
-
-      <ParticipantFiltersSheet
-        open={view.filterSheetOpen}
-        onOpenChange={view.setFilterSheetOpen}
-        activeFilter={view.activeFilter}
-        setActiveFilter={view.setActiveFilter}
-        filterCounts={view.filterCounts}
-      />
 
       <ParticipantUserDialog
         form={view.createForm}
@@ -315,14 +312,17 @@ function ParticipantUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
+        <div className="flex-shrink-0 px-6 pt-6">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Create User' : 'Edit User'}</DialogTitle>
           <DialogDescription>
             {mode === 'create' ? 'Add a local account for a participant or event staff member.' : 'Update account profile fields and assigned roles.'}
           </DialogDescription>
         </DialogHeader>
+        </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto px-6">
         <div className="grid gap-4 py-2">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -468,8 +468,9 @@ function ParticipantUserDialog({
             />
           </div>
         </div>
+        </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

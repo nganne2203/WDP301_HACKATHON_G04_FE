@@ -21,5 +21,6 @@ export { teamsApi } from './teams';
 export { timelinesApi } from './timelines';
 export { tracksApi } from './tracks';
 export { usersApi } from './users';
+export { notificationsApi } from './notifications';
 export { workshopsApi } from './workshops';
 export type * from './types';

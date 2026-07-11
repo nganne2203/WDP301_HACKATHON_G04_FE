@@ -98,7 +98,11 @@ export function TeamInvitationsCard({
             <CardDescription>New members must accept by email before they join the team.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <MemberInviteFields rows={newInvitedMembers} setRows={setNewInvitedMembers} />
+            <MemberInviteFields
+              activeEventId={team.eventId}
+              rows={newInvitedMembers}
+              setRows={setNewInvitedMembers}
+            />
             <Button onClick={onInviteMembers} disabled={invitePending}>
               {invitePending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
               Send invitations

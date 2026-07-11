@@ -12,6 +12,7 @@ import { ApiError } from '@/shared/api/client';
 
 export function ParticipantWorkshops() {
   const view = useParticipantWorkshopsView();
+  const isMentorFacing = view.appRole === 'mentor' || view.appRole === 'speaker';
 
   const activeWorkshops = view.workshops.filter((w) => w.status === 'LIVE');
   const upcomingWorkshops = view.workshops.filter((w) => w.status === 'SCHEDULED');
@@ -126,8 +127,18 @@ export function ParticipantWorkshops() {
                           className="flex-1 gap-2 border-red-200 text-red-700 hover:bg-red-50"
                         >
                           <MessageSquare className="h-4 w-4" />
-                          Q&A & Feedback
+                          {isMentorFacing ? 'Workshop Details' : 'Q&A & Feedback'}
                         </Button>
+                        {isMentorFacing && (
+                          <Button
+                            variant="secondary"
+                            onClick={() => view.openQuestionsDialog(workshop)}
+                            className="flex-1 gap-2"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                            Question Inbox
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -232,72 +243,98 @@ export function ParticipantWorkshops() {
                 </div>
               )}
 
-              {/* Ratings and Feedback Section */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
-                  Leave Feedback & Rating
-                </h3>
-                <div className="space-y-4">
-                  {/* Rating Selector */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium mr-2">Your Rating:</span>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => view.setRatingValue(star)}
-                        className="focus:outline-none transition-transform active:scale-95"
-                      >
-                        <Star
-                          className={`h-7 w-7 ${
-                            star <= view.ratingValue
-                              ? 'text-amber-500 fill-amber-500'
-                              : 'text-muted-foreground/30'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                    <Button
-                      size="sm"
-                      className="ml-auto"
-                      onClick={() => view.handleRateWorkshop(view.ratingValue)}
-                      disabled={view.createRatingMutation.isPending}
-                    >
-                      {view.createRatingMutation.isPending ? 'Submitting...' : 'Submit Rating'}
-                    </Button>
-                  </div>
-
-                  {/* Feedback Comments */}
+              {view.selectedWorkshop.questionnaire && view.selectedWorkshop.questionnaire.length > 0 && (
+                <div className="border rounded-lg p-4 bg-blue-50/40 space-y-3">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                    Workshop Questionnaire
+                  </h4>
                   <div className="space-y-2">
-                    <Textarea
-                      placeholder="Share your thoughts about this session..."
-                      value={view.feedbackContent}
-                      onChange={(e) => view.setFeedbackContent(e.target.value)}
-                      rows={3}
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        size="sm"
-                        onClick={view.handleFeedbackSubmit}
-                        disabled={!view.feedbackContent.trim() || view.createFeedbackMutation.isPending}
-                      >
-                        {view.createFeedbackMutation.isPending ? 'Submitting...' : 'Submit Review'}
-                      </Button>
-                    </div>
+                    {view.selectedWorkshop.questionnaire.map((question, index) => (
+                      <div key={`${question}-${index}`} className="rounded-md border border-blue-100 bg-background px-3 py-2 text-sm">
+                        <span className="font-medium text-blue-700">{index + 1}.</span>{' '}
+                        <span>{question}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Live Q&A Section */}
-              <div className="space-y-4 border-t pt-4">
+              {(view.canCreateRating || view.canCreateFeedback) && (
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+                    Leave Feedback & Rating
+                  </h3>
+                  <div className="space-y-4">
+                    {view.canCreateRating && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium mr-2">Your Rating:</span>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => view.setRatingValue(star)}
+                            className="focus:outline-none transition-transform active:scale-95"
+                          >
+                            <Star
+                              className={`h-7 w-7 ${
+                                star <= view.ratingValue
+                                  ? 'text-amber-500 fill-amber-500'
+                                  : 'text-muted-foreground/30'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                        <Button
+                          size="sm"
+                          className="ml-auto"
+                          onClick={() => view.handleRateWorkshop(view.ratingValue)}
+                          disabled={view.createRatingMutation.isPending}
+                        >
+                          {view.createRatingMutation.isPending ? 'Submitting...' : 'Submit Rating'}
+                        </Button>
+                      </div>
+                    )}
+
+                    {view.canCreateFeedback && (
+                      <div className="space-y-2">
+                        <Textarea
+                          placeholder="Share your thoughts about this session..."
+                          value={view.feedbackContent}
+                          onChange={(e) => view.setFeedbackContent(e.target.value)}
+                          rows={3}
+                        />
+                        <div className="flex justify-end">
+                          <Button
+                            size="sm"
+                            onClick={view.handleFeedbackSubmit}
+                            disabled={!view.feedbackContent.trim() || view.createFeedbackMutation.isPending}
+                          >
+                            {view.createFeedbackMutation.isPending ? 'Submitting...' : 'Submit Review'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!isMentorFacing && (
+                <div className="space-y-4 border-t pt-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <MessageSquare className="h-5 w-5 text-blue-500" />
-                  Live Questionnaire
+                  Participant Questions & Q&A
                 </h3>
 
+                <p className="text-sm text-muted-foreground">
+                  {isMentorFacing
+                    ? 'Review questions submitted by participants for this workshop.'
+                    : 'View and join the participant Q&A for this workshop.'}
+                </p>
+
                 {/* Submitting a question */}
-                {['SCHEDULED', 'LIVE'].includes(view.selectedWorkshop.status) ? (
+                {view.canCreateQuestion && ['SCHEDULED', 'LIVE'].includes(view.selectedWorkshop.status) ? (
                   <div className="flex gap-2">
                     <Textarea
                       placeholder="Ask the presenter a question..."
@@ -319,11 +356,19 @@ export function ParticipantWorkshops() {
                       )}
                     </Button>
                   </div>
+                ) : ['SCHEDULED', 'LIVE'].includes(view.selectedWorkshop.status) ? (
+                  <p className="text-xs text-muted-foreground">You can view workshop questions, but this account cannot submit new ones.</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">Q&A session is closed for this workshop.</p>
                 )}
 
-                {/* List of Questions */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold">Participant Questions</h4>
+                  <p className="text-xs text-muted-foreground">
+                    These are the questions that participants have already submitted for the speaker or mentor.
+                  </p>
+                </div>
+
                 <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1 mt-2">
                   {view.workshopQuestionsQuery.isLoading ? (
                     <div className="flex items-center justify-center py-4">
@@ -342,23 +387,117 @@ export function ParticipantWorkshops() {
                             <span>{q.voteCount || 0} vote(s)</span>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => view.voteQuestionMutation.mutate(q.id)}
-                          className="h-8 w-8 p-0 hover:bg-blue-50 text-muted-foreground hover:text-blue-600"
-                        >
-                          <ThumbsUp className="h-4 w-4" />
-                        </Button>
+                        {view.canVoteQuestion && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => view.voteQuestionMutation.mutate(q.id)}
+                            className="h-8 w-8 p-0 hover:bg-blue-50 text-muted-foreground hover:text-blue-600"
+                          >
+                            <ThumbsUp className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))
                   )}
                 </div>
-              </div>
+                </div>
+              )}
             </>
           )}
         </DialogContent>
       </Dialog>
+
+      {isMentorFacing && (
+        <Dialog open={view.isQuestionsOpen} onOpenChange={(open) => !open && view.closeQuestionsDialog()}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            {view.selectedWorkshop && (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={view.selectedWorkshop.status === 'LIVE' ? 'destructive' : 'outline'}>
+                      {view.selectedWorkshop.status}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDateTime(view.selectedWorkshop.startTime)} - {formatDateTime(view.selectedWorkshop.endTime)}
+                    </span>
+                  </div>
+                  <DialogTitle className="text-2xl pt-2">Participant Question Inbox</DialogTitle>
+                  <DialogDescription>
+                    Questions submitted by participants for <strong>{view.selectedWorkshop.title}</strong>.
+                  </DialogDescription>
+                </DialogHeader>
+
+                {view.selectedWorkshop.questionnaire && view.selectedWorkshop.questionnaire.length > 0 && (
+                  <div className="border rounded-lg p-4 bg-blue-50/40 space-y-3">
+                    <h4 className="text-sm font-semibold flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                      Workshop Questionnaire
+                    </h4>
+                    <div className="space-y-2">
+                      {view.selectedWorkshop.questionnaire.map((question, index) => (
+                        <div key={`${question}-${index}`} className="rounded-md border border-blue-100 bg-background px-3 py-2 text-sm">
+                          <span className="font-medium text-blue-700">{index + 1}.</span>{' '}
+                          <span>{question}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="text-sm font-semibold">Participant Questions</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Review what participants have already asked so you can address them during the workshop.
+                    </p>
+                  </div>
+
+                  {view.workshopQuestionsQuery.isLoading ? (
+                    <div className="flex items-center justify-center py-8 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                  ) : view.workshopQuestions.length === 0 ? (
+                    <div className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+                      No participant questions have been submitted for this workshop yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {view.workshopQuestions.map((q) => (
+                        <div key={q.id} className="rounded-lg border bg-muted/20 p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium leading-relaxed">{q.content}</p>
+                              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                <span>{q.author?.fullName || 'Anonymous participant'}</span>
+                                <span>•</span>
+                                <span>{formatDateTime(q.createdAt)}</span>
+                                <span>•</span>
+                                <span>{q.voteCount || 0} vote(s)</span>
+                              </div>
+                            </div>
+                            {view.canVoteQuestion && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => view.voteQuestionMutation.mutate(q.id)}
+                                className="gap-2"
+                              >
+                                <ThumbsUp className="h-4 w-4" />
+                                Upvote
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

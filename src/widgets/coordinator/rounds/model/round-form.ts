@@ -15,6 +15,8 @@ export const roundStatusOptions: RoundStatus[] = ['DRAFT', 'OPEN', 'CLOSED', 'SC
 export interface RoundFormState {
   name: string;
   roundType: RoundType;
+  problemStatement: string;
+  examDriveUrl: string;
   trackId: string;
   rubricId: string;
   assignedTeamIds: string[];
@@ -34,6 +36,8 @@ export function createEmptyRoundForm(): RoundFormState {
   return {
     name: '',
     roundType: 'PRELIMINARY',
+    problemStatement: '',
+    examDriveUrl: '',
     trackId: 'none',
     rubricId: 'none',
     assignedTeamIds: [],
@@ -124,6 +128,8 @@ export function mapRoundToForm(round: Round): RoundFormState {
   return {
     name: round.name,
     roundType: round.roundType,
+    problemStatement: round.problemStatement || '',
+    examDriveUrl: round.examDriveUrl || '',
     trackId: round.trackId || 'none',
     rubricId: round.rubricId || 'none',
     assignedTeamIds: round.assignedTeamIds || [],
@@ -147,6 +153,8 @@ export function buildCreateRoundPayload(form: RoundFormState, eventId: string): 
     eventId,
     name: form.name.trim(),
     roundType: form.roundType,
+    problemStatement: normalizeText(form.problemStatement),
+    examDriveUrl: normalizeText(form.examDriveUrl),
     trackId: form.trackId === 'none' ? null : form.trackId,
     assignedTeamIds: form.assignedTeamIds,
     assignedJudgeIds: form.assignedJudgeIds,
@@ -169,6 +177,8 @@ export function buildUpdateRoundPayload(form: RoundFormState): UpdateRoundReques
   return {
     name: form.name.trim(),
     roundType: form.roundType,
+    problemStatement: normalizeText(form.problemStatement),
+    examDriveUrl: normalizeText(form.examDriveUrl),
     trackId: form.trackId === 'none' ? null : form.trackId,
     assignedTeamIds: form.assignedTeamIds,
     assignedJudgeIds: form.assignedJudgeIds,

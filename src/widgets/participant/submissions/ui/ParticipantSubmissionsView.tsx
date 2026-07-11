@@ -64,7 +64,7 @@ export function ParticipantSubmissions() {
         <Card>
           <CardHeader>
             <CardTitle>{view.team.name}</CardTitle>
-            <CardDescription>{view.team.projectName || view.selectedEvent?.title}</CardDescription>
+            <CardDescription>{view.selectedEvent?.title}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3 text-sm">
             <div>Leader: {view.user?.fullName || view.user?.email}</div>

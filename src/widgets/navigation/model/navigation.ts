@@ -4,6 +4,7 @@ import {
   Clock3,
   ClipboardCheck,
   ClipboardList,
+  Code,
   FileText,
   GitBranch,
   Github,
@@ -16,7 +17,9 @@ import {
   Server,
   Settings,
   Trophy,
+  MessageSquare,
   Users,
+  UserRound,
   UsersRound,
 } from 'lucide-react';
 import type { AppRole } from '@/entities/session/model/store';
@@ -25,6 +28,7 @@ export interface NavigationItem {
   href: string;
   icon: LucideIcon;
   label: string;
+  disabled?: boolean;
 }
 
 const coordinatorNavigation: NavigationItem[] = [
@@ -35,8 +39,9 @@ const coordinatorNavigation: NavigationItem[] = [
   { icon: GitBranch, label: 'Tracks', href: '/coordinator/tracks' },
   { icon: Clock3, label: 'Timelines', href: '/coordinator/timelines' },
   { icon: Presentation, label: 'Workshops', href: '/coordinator/workshops' },
-  { icon: Users, label: 'Participants', href: '/coordinator/participants' },
+  { icon: Users, label: 'Users', href: '/coordinator/participants' },
   { icon: UsersRound, label: 'Teams', href: '/coordinator/teams' },
+  { icon: UserRound, label: 'Mentor Assignments', href: '/coordinator/mentor-assignments' },
   { icon: ClipboardCheck, label: 'Check-in', href: '/coordinator/checkin' },
   { icon: Github, label: 'Repositories', href: '/coordinator/repos' },
   { icon: Scale, label: 'Judging', href: '/coordinator/judging' },
@@ -53,8 +58,9 @@ const adminNavigation: NavigationItem[] = [
   { icon: GitBranch, label: 'Tracks', href: '/coordinator/tracks' },
   { icon: Clock3, label: 'Timelines', href: '/coordinator/timelines' },
   { icon: Presentation, label: 'Workshops', href: '/coordinator/workshops' },
-  { icon: Users, label: 'Participants', href: '/coordinator/participants' },
+  { icon: Users, label: 'Users', href: '/coordinator/participants' },
   { icon: UsersRound, label: 'Teams', href: '/coordinator/teams' },
+  { icon: UserRound, label: 'Mentor Assignments', href: '/coordinator/mentor-assignments' },
   { icon: ClipboardCheck, label: 'Check-in', href: '/coordinator/checkin' },
   { icon: Github, label: 'Repositories', href: '/coordinator/repos' },
   { icon: Scale, label: 'Judging', href: '/coordinator/judging' },
@@ -69,11 +75,15 @@ const adminNavigation: NavigationItem[] = [
 const judgeNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/judge' },
   { icon: Scale, label: 'Score Teams', href: '/judge/scoring' },
+  { icon: Code, label: 'Code Reviews', href: '/judge/code-reviews' },
+  { icon: Trophy, label: 'Results', href: '/judge/results' },
 ];
 
 const participantNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/participant' },
   { icon: UsersRound, label: 'My Team', href: '/participant/team' },
+  { icon: Calendar, label: 'Rounds', href: '/participant/rounds' },
+  { icon: MessageSquare, label: 'Chats', href: '/participant/chats' },
   { icon: Send, label: 'Submissions', href: '/participant/submissions' },
   { icon: Presentation, label: 'Workshops', href: '/participant/workshops' },
   { icon: Trophy, label: 'Results', href: '/participant/results' },
@@ -83,10 +93,12 @@ const participantNavigation: NavigationItem[] = [
 const mentorNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/mentor' },
   { icon: UsersRound, label: 'My Teams', href: '/mentor/teams' },
+  { icon: Presentation, label: 'Workshops', href: '/mentor/workshops' },
 ];
 
 const speakerNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/mentor' },
+  { icon: Presentation, label: 'Workshops', href: '/mentor/workshops' },
 ];
 
 export function getNavigationItems(role: AppRole | null | undefined) {

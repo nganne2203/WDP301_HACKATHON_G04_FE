@@ -4,7 +4,7 @@ import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/
 export const workshopStatusOptions: WorkshopStatus[] = ['SCHEDULED', 'LIVE', 'COMPLETED', 'CANCELLED'];
 const workshopPresenterRoles = new Set(['SPEAKER', 'MENTOR']);
 const workshopPresenterPermissions = new Set(['WORKSHOP_MEET_CREATE']);
-const eligiblePresenterStatuses = new Set(['APPROVED', 'ACTIVE']);
+const eligiblePresenterStatuses = new Set(['ACTIVE']);
 
 export interface WorkshopFormState {
   timelineEventId: string;
