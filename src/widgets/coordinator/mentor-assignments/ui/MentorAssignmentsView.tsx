@@ -54,14 +54,15 @@ export function MentorAssignmentsView() {
   }, [events, selectedEventId]);
 
   const boardTeamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, limit: 100 }),
+    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, status: 'CONFIRMED', limit: 100 }),
     enabled: Boolean(activeEvent?.id),
-    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, limit: 100 }),
+    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, status: 'CONFIRMED', limit: 100 }),
   });
 
   const teamsQuery = useQuery({
     queryKey: queryKeys.teams.list({
       eventId: activeEvent?.id,
+      status: 'CONFIRMED',
       boardNumber: selectedBoardNumber === 'all' ? undefined : Number(selectedBoardNumber),
       page,
       limit: 12,
@@ -69,6 +70,7 @@ export function MentorAssignmentsView() {
     enabled: Boolean(activeEvent?.id),
     queryFn: () => teamsApi.list({
       eventId: activeEvent?.id,
+      status: 'CONFIRMED',
       boardNumber: selectedBoardNumber === 'all' ? undefined : Number(selectedBoardNumber),
       page,
       limit: 12,
@@ -261,8 +263,8 @@ export function MentorAssignmentsView() {
       {!teamsQuery.isLoading && teams.length === 0 && activeEvent?.id && (
         <Alert>
           <UsersRound className="h-4 w-4" />
-          <AlertTitle>No teams in this event</AlertTitle>
-          <AlertDescription>Teams will appear here after participants create or confirm registrations.</AlertDescription>
+          <AlertTitle>No confirmed teams in this event</AlertTitle>
+          <AlertDescription>Teams appear here only after their registration is confirmed.</AlertDescription>
         </Alert>
       )}
 
@@ -273,7 +275,7 @@ export function MentorAssignmentsView() {
           <AlertDescription>
             {teamsInSelectedBoard.length > 0
               ? `${teamsInSelectedBoard.length} team(s) are in this board. You can assign mentors to the entire board in one action.`
-              : 'No teams were found in this board for the selected event.'}
+              : 'No confirmed teams were found in this board for the selected event.'}
           </AlertDescription>
         </Alert>
       )}

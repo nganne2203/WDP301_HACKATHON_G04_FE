@@ -35,15 +35,15 @@ function ChatRoomRow({ room, selected }: { room: ChatRoom; selected: boolean }) 
       className={({ isActive }) => [
         'group flex rounded-3xl border p-4 transition-all',
         selected || isActive
-          ? 'border-slate-900 bg-slate-950 text-white shadow-lg'
-          : 'border-border bg-card hover:border-slate-300 hover:bg-slate-50',
+          ? 'border-blue-600 bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200'
+          : 'border-border bg-card hover:border-blue-200 hover:bg-blue-50/60',
       ].join(' ')}
     >
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <div
           className={[
             'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl',
-            selected ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-900',
+            selected ? 'bg-white/15 text-white' : 'bg-blue-50 text-blue-600',
           ].join(' ')}
         >
           <MessageSquare className="h-5 w-5" />
@@ -151,7 +151,7 @@ export function ParticipantChatsLayout() {
         <div>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Chats</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-600">
               Shared team conversations with your members and assigned mentors.
             </p>
           </div>
@@ -172,7 +172,7 @@ export function ParticipantChatsLayout() {
                 <p className="text-sm font-semibold text-slate-900">Team rooms</p>
                 <p className="text-xs text-slate-500">{rooms.length} conversation(s)</p>
               </div>
-              {roomsQuery.isFetching ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : null}
+              {roomsQuery.isFetching ? <Loader2 className="h-4 w-4 animate-spin text-blue-400" /> : null}
             </div>
           </div>
 
@@ -188,9 +188,9 @@ export function ParticipantChatsLayout() {
                   {roomsQuery.error instanceof ApiError ? roomsQuery.error.firstError : 'Failed to load chat rooms.'}
                 </div>
               ) : rooms.length === 0 ? (
-                <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-200 px-6 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-                    <MessageSquare className="h-6 w-6 text-slate-500" />
+                <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-blue-200 px-6 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
+                    <MessageSquare className="h-6 w-6 text-blue-500" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-900">No chats yet</p>
@@ -220,7 +220,7 @@ export function ParticipantChatsIndex() {
   return (
     <div className="hidden min-h-0 flex-1 items-center justify-center lg:flex">
       <div className="mx-auto max-w-md px-8 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-900 text-white shadow-lg">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-600 text-white shadow-lg shadow-blue-200">
           <MessageSquare className="h-7 w-7" />
         </div>
         <h2 className="mt-6 text-2xl font-semibold text-slate-950">Select a conversation</h2>

@@ -53,13 +53,13 @@ function MessageBubble({ isMine, message }: { isMine: boolean; message: ChatMess
       <div
         className={[
           'max-w-[88%] rounded-[28px] border px-4 py-3 shadow-sm',
-          isMine ? 'border-slate-900 bg-slate-950 text-white' : 'border-border bg-white',
+          isMine ? 'border-blue-600 bg-blue-600 text-white shadow-blue-100' : 'border-blue-100 bg-white',
         ].join(' ')}
       >
         <div className="mb-2 flex items-start gap-2">
           {!isMine ? (
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-slate-100 text-[11px] text-slate-700">
+              <AvatarFallback className="bg-blue-50 text-[11px] text-blue-700">
                 {getInitials(senderName)}
               </AvatarFallback>
             </Avatar>
@@ -218,7 +218,7 @@ export function ParticipantChatRoomView() {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center bg-[radial-gradient(circle_at_top,#eef2ff,transparent_45%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-6">
         <div className="max-w-md text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-900 text-white shadow-lg">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-blue-600 text-white shadow-lg shadow-blue-200">
             <MessageSquare className="h-7 w-7" />
           </div>
           <h2 className="mt-6 text-2xl font-semibold text-slate-950">Conversation unavailable</h2>
@@ -296,7 +296,7 @@ export function ParticipantChatRoomView() {
             </div>
           </ScrollArea>
           <div className="border-t border-border/70 bg-white/90 px-4 py-4 md:px-6">
-            <div className="flex items-end gap-3 rounded-[24px] border border-slate-200 bg-slate-50/90 p-3 shadow-sm">
+            <div className="flex items-end gap-3 rounded-[24px] border border-blue-100 bg-blue-50/70 p-3 shadow-sm">
               <div className="min-w-0 flex-1">
                 <label className="sr-only" htmlFor={`participant-chat-${room.id}`}>
                   New message

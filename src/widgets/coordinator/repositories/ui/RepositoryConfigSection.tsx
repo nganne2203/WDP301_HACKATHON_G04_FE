@@ -1,12 +1,25 @@
-import { CheckCircle2, Github, Link, Loader2, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, Github, Link, Loader2, Plus, ShieldX } from 'lucide-react';
 
 import type { useRepositoriesView } from '../model/useRepositoriesView';
 
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/shared/ui/alert-dialog';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Checkbox } from '@/shared/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
@@ -15,6 +28,8 @@ import { Switch } from '@/shared/ui/switch';
 type RepositoriesViewModel = ReturnType<typeof useRepositoriesView>;
 
 export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel }) {
+  const [isLinkRepositoryOpen, setIsLinkRepositoryOpen] = useState(false);
+
   return (
     <>
       {view.configQuery.isLoading || view.eventsQuery.isLoading ? (
@@ -152,16 +167,18 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Link className="h-5 w-5" />
-            Link Existing Repository
-          </CardTitle>
-          <CardDescription>Link an already-existing GitHub repository to a team. Use this when the repo was created outside of SEAL.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Dialog open={isLinkRepositoryOpen} onOpenChange={setIsLinkRepositoryOpen}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Link className="h-5 w-5" />
+                Link Existing Repository
+              </DialogTitle>
+              <DialogDescription>
+                Use this exception flow only for a repository created outside SEAL. The normal workflow is bulk provisioning repositories in the organizer's GitHub Organization.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Team</Label>
               <Select value={view.selectedTeamId} onValueChange={view.setSelectedTeamId}>
@@ -185,21 +202,32 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
               <Label htmlFor="link-branch">Default branch</Label>
               <Input id="link-branch" value={view.linkBranch} onChange={(e) => view.setLinkBranch(e.target.value)} placeholder="main" />
             </div>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => view.linkRepositoryMutation.mutate()}
-            disabled={view.linkRepositoryMutation.isPending || !view.activeEventId || !view.selectedTeamId || !view.linkOwner || !view.linkRepo}
-          >
-            {view.linkRepositoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Link className="mr-2 h-4 w-4" />
-            Link repository
-          </Button>
-        </CardContent>
-      </Card>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsLinkRepositoryOpen(false)}>Cancel</Button>
+              <Button
+                onClick={() => view.linkRepositoryMutation.mutate()}
+                disabled={view.linkRepositoryMutation.isPending || !view.activeEventId || !view.selectedTeamId || !view.linkOwner || !view.linkRepo}
+              >
+                {view.linkRepositoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Link className="mr-2 h-4 w-4" />
+                Link repository
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+      </Dialog>
 
-      <Card className="border-blue-200 bg-blue-50/10">
-        <CardHeader>
+      <Card className="relative border-blue-200 bg-blue-50/10">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute right-4 top-4 z-10 w-fit text-muted-foreground"
+          onClick={() => setIsLinkRepositoryOpen(true)}
+        >
+          <Link className="mr-2 h-4 w-4" />
+          Link existing repo
+        </Button>
+        <CardHeader className="pr-44">
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-blue-600" />
             Bulk Repository Operations
@@ -250,19 +278,39 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                 Bulk Grant Access
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={() => view.bulkRevokeAccessMutation.mutate()}
-                disabled={view.bulkRevokeAccessMutation.isPending || !view.activeEventId}
-                className="w-full sm:w-auto border-red-200 hover:bg-red-50 text-red-700"
-              >
-                {view.bulkRevokeAccessMutation.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Github className="mr-2 h-4 w-4 text-red-600" />
-                )}
-                Bulk Revoke Access
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={view.bulkRevokeAccessMutation.isPending || !view.activeEventId}
+                    className="w-full border-red-200 text-red-700 hover:bg-red-50 sm:w-auto"
+                  >
+                    {view.bulkRevokeAccessMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ShieldX className="mr-2 h-4 w-4 text-red-600" />
+                    )}
+                    Revoke Event Repo Access
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Revoke access to all event repositories?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes team members as collaborators from repositories linked to this event. It does not remove anyone from the GitHub Organization.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => view.bulkRevokeAccessMutation.mutate()}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                    >
+                      Revoke repository access
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </CardContent>
