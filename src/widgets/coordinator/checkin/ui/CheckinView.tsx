@@ -25,6 +25,15 @@ import { queryKeys } from '@/lib/queryKeys';
 import { EventCheckInQrPanel } from './EventCheckInQrPanel';
 
 const EXPORT_PAGE_SIZE = 100;
+const CHECKIN_EVENT_STORAGE_KEY = 'seal:check-in:selected-event';
+
+function getStoredEventId() {
+  try {
+    return window.sessionStorage.getItem(CHECKIN_EVENT_STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
 
 function escapeExcelCell(value: unknown) {
   return String(value ?? '')
@@ -108,7 +117,7 @@ function buildAttendanceExcel(eventTitle: string, participants: Participant[]) {
 export function Checkin() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((s) => s.selectedEvent);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const [selectedEventId, setSelectedEventId] = useState(getStoredEventId);
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -126,6 +135,7 @@ export function Checkin() {
 
   const handleSelectEvent = (eventId: string) => {
     setSelectedEventId(eventId);
+    window.sessionStorage.setItem(CHECKIN_EVENT_STORAGE_KEY, eventId);
     setPage(1);
   };
 
@@ -134,6 +144,7 @@ export function Checkin() {
     queryKey: queryKeys.participants.list({ eventId: activeEvent?.id, page, limit: 10 }),
     queryFn: () => participantsApi.list({
       eventId: activeEvent?.id,
+      confirmedTeamsOnly: true,
       page,
       limit: 10,
     }),
@@ -144,6 +155,7 @@ export function Checkin() {
     queryKey: queryKeys.participants.list({ eventId: activeEvent?.id, checkInStatus: 'CHECKED_IN', page: 1, limit: 10 }),
     queryFn: () => participantsApi.list({
       eventId: activeEvent?.id,
+      confirmedTeamsOnly: true,
       checkInStatus: 'CHECKED_IN',
       page: 1,
       limit: 10,
@@ -189,6 +201,7 @@ export function Checkin() {
     try {
       const firstPage = await participantsApi.list({
         eventId: activeEvent.id,
+        confirmedTeamsOnly: true,
         page: 1,
         limit: EXPORT_PAGE_SIZE,
       });
@@ -197,6 +210,7 @@ export function Checkin() {
         ? await Promise.all(
           Array.from({ length: totalPages - 1 }, (_, index) => participantsApi.list({
             eventId: activeEvent.id,
+            confirmedTeamsOnly: true,
             page: index + 2,
             limit: EXPORT_PAGE_SIZE,
           }))
@@ -287,7 +301,7 @@ export function Checkin() {
                   <div className="text-4xl font-semibold mb-1">
                     {checkedInCount}/{totalCount}
                   </div>
-                  <p className="text-sm text-muted-foreground">Participants checked in</p>
+                  <p className="text-sm text-muted-foreground">Confirmed team members checked in</p>
                 </div>
                 <Progress value={checkinRate} />
                 <div className="flex items-center justify-between text-sm">
@@ -378,7 +392,7 @@ export function Checkin() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Attendance List</CardTitle>
+            <CardTitle>Attendance List — Confirmed Teams</CardTitle>
             <div className="flex gap-2">
               <Button
                 variant="outline"

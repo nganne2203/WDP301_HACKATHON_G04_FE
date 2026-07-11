@@ -1295,6 +1295,7 @@ export interface ListParticipantsQuery {
   eventId?: string;
   userId?: string;
   teamId?: string;
+  confirmedTeamsOnly?: boolean;
   checkInStatus?: CheckInStatus;
   status?: ParticipantStatus;
   eligibilityStatus?: EligibilityStatus;
