@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Html5Qrcode } from 'html5-qrcode';
-import { AlertCircle, Camera, Loader2, RefreshCw, ScanLine } from 'lucide-react';
+import { AlertCircle, Camera, ImageUp, Loader2, RefreshCw, ScanLine } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { participantsApi } from '@/shared/api/participants';
@@ -19,6 +18,28 @@ import {
 } from '@/shared/ui/dialog';
 
 const READER_ID = 'participant-self-check-in-qr-reader';
+type QrScanner = {
+  isScanning: boolean;
+  start: (
+    cameraConfig: { facingMode: string },
+    config: { fps: number; qrbox: { width: number; height: number }; aspectRatio: number },
+    successCallback: (decodedText: string) => void | Promise<void>,
+    errorCallback?: () => void,
+  ) => Promise<unknown>;
+  stop: () => Promise<unknown>;
+  scanFile: (imageFile: File, showImage?: boolean) => Promise<string>;
+  clear: () => Promise<unknown> | void;
+};
+
+async function waitForReaderElement() {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const reader = document.getElementById(READER_ID);
+    if (reader) return reader;
+    await new Promise((resolve) => window.requestAnimationFrame(resolve));
+  }
+
+  return null;
+}
 
 function getScannerError(error: unknown) {
   if (error instanceof ApiError) {
@@ -37,7 +58,10 @@ export function ParticipantCheckInScannerDialog() {
   const [attempt, setAttempt] = useState(0);
   const [scannerError, setScannerError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [scanningImage, setScanningImage] = useState(false);
   const scanLockedRef = useRef(false);
+  const scannerRef = useRef<QrScanner | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const scanMutation = useMutation({
     mutationFn: (token: string) => participantsApi.scanCheckInQr(token),
@@ -58,50 +82,99 @@ export function ParticipantCheckInScannerDialog() {
     if (!open) return;
 
     let disposed = false;
-    const scanner = new Html5Qrcode(READER_ID, false);
     scanLockedRef.current = false;
     setScannerError(null);
     setStarting(true);
 
     const stopScanner = async () => {
+      const scanner = scannerRef.current;
+      if (!scanner) return;
       if (scanner.isScanning) await scanner.stop().catch(() => undefined);
-      await scanner.clear().catch(() => undefined);
+      await Promise.resolve(scanner.clear()).catch(() => undefined);
     };
 
-    scanner.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1 },
-      async (decodedText) => {
-        if (scanLockedRef.current || disposed) return;
-        scanLockedRef.current = true;
-        await scanner.stop().catch(() => undefined);
-
-        try {
-          await handleScan(decodedText);
-          if (!disposed) setOpen(false);
-        } catch (error) {
-          if (!disposed) setScannerError(getScannerError(error));
+    const startScanner = async () => {
+      try {
+        const reader = await waitForReaderElement();
+        if (!reader) {
+          throw new Error('QR scanner container is not ready. Please try again.');
         }
-      },
-      () => undefined,
-    ).then(() => {
-      if (!disposed) setStarting(false);
-    }).catch((error: unknown) => {
-      if (!disposed) {
-        setStarting(false);
-        setScannerError(
-          error instanceof Error
-            ? error.message
-            : 'Camera access failed. Check browser permissions and try again.',
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error('Camera access is not available in this browser or context.');
+        }
+
+        const { Html5Qrcode } = await import('html5-qrcode');
+        scannerRef.current = new Html5Qrcode(READER_ID, false);
+
+        await scannerRef.current.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1 },
+          async (decodedText) => {
+            if (scanLockedRef.current || disposed) return;
+            scanLockedRef.current = true;
+            await scannerRef.current?.stop().catch(() => undefined);
+
+            try {
+              await handleScan(decodedText);
+              if (!disposed) setOpen(false);
+            } catch (error) {
+              if (!disposed) setScannerError(getScannerError(error));
+            }
+          },
+          () => undefined,
         );
+
+        if (!disposed) setStarting(false);
+      } catch (error: unknown) {
+        if (!disposed) {
+          setStarting(false);
+          setScannerError(
+            error instanceof Error
+              ? error.message
+              : 'Camera access failed. Check browser permissions and try again.',
+          );
+        }
       }
-    });
+    };
+
+    void startScanner();
 
     return () => {
       disposed = true;
       void stopScanner();
+      scannerRef.current = null;
     };
   }, [attempt, handleScan, open]);
+
+  const handleImageUpload = async (file?: File | null) => {
+    if (!file) return;
+
+    scanLockedRef.current = true;
+    setScannerError(null);
+    setScanningImage(true);
+
+    try {
+      const reader = await waitForReaderElement();
+      if (!reader) {
+        throw new Error('QR scanner container is not ready. Please try again.');
+      }
+
+      const { Html5Qrcode } = await import('html5-qrcode');
+      if (!scannerRef.current) scannerRef.current = new Html5Qrcode(READER_ID, false);
+      if (scannerRef.current.isScanning) await scannerRef.current.stop().catch(() => undefined);
+
+      const decodedText = await scannerRef.current.scanFile(file, false);
+      await handleScan(decodedText);
+      setOpen(false);
+    } catch (error) {
+      setScannerError(getScannerError(error));
+      scanLockedRef.current = false;
+    } finally {
+      setScanningImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -122,8 +195,11 @@ export function ParticipantCheckInScannerDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative min-h-72 overflow-hidden rounded-xl border bg-slate-950">
-          <div id={READER_ID} className="w-full [&_video]:rounded-lg" />
+        <div className="relative h-72 overflow-hidden rounded-xl border bg-slate-950">
+          <div
+            id={READER_ID}
+            className="h-full w-full overflow-hidden [&_img]:max-h-72 [&_img]:w-full [&_img]:object-contain [&_video]:h-full [&_video]:w-full [&_video]:rounded-lg [&_video]:object-cover"
+          />
           {starting && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950 text-sm text-white">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -145,6 +221,28 @@ export function ParticipantCheckInScannerDialog() {
             Try again
           </Button>
         )}
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={scanningImage || scanMutation.isPending}
+          >
+            {scanningImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageUp className="mr-2 h-4 w-4" />}
+            Upload QR image
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            Close
+          </Button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(event) => void handleImageUpload(event.target.files?.[0])}
+        />
       </DialogContent>
     </Dialog>
   );

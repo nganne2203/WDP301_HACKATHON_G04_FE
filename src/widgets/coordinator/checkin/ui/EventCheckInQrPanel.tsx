@@ -19,6 +19,21 @@ function formatCountdown(totalSeconds: number) {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+function getStorageKey(eventId: string) {
+  return `seal:check-in-qr:${eventId}`;
+}
+
+function readStoredQr(eventId: string): CheckInQr | null {
+  try {
+    const value = window.sessionStorage.getItem(getStorageKey(eventId));
+    if (!value) return null;
+    const stored = JSON.parse(value) as CheckInQr;
+    return getRemainingSeconds(stored.expiresAt) > 0 ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
 export function EventCheckInQrPanel({ eventId, eventTitle }: { eventId?: string; eventTitle?: string }) {
   const [qr, setQr] = useState<CheckInQr | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
@@ -28,17 +43,36 @@ export function EventCheckInQrPanel({ eventId, eventTitle }: { eventId?: string;
     onSuccess: (response) => {
       setQr(response.data);
       setRemainingSeconds(getRemainingSeconds(response.data.expiresAt));
+      window.sessionStorage.setItem(getStorageKey(eventId!), JSON.stringify(response.data));
     },
   });
 
   useEffect(() => {
+    if (!eventId) {
+      setQr(null);
+      setRemainingSeconds(0);
+      return;
+    }
+
+    const storedQr = readStoredQr(eventId);
+    if (storedQr) {
+      setQr(storedQr);
+      setRemainingSeconds(getRemainingSeconds(storedQr.expiresAt));
+      return;
+    }
+
+    window.sessionStorage.removeItem(getStorageKey(eventId));
     setQr(null);
     setRemainingSeconds(0);
   }, [eventId]);
 
   useEffect(() => {
     if (!qr?.expiresAt) return;
-    const updateCountdown = () => setRemainingSeconds(getRemainingSeconds(qr.expiresAt));
+    const updateCountdown = () => {
+      const seconds = getRemainingSeconds(qr.expiresAt);
+      setRemainingSeconds(seconds);
+      if (seconds === 0 && eventId) window.sessionStorage.removeItem(getStorageKey(eventId));
+    };
     updateCountdown();
     const interval = window.setInterval(updateCountdown, 1000);
     return () => window.clearInterval(interval);

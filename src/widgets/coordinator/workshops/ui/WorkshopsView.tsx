@@ -49,7 +49,7 @@ export function Workshops() {
         <div>
           <h1 className="text-2xl font-semibold mb-1">Workshop Management</h1>
           <p className="text-sm text-muted-foreground">
-            Manage seminars, speakers, questionnaire prompts, and workshop links from the FE.
+            Manage workshops, speakers, questions, and meeting links.
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
@@ -262,7 +262,7 @@ export function Workshops() {
           <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Edit Workshop</DialogTitle>
-            <DialogDescription>Update workshop speaker info and scheduling fields to match the backend.</DialogDescription>
+            <DialogDescription>Update the speaker, schedule, and meeting details.</DialogDescription>
           </DialogHeader>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6">

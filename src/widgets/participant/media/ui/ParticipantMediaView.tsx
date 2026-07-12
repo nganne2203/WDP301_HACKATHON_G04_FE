@@ -94,7 +94,7 @@ export function ParticipantMedia() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete media?</AlertDialogTitle>
             <AlertDialogDescription>
-              Pending media can be deleted before moderation. This action removes the file and metadata.
+              You can delete pending uploads before they are reviewed. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {view.deleteMedia && !view.canDelete(view.deleteMedia) && (

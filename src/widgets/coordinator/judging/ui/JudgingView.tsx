@@ -113,7 +113,7 @@ export function Judging() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading judging boards</AlertTitle>
-          <AlertDescription>The system is fetching judging board data...</AlertDescription>
+          <AlertDescription>Loading judging boards.</AlertDescription>
         </Alert>
       )}
 
@@ -227,8 +227,8 @@ export function Judging() {
           <AlertDialogHeader>
             <AlertDialogTitle>Randomize Board Assignment</AlertDialogTitle>
             <AlertDialogDescription>
-              The system will take eligible teams from <strong>{view.activeEvent?.title}</strong>, create a random
-              assignment plan for the current round, and show a preview for confirmation before saving.
+              Eligible teams from <strong>{view.activeEvent?.title}</strong> will be assigned randomly. You can review
+              the result before saving.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -252,7 +252,7 @@ export function Judging() {
             <DialogDescription>
               {view.randomizationPreview
                 ? `There are ${view.randomizationPreview.eligibleTeamCount} eligible teams and ${view.randomizationPreview.ineligibleTeamCount} ineligible teams. The assignment is saved only after confirmation.`
-                : 'No preview data available.'}
+                : 'No assignment preview available.'}
             </DialogDescription>
           </DialogHeader>
           </div>

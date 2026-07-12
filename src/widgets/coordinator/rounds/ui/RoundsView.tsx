@@ -108,7 +108,7 @@ export function Rounds() {
 
       {(view.eventsQuery.error || view.roundsQuery.error || view.tracksQuery.error || view.rubricsQuery.error || view.teamsQuery.error || view.judgesQuery.error) && (
         <Alert>
-          <AlertTitle>Unable to load round configuration data</AlertTitle>
+          <AlertTitle>Unable to load rounds</AlertTitle>
           <AlertDescription>
             {view.getRoundErrorMessage(
               view.eventsQuery.error ||
@@ -220,7 +220,7 @@ export function Rounds() {
         <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Round</DialogTitle>
-            <DialogDescription>Update round metadata, assigned teams, and assigned judges.</DialogDescription>
+            <DialogDescription>Update the round, assigned teams, and judges.</DialogDescription>
           </DialogHeader>
           <RoundForm
             form={view.editForm}
@@ -249,7 +249,7 @@ export function Rounds() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete round</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete "{view.selectedRound?.name}"? Existing FE flows that reference this round will stop using it.
+              Delete "{view.selectedRound?.name}"? It will no longer be available in this event.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

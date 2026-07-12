@@ -180,7 +180,7 @@ export function Results() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading rankings…</AlertTitle>
-          <AlertDescription>Fetching score data from the backend.</AlertDescription>
+          <AlertDescription>Loading scores for this event.</AlertDescription>
         </Alert>
       ) : view.rankings.length === 0 ? (
         <Alert>

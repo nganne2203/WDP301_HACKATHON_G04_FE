@@ -108,7 +108,7 @@ export function AdminMedia() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete media?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the stored file and metadata for {view.deleteMedia?.title || view.deleteMedia?.originalFileName || 'this item'}.
+              Permanently delete {view.deleteMedia?.title || view.deleteMedia?.originalFileName || 'this item'}? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

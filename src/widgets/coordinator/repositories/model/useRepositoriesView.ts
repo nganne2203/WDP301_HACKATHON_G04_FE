@@ -6,7 +6,8 @@ import { githubApi } from '@/entities/github/api';
 import { repositoriesApi } from '@/entities/repository/api';
 import { useEventsQuery, useRoundsQuery, useTeamsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
-import type { Repository, RevokeGitHubMembersResult } from '@/shared/api/types';
+import type { Repository, RepositoryAccessState, RepositoryStatus, RevokeGitHubMembersResult } from '@/shared/api/types';
+import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 
 import { getApiErrorMessage } from './repository-view.utils';
 
@@ -16,6 +17,10 @@ export function useRepositoriesView() {
   const queryClient = useQueryClient();
   const [selectedEventId, setSelectedEventId] = useState('');
   const [repositoriesPage, setRepositoriesPage] = useState(1);
+  const [repositorySearch, setRepositorySearch] = useState('');
+  const [repositoryStatus, setRepositoryStatus] = useState<'all' | RepositoryStatus>('all');
+  const [repositoryAccessState, setRepositoryAccessState] = useState<'all' | RepositoryAccessState>('all');
+  const debouncedRepositorySearch = useDebouncedValue(repositorySearch.trim(), 300);
   const [organizationName, setOrganizationName] = useState('');
   const [ownerUsername, setOwnerUsername] = useState('');
   const [githubToken, setGithubToken] = useState('');
@@ -60,9 +65,23 @@ export function useRepositoriesView() {
   const roundsQuery = useRoundsQuery({ eventId: activeEventId, limit: 10 }, { enabled: Boolean(activeEventId) });
 
   const repositoriesQuery = useQuery({
-    queryKey: queryKeys.repositories.list({ eventId: activeEventId, page: repositoriesPage, limit: 10 }),
+    queryKey: queryKeys.repositories.list({
+      eventId: activeEventId,
+      page: repositoriesPage,
+      limit: 10,
+      search: debouncedRepositorySearch || undefined,
+      status: repositoryStatus === 'all' ? undefined : repositoryStatus,
+      accessState: repositoryAccessState === 'all' ? undefined : repositoryAccessState,
+    }),
     enabled: Boolean(activeEventId),
-    queryFn: () => repositoriesApi.list({ eventId: activeEventId, page: repositoriesPage, limit: 10 }),
+    queryFn: () => repositoriesApi.list({
+      eventId: activeEventId,
+      page: repositoriesPage,
+      limit: 10,
+      search: debouncedRepositorySearch || undefined,
+      status: repositoryStatus === 'all' ? undefined : repositoryStatus,
+      accessState: repositoryAccessState === 'all' ? undefined : repositoryAccessState,
+    }),
   });
 
   const teams = teamsQuery.data || [];
@@ -85,7 +104,14 @@ export function useRepositoriesView() {
     setCollabRepoName('');
     setRevokeResult(null);
     setRepositoriesPage(1);
+    setRepositorySearch('');
+    setRepositoryStatus('all');
+    setRepositoryAccessState('all');
   }, [activeEventId]);
+
+  useEffect(() => {
+    setRepositoriesPage(1);
+  }, [debouncedRepositorySearch, repositoryStatus, repositoryAccessState]);
 
   useEffect(() => {
     if (!configQuery.data) return;
@@ -405,6 +431,12 @@ export function useRepositoriesView() {
     repositoriesQuery,
     repositoriesPage,
     setRepositoriesPage,
+    repositorySearch,
+    setRepositorySearch,
+    repositoryStatus,
+    setRepositoryStatus,
+    repositoryAccessState,
+    setRepositoryAccessState,
     repositoriesPagination,
     teams,
     rounds,

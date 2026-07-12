@@ -58,8 +58,8 @@ export function JudgeCodeReviewsView() {
       {view.isLoading && (
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
-          <AlertTitle>Loading code review data</AlertTitle>
-          <AlertDescription>Fetching assigned repositories and review signals.</AlertDescription>
+          <AlertTitle>Loading code reviews</AlertTitle>
+          <AlertDescription>Loading repositories assigned to you.</AlertDescription>
         </Alert>
       )}
 
