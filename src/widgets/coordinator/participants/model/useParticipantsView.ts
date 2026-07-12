@@ -26,7 +26,6 @@ function getParticipantErrorMessage(error: unknown) {
 
 export function useParticipantsView() {
   const queryClient = useQueryClient();
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -170,22 +169,6 @@ export function useParticipantsView() {
     },
   });
 
-  const allSelected = filteredUsers.length > 0 && selectedIds.length === filteredUsers.length;
-  const someSelected = selectedIds.length > 0 && !allSelected;
-
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelectedIds([]);
-      return;
-    }
-
-    setSelectedIds(filteredUsers.map((participant) => participant.id));
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
-  };
-
   const validateUserForm = (form: ParticipantUserFormState, mode: 'create' | 'edit') => {
     if (!form.fullName.trim()) {
       toast.error('Full name is required');
@@ -231,9 +214,7 @@ export function useParticipantsView() {
   };
 
   const handleExport = () => {
-    const dataToExport = selectedIds.length > 0
-      ? filteredUsers.filter((participant) => selectedIds.includes(participant.id))
-      : filteredUsers;
+    const dataToExport = filteredUsers;
 
     if (dataToExport.length === 0) {
       toast.error('No users to export');
@@ -269,7 +250,6 @@ export function useParticipantsView() {
   };
 
   return {
-    selectedIds,
     createForm,
     setCreateForm,
     createOpen,
@@ -297,7 +277,6 @@ export function useParticipantsView() {
     roleFilter,
     setRoleFilter: (role: UserRoleName | 'all') => {
       setRoleFilter(role);
-      setSelectedIds([]);
       setPage(1);
     },
     page,
@@ -310,10 +289,6 @@ export function useParticipantsView() {
     rejectMutation,
     suspendMutation,
     activateMutation,
-    allSelected,
-    someSelected,
-    toggleAll,
-    toggleSelect,
     handleCreateUser,
     handleUpdateUser,
     openEditDialog,

@@ -89,12 +89,6 @@ export function Events() {
       )}
 
       {!view.eventsQuery.isLoading && !view.eventsQuery.error && (
-        <div className="rounded-md border bg-blue-50 p-4 text-sm text-blue-900">
-          Event dates do not change lifecycle status automatically. Use each event's action menu to move one step at a time after the backend checklist is satisfied.
-        </div>
-      )}
-
-      {!view.eventsQuery.isLoading && !view.eventsQuery.error && (
         <Card>
           <Table className="table-fixed">
             <colgroup>

@@ -51,7 +51,6 @@ export function Participants() {
           <h1 className="text-2xl font-semibold mb-1">Users</h1>
           <p className="text-sm text-muted-foreground">
             Manage user accounts, assigned roles, and activation status
-            {view.selectedIds.length > 0 && ` - ${view.selectedIds.length} selected`}
             {view.pagination && ` - ${view.pagination.totalItems} total`}
           </p>
         </div>
@@ -135,14 +134,6 @@ export function Participants() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={view.allSelected}
-                    onCheckedChange={view.toggleAll}
-                    aria-label="Select all"
-                    className={view.someSelected ? 'data-[state=checked]:bg-primary' : ''}
-                  />
-                </TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>GitHub</TableHead>
@@ -155,20 +146,13 @@ export function Participants() {
             <TableBody>
               {view.filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No users found.
                   </TableCell>
                 </TableRow>
               ) : (
                 view.filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={view.selectedIds.includes(user.id)}
-                        onCheckedChange={() => view.toggleSelect(user.id)}
-                        aria-label={`Select ${user.fullName}`}
-                      />
-                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="w-8 h-8">
