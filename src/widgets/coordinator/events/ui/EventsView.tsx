@@ -1,4 +1,4 @@
-import { AlertCircle, Calendar, Loader2, MoreVertical, Plus } from 'lucide-react';
+import { AlertCircle, Calendar, Loader2, MoreVertical, Play, Plus } from 'lucide-react';
 
 import { describeAdvancementRule, formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
 import { ApiError } from '@/shared/api/client';
@@ -89,6 +89,12 @@ export function Events() {
       )}
 
       {!view.eventsQuery.isLoading && !view.eventsQuery.error && (
+        <div className="rounded-md border bg-blue-50 p-4 text-sm text-blue-900">
+          Event dates do not change lifecycle status automatically. Use each event's action menu to move one step at a time after the backend checklist is satisfied.
+        </div>
+      )}
+
+      {!view.eventsQuery.isLoading && !view.eventsQuery.error && (
         <Card>
           <Table className="table-fixed">
             <colgroup>
@@ -159,9 +165,20 @@ export function Events() {
                           <DropdownMenuItem onClick={() => view.openInviteDialog(event)}>
                             Send Invitations
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => view.openDeleteDialog(event)}>
-                            Delete Event
-                          </DropdownMenuItem>
+                          {view.getNextStatus(event) && (
+                            <DropdownMenuItem
+                              disabled={view.statusMutation.isPending}
+                              onClick={() => view.advanceStatus(event)}
+                            >
+                              <Play className="mr-2 h-4 w-4" />
+                              {view.getStatusActionLabel(event)}
+                            </DropdownMenuItem>
+                          )}
+                          {view.canDeleteEvent(event) && (
+                            <DropdownMenuItem className="text-destructive" onClick={() => view.openDeleteDialog(event)}>
+                              Delete Draft
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -218,7 +235,7 @@ export function Events() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Event</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{view.selectedEvent?.title}"? This action cannot be undone.
+              Are you sure you want to delete draft event "{view.selectedEvent?.title}"? Events that already entered operations should be archived through the lifecycle action instead.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

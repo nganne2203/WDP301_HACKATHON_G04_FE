@@ -318,7 +318,6 @@ export interface CreateEventRequest {
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
   competitionConfig?: CompetitionConfig;
-  status?: EventStatus;
 }
 
 export type UpdateEventRequest = Partial<CreateEventRequest>;

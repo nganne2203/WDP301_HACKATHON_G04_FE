@@ -21,6 +21,7 @@ export function ScoringCriteriaCard({
   setGeneralComment,
   isSubmitted,
   submitDisabled,
+  saveDisabled,
   savePending,
   onSaveDraft,
   onSubmit,
@@ -36,6 +37,7 @@ export function ScoringCriteriaCard({
   setGeneralComment: React.Dispatch<React.SetStateAction<string>>;
   isSubmitted: boolean;
   submitDisabled: boolean;
+  saveDisabled?: boolean;
   savePending: boolean;
   onSaveDraft: () => void;
   onSubmit: () => void;
@@ -108,7 +110,7 @@ export function ScoringCriteriaCard({
 
         {!isSubmitted && (
           <div className="flex gap-3 pt-2">
-            <Button variant="outline" onClick={onSaveDraft} disabled={savePending}>
+            <Button variant="outline" onClick={onSaveDraft} disabled={saveDisabled || savePending}>
               {savePending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
               Save Draft
             </Button>

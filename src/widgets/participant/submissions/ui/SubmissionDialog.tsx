@@ -26,6 +26,7 @@ export function SubmissionDialog({
   onSubmitConfirmOpenChange,
   selectedRound,
   currentSubmission,
+  gateMessage,
   form,
   setForm,
   saveDraftPending,
@@ -39,6 +40,7 @@ export function SubmissionDialog({
   onSubmitConfirmOpenChange: (open: boolean) => void;
   selectedRound: Round | null;
   currentSubmission: Submission | null;
+  gateMessage: string;
   form: SubmissionFormState;
   setForm: React.Dispatch<React.SetStateAction<SubmissionFormState>>;
   saveDraftPending: boolean;
@@ -47,6 +49,7 @@ export function SubmissionDialog({
   onSubmit: () => void;
 }) {
   const locked = currentSubmission?.status === 'SUBMITTED' || currentSubmission?.status === 'ACCEPTED' || currentSubmission?.status === 'REJECTED';
+  const editable = !locked && !gateMessage;
 
   return (
     <>
@@ -58,14 +61,16 @@ export function SubmissionDialog({
           </DialogHeader>
           {selectedRound && (
             <div className="space-y-4 py-2">
-              <SubmissionInput id="submission-demo" label="Demo URL" value={form.demoUrl} onChange={(value) => setForm((current) => ({ ...current, demoUrl: value }))} />
-              <SubmissionInput id="submission-report" label="Report URL" value={form.reportUrl} onChange={(value) => setForm((current) => ({ ...current, reportUrl: value }))} />
-              <SubmissionInput id="submission-presentation" label="Presentation URL" value={form.presentationUrl} onChange={(value) => setForm((current) => ({ ...current, presentationUrl: value }))} />
+              <SubmissionInput disabled={!editable} id="submission-demo" label="Demo URL" value={form.demoUrl} onChange={(value) => setForm((current) => ({ ...current, demoUrl: value }))} />
+              <SubmissionInput disabled={!editable} id="submission-report" label="Report URL" value={form.reportUrl} onChange={(value) => setForm((current) => ({ ...current, reportUrl: value }))} />
+              <SubmissionInput disabled={!editable} id="submission-presentation" label="Presentation URL" value={form.presentationUrl} onChange={(value) => setForm((current) => ({ ...current, presentationUrl: value }))} />
 
-              {locked ? (
+              {!editable ? (
                 <Alert>
-                  <AlertTitle>Submission locked</AlertTitle>
-                  <AlertDescription>This submission is no longer editable from the participant side.</AlertDescription>
+                  <AlertTitle>{locked ? 'Submission locked' : 'Submission window closed'}</AlertTitle>
+                  <AlertDescription>
+                    {locked ? 'This submission is no longer editable from the participant side.' : gateMessage}
+                  </AlertDescription>
                 </Alert>
               ) : (
                 <div className="flex justify-end gap-2">
@@ -110,11 +115,13 @@ export function SubmissionDialog({
 }
 
 function SubmissionInput({
+  disabled,
   id,
   label,
   value,
   onChange,
 }: {
+  disabled: boolean;
   id: string;
   label: string;
   value: string;
@@ -123,7 +130,7 @@ function SubmissionInput({
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} value={value} onChange={(event) => onChange(event.target.value)} placeholder="https://..." />
+      <Input id={id} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} placeholder="https://..." />
     </div>
   );
 }

@@ -61,10 +61,8 @@ export function useJudgeDashboardView() {
     if (selectedRoundId) {
       return rounds.find((round) => round.id === selectedRoundId) || null;
     }
-    const ongoingRound = rounds.find(
-      (round) => round.status?.toUpperCase() === 'ONGOING' || round.status?.toUpperCase() === 'ACTIVE'
-    );
-    return ongoingRound || rounds[0] || null;
+    const scoringRound = rounds.find((round) => round.status === 'SCORING');
+    return scoringRound || rounds[0] || null;
   }, [rounds, selectedRoundId]);
 
   // Fetch judging boards for the round
@@ -80,11 +78,12 @@ export function useJudgeDashboardView() {
   }, [boardQuery.data, user?.id]);
 
   const assignedTeams = myBoard?.teams || [];
+  const scoringOpen = activeRound?.status === 'SCORING' && myBoard?.status === 'SCORING';
 
   // Fetch submissions
   const submissionsQuery = useQuery({
     queryKey: queryKeys.submissions.list({ roundId: activeRound?.id, limit: 20 }),
-    enabled: Boolean(activeRound?.id && assignedTeams.length > 0),
+    enabled: Boolean(activeRound?.id && assignedTeams.length > 0 && scoringOpen),
     queryFn: () => submissionsApi.list({ roundId: activeRound!.id, limit: 20 }),
   });
   const submissions = submissionsQuery.data?.data || [];
@@ -100,7 +99,7 @@ export function useJudgeDashboardView() {
   // Fetch scoresheets matching the current judge in this round
   const sheetsQuery = useQuery({
     queryKey: queryKeys.scoreSheets.list({ roundId: activeRound?.id, judgeId: user?.id, limit: 20 }),
-    enabled: Boolean(activeRound?.id && user?.id),
+    enabled: Boolean(activeRound?.id && user?.id && scoringOpen),
     queryFn: () => scoringApi.listSheets({ roundId: activeRound!.id, judgeId: user?.id, limit: 20 }),
   });
   const allSheets = sheetsQuery.data?.data || [];
@@ -166,6 +165,7 @@ export function useJudgeDashboardView() {
     draftTeamsCount,
     pendingTeamsCount,
     averageScoreGiven,
+    scoringOpen,
     isLoading: eventsQuery.isLoading || roundsQuery.isLoading || boardQuery.isLoading,
   };
 }

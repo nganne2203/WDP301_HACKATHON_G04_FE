@@ -67,10 +67,8 @@ export function useJudgeScoringView() {
     if (selectedRoundId) {
       return rounds.find((round) => round.id === selectedRoundId) || null;
     }
-    const ongoingRound = rounds.find(
-      (round) => round.status?.toUpperCase() === 'ONGOING' || round.status?.toUpperCase() === 'ACTIVE'
-    );
-    return ongoingRound || rounds[0] || null;
+    const scoringRound = rounds.find((round) => round.status === 'SCORING');
+    return scoringRound || rounds[0] || null;
   }, [rounds, selectedRoundId]);
 
   const boardQuery = useQuery({
@@ -200,6 +198,17 @@ export function useJudgeScoringView() {
   const latestAnalysis = repositoryAnalysisQuery.data?.[0] || null;
   const latestAiReview = repositoryAiQuery.data?.aiReviews?.[0] || null;
   const hasIncompleteCriteria = criteria.some((criterion) => scores[criterion.id] === undefined);
+  const submissionReady = submission?.status === 'SUBMITTED' || submission?.status === 'ACCEPTED';
+  const scoringOpen = activeRound?.status === 'SCORING' && myBoard?.status === 'SCORING';
+  const scoringGateMessage = !activeRound
+    ? 'Select a round to begin scoring.'
+    : activeRound.status !== 'SCORING'
+      ? 'This round is not in scoring status yet.'
+      : myBoard && myBoard.status !== 'SCORING'
+        ? 'Your judging board is not open for scoring yet.'
+        : submission && !submissionReady
+          ? 'This team does not have a submitted artifact ready for scoring.'
+          : '';
 
   return {
     selectedEventId,
@@ -240,5 +249,8 @@ export function useJudgeScoringView() {
     latestAnalysis,
     latestAiReview,
     hasIncompleteCriteria,
+    scoringOpen,
+    submissionReady,
+    scoringGateMessage,
   };
 }

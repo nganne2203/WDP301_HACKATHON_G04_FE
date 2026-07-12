@@ -11,6 +11,8 @@ import { ApiError } from '@/shared/api/client';
 import type { CreateEventRequest, Event } from '@/shared/api/types';
 import {
   eventFormSchema,
+  getEventLifecycleActionLabel,
+  getNextEventStatus,
   getTodayDateInputValue,
   parseInviteEmails,
   toCreateEventRequest,
@@ -43,7 +45,6 @@ export function useEventsView() {
   const createForm = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      status: 'DRAFT',
       finalistSelectionMode: 'FIXED_PER_BOARD',
       fillRemainingFinalistsByOverallScore: false,
     },
@@ -59,7 +60,6 @@ export function useEventsView() {
       toast.success('Event Created', { description: `${response.data.title} has been created.` });
       setCreateOpen(false);
       createForm.reset({
-        status: 'DRAFT',
         finalistSelectionMode: 'FIXED_PER_BOARD',
         fillRemainingFinalistsByOverallScore: false,
       });
@@ -82,6 +82,23 @@ export function useEventsView() {
     onError: (error: unknown) => {
       toast.error('Failed to update event', {
         description: getEventErrorMessage(error, 'Please try again.'),
+      });
+    },
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: Event['status'] }) => eventsApi.updateStatus(id, { status }),
+    onSuccess: async (response) => {
+      toast.success('Event status updated', {
+        description: `${response.data.title} is now ${response.data.status.replaceAll('_', ' ').toLowerCase()}.`,
+      });
+      setSelectedEvent((current) => (current?.id === response.data.id ? response.data : current));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(response.data.id) });
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to update event status', {
+        description: getEventErrorMessage(error, 'Please resolve the checklist items and try again.'),
       });
     },
   });
@@ -160,7 +177,6 @@ export function useEventsView() {
     setCreateOpen(open);
     if (!open) {
       createForm.reset({
-        status: 'DRAFT',
         finalistSelectionMode: 'FIXED_PER_BOARD',
         fillRemainingFinalistsByOverallScore: false,
       });
@@ -179,6 +195,12 @@ export function useEventsView() {
   };
 
   const openDeleteDialog = (event: Event) => {
+    if (event.status !== 'DRAFT') {
+      toast.error('Only draft events can be deleted', {
+        description: 'Use the lifecycle action to archive events that already entered operations.',
+      });
+      return;
+    }
     setSelectedEvent(event);
     setDeleteOpen(true);
   };
@@ -194,6 +216,18 @@ export function useEventsView() {
     if (!selectedEvent) return;
     deleteMutation.mutate(selectedEvent.id);
   };
+
+  const getNextStatus = (event: Event) => getNextEventStatus(event.status);
+
+  const getStatusActionLabel = (event: Event) => getEventLifecycleActionLabel(event.status);
+
+  const advanceStatus = (event: Event) => {
+    const nextStatus = getNextStatus(event);
+    if (!nextStatus) return;
+    statusMutation.mutate({ id: event.id, status: nextStatus });
+  };
+
+  const canDeleteEvent = (event: Event) => event.status === 'DRAFT';
 
   const sendInvitations = () => {
     if (!selectedEvent) return;
@@ -231,6 +265,7 @@ export function useEventsView() {
     editForm,
     createMutation,
     updateMutation,
+    statusMutation,
     deleteMutation,
     inviteMutation,
     handleCreate,
@@ -241,6 +276,10 @@ export function useEventsView() {
     openDeleteDialog,
     openInviteDialog,
     confirmDelete,
+    getNextStatus,
+    getStatusActionLabel,
+    advanceStatus,
+    canDeleteEvent,
     sendInvitations,
     getEventErrorMessage,
   };
