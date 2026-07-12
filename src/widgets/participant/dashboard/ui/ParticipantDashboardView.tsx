@@ -17,6 +17,12 @@ function formatDateTime(value?: string | null) {
   return new Date(value).toLocaleString();
 }
 
+function formatGitHubAccessStatus(status?: string | null) {
+  if (status === 'GRANTED') return 'Access granted';
+  if (status === 'REVOKED') return 'Access revoked';
+  return 'Access not granted yet';
+}
+
 export function ParticipantDashboard() {
   const view = useParticipantDashboardView();
 
@@ -110,7 +116,9 @@ export function ParticipantDashboard() {
               {view.participant?.githubAccessStatus === 'GRANTED' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-gray-300" />}
               <div className="flex-1">
                 <p className="font-medium">GitHub Access</p>
-                <p className="text-xs text-muted-foreground">{view.participant?.githubAccessStatus || 'Not granted yet'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatGitHubAccessStatus(view.participant?.githubAccessStatus)}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -147,7 +155,7 @@ export function ParticipantDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Github className="w-4 h-4 text-muted-foreground" />
-                    <span>{view.participant?.githubAccessStatus || 'No repository access yet'}</span>
+                    <span>{formatGitHubAccessStatus(view.participant?.githubAccessStatus)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-muted-foreground" />
@@ -179,7 +187,7 @@ export function ParticipantDashboard() {
           <CardDescription>
             {view.rounds.length > 0
               ? `${view.completedSubmissionCount} of ${view.rounds.length} round submission(s) completed`
-              : 'No rounds available yet.'}
+              : 'No rounds have been assigned to your team yet.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -212,8 +220,8 @@ export function ParticipantDashboard() {
             </div>
           ) : (
             <Alert>
-              <AlertTitle>No active rounds</AlertTitle>
-              <AlertDescription>The coordinator has not published any round for this event yet.</AlertDescription>
+              <AlertTitle>No rounds assigned</AlertTitle>
+              <AlertDescription>Your confirmed team has not been assigned to a competition round yet.</AlertDescription>
             </Alert>
           )}
 
@@ -240,7 +248,7 @@ export function ParticipantDashboard() {
           ) : view.timelineItems.length === 0 ? (
             <Alert>
               <AlertTitle>No timeline items</AlertTitle>
-              <AlertDescription>The event timeline has not been configured yet.</AlertDescription>
+              <AlertDescription>The event schedule is not available yet.</AlertDescription>
             </Alert>
           ) : (
             <div className="space-y-4">

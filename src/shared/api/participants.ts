@@ -9,7 +9,7 @@ import type {
 
 export const participantsApi = {
   list: (query?: ListParticipantsQuery) =>
-    api.get<Participant[]>('/participants', { params: query as Record<string, string | number | undefined> }),
+    api.get<Participant[]>('/participants', { params: query as Record<string, string | number | boolean | undefined> }),
 
   getById: (id: string) =>
     api.get<Participant>(`/participants/${id}`),

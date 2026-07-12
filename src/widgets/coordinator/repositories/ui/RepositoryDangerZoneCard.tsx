@@ -28,14 +28,14 @@ export function RepositoryDangerZoneCard({ view }: { view: RepositoriesViewModel
           <ShieldX className="h-5 w-5" />
           Organization Danger Zone
         </CardTitle>
-        <CardDescription>Revoke every organization member except the configured owner username.</CardDescription>
+        <CardDescription>Remove organization membership from everyone except the configured owner username.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Destructive action</AlertTitle>
           <AlertDescription>
-            This calls GitHub and removes organization members. It skips only the configured owner: {view.ownerUsername || 'not configured'}.
+            This removes all Organization members except the owner: {view.ownerUsername || 'not set'}.
           </AlertDescription>
         </Alert>
 
@@ -43,12 +43,12 @@ export function RepositoryDangerZoneCard({ view }: { view: RepositoriesViewModel
           <AlertDialogTrigger asChild>
             <Button variant="destructive">
               <ShieldX className="mr-2 h-4 w-4" />
-              Revoke all members except owner
+              Remove organization members
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Revoke organization members?</AlertDialogTitle>
+              <AlertDialogTitle>Remove organization members?</AlertDialogTitle>
               <AlertDialogDescription>
                 Type <strong>REVOKE MEMBERS</strong> to confirm. This operation continues even if one removal fails.
               </AlertDialogDescription>

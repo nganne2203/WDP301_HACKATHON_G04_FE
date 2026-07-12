@@ -53,7 +53,8 @@ export function Results() {
   const top3Rankings = view.rankings.slice(0, 3);
   const podiumItems = top3Finalists.length ? top3Finalists : top3Rankings;
 
-  const isPublished = view.rankings.some((r) => r.publishedAt !== null);
+  const isPublished = view.rankings.some((r) => Boolean(r.publishedAt));
+  const isPreliminaryRound = view.activeRound?.roundType === 'PRELIMINARY';
 
   return (
     <div className="p-6 space-y-6">
@@ -137,8 +138,9 @@ export function Results() {
               <Button
                 variant="outline"
                 onClick={() => view.generateRankingsMutation.mutate()}
-                disabled={view.generateRankingsMutation.isPending || !view.activeEventId || !view.activeRoundId}
+                disabled={!view.canGenerateRankingsForRound || view.generateRankingsMutation.isPending || !view.activeEventId || !view.activeRoundId}
                 className="w-full"
+                title={view.activeRound?.roundType === 'PRELIMINARY' ? 'Rankings are generated only for the final round.' : undefined}
               >
                 {view.generateRankingsMutation.isPending
                   ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -180,7 +182,7 @@ export function Results() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading rankings…</AlertTitle>
-          <AlertDescription>Fetching score data from the backend.</AlertDescription>
+          <AlertDescription>Loading scores for this event.</AlertDescription>
         </Alert>
       ) : view.rankings.length === 0 ? (
         <Alert>
@@ -191,16 +193,24 @@ export function Results() {
           </AlertDescription>
         </Alert>
       ) : (
-        <Alert>
+        <Alert className="sm:grid-cols-[1rem_auto_auto] sm:items-center sm:gap-x-8">
           <Trophy className="h-4 w-4" />
-          <AlertTitle>
+          <AlertTitle className="sm:col-start-2 sm:row-start-1">
             {view.finalists.length
               ? `${view.finalists.length} finalists selected from ${view.rankings.length} ranked teams`
               : `${view.rankings.length} teams ranked`}
           </AlertTitle>
-          <AlertDescription>
-            Round: <strong>{view.activeRound?.name || '–'}</strong>
-            {' '} · Type: <strong>{view.activeRound?.roundType || '–'}</strong>
+          <AlertDescription className="sm:col-start-3 sm:row-start-1 sm:block">
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
+              <div>
+                <span className="mr-2 text-xs text-muted-foreground">Round</span>
+                <strong>{view.activeRound?.name || '–'}</strong>
+              </div>
+              <div>
+                <span className="mr-2 text-xs text-muted-foreground">Type</span>
+                <strong>{view.activeRound?.roundType || '–'}</strong>
+              </div>
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -228,7 +238,9 @@ export function Results() {
               <Alert>
                 <AlertTitle>No advancing teams selected yet</AlertTitle>
                 <AlertDescription>
-                  Generate rankings first, then use Select Finalists to mark which teams go to the next round.
+                  {isPreliminaryRound
+                    ? 'Use Select Finalists to mark the teams advancing to the next round.'
+                    : 'Generate final rankings before publishing the official results.'}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -340,7 +352,8 @@ export function Results() {
                   <TableHead>Team</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Track</TableHead>
-                  <TableHead>Finalist</TableHead>
+                  <TableHead>Board</TableHead>
+                  <TableHead>{isPreliminaryRound ? 'Advances' : 'Finalist'}</TableHead>
                   <TableHead>Published</TableHead>
                 </TableRow>
               </TableHeader>
@@ -386,8 +399,15 @@ export function Results() {
                       )}
                     </TableCell>
                     <TableCell>
+                      {ranking.team?.boardNumber ? (
+                        <Badge variant="outline">Board {ranking.team.boardNumber}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {ranking.isSelectedForFinal ? (
-                        <Badge><CheckCircle2 className="mr-1 h-3 w-3" />Finalist</Badge>
+                        <Badge><CheckCircle2 className="mr-1 h-3 w-3" />{isPreliminaryRound ? 'Advances' : 'Finalist'}</Badge>
                       ) : (
                         <Badge variant="outline">–</Badge>
                       )}

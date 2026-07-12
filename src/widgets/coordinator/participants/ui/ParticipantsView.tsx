@@ -3,7 +3,6 @@ import { AlertCircle, Ban, CheckCircle, Download, Loader2, Pencil, Plus, Search,
 
 import { ApiError } from '@/shared/api/client';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
-import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { Checkbox } from '@/shared/ui/checkbox';
@@ -39,7 +38,6 @@ import {
   getParticipantInitials,
   getParticipantRoleLabels,
   getParticipantStatusBadge,
-  type ParticipantFilterType,
 } from '../model/participants-view.utils';
 import { useParticipantsView } from '../model/useParticipantsView';
 
@@ -53,7 +51,6 @@ export function Participants() {
           <h1 className="text-2xl font-semibold mb-1">Users</h1>
           <p className="text-sm text-muted-foreground">
             Manage user accounts, assigned roles, and activation status
-            {view.selectedIds.length > 0 && ` - ${view.selectedIds.length} selected`}
             {view.pagination && ` - ${view.pagination.totalItems} total`}
           </p>
         </div>
@@ -69,7 +66,7 @@ export function Participants() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -89,19 +86,31 @@ export function Participants() {
             </button>
           ) : null}
         </div>
-      </div>
-
-      <div className="flex gap-2 flex-wrap">
-        {(['all', 'PENDING', 'ACTIVE', 'REJECTED', 'SUSPENDED'] as ParticipantFilterType[]).map((filter) => (
-          <Badge
-            key={filter}
-            variant={view.activeFilter === filter ? 'secondary' : 'outline'}
-            className="cursor-pointer"
-            onClick={() => view.setActiveFilter(filter)}
-          >
-            {filter === 'all' ? 'All' : filter.charAt(0) + filter.slice(1).toLowerCase()} ({view.filterCounts[filter]})
-          </Badge>
-        ))}
+        <Select value={view.activeFilter} onValueChange={view.setActiveFilter}>
+          <SelectTrigger className="w-full sm:w-48" aria-label="Filter users by status">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="REJECTED">Rejected</SelectItem>
+            <SelectItem value="SUSPENDED">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={view.roleFilter} onValueChange={view.setRoleFilter}>
+          <SelectTrigger className="w-full sm:w-56" aria-label="Filter users by role">
+            <SelectValue placeholder="All roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All roles</SelectItem>
+            {participantUserRoleOptions.map((role) => (
+              <SelectItem key={role} value={role}>
+                {role.replaceAll('_', ' ')}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {view.usersQuery.isLoading && (
@@ -125,14 +134,6 @@ export function Participants() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={view.allSelected}
-                    onCheckedChange={view.toggleAll}
-                    aria-label="Select all"
-                    className={view.someSelected ? 'data-[state=checked]:bg-primary' : ''}
-                  />
-                </TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>GitHub</TableHead>
@@ -145,20 +146,13 @@ export function Participants() {
             <TableBody>
               {view.filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No users found.
                   </TableCell>
                 </TableRow>
               ) : (
                 view.filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={view.selectedIds.includes(user.id)}
-                        onCheckedChange={() => view.toggleSelect(user.id)}
-                        aria-label={`Select ${user.fullName}`}
-                      />
-                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="w-8 h-8">

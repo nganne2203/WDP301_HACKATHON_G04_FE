@@ -161,6 +161,7 @@ export interface Notification {
   message?: string | null;
   type: NotificationType;
   status: NotificationStatus;
+  dedupeKey?: string | null;
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -317,7 +318,6 @@ export interface CreateEventRequest {
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
   competitionConfig?: CompetitionConfig;
-  status?: EventStatus;
 }
 
 export type UpdateEventRequest = Partial<CreateEventRequest>;
@@ -1294,6 +1294,7 @@ export interface ListParticipantsQuery {
   eventId?: string;
   userId?: string;
   teamId?: string;
+  confirmedTeamsOnly?: boolean;
   checkInStatus?: CheckInStatus;
   status?: ParticipantStatus;
   eligibilityStatus?: EligibilityStatus;

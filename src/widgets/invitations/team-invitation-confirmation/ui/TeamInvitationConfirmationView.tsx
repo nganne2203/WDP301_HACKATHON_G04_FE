@@ -40,7 +40,7 @@ export function TeamInvitationConfirmation() {
       if (err instanceof ApiError) {
         setError(err.firstError);
       } else {
-        setError('Could not connect to the server.');
+        setError('Connection failed. Please try again.');
       }
     } finally {
       setLoading(false);

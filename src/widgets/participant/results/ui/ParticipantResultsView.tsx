@@ -110,7 +110,7 @@ export function ParticipantResultsView() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading results</AlertTitle>
-          <AlertDescription>Fetching ranking data for the selected round.</AlertDescription>
+          <AlertDescription>Loading results for this round.</AlertDescription>
         </Alert>
       ) : rankings.length === 0 ? (
         <Alert>

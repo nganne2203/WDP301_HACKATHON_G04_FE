@@ -78,6 +78,13 @@ export function JudgeScoring() {
           <div className="lg:col-span-2 space-y-4">
             {view.selectedTeam ? (
               <>
+                {view.scoringGateMessage && (
+                  <Alert>
+                    <AlertTitle>Scoring not open</AlertTitle>
+                    <AlertDescription>{view.scoringGateMessage}</AlertDescription>
+                  </Alert>
+                )}
+
                 <SubmissionSummaryCard
                   teamName={view.selectedTeam.name}
                   submission={view.submission}
@@ -100,11 +107,14 @@ export function JudgeScoring() {
                   isSubmitted={view.isSubmitted}
                   submitDisabled={
                     view.saveMutation.isPending ||
+                    !view.scoringOpen ||
+                    !view.submissionReady ||
                     !view.submission ||
                     !view.myBoard ||
                     view.hasIncompleteCriteria
                   }
-                  savePending={view.saveMutation.isPending || !view.submission || !view.myBoard}
+                  saveDisabled={!view.scoringOpen || !view.submissionReady || !view.submission || !view.myBoard}
+                  savePending={view.saveMutation.isPending}
                   onSaveDraft={() => view.saveMutation.mutate(false)}
                   onSubmit={() => view.setSubmitConfirm(true)}
                 />

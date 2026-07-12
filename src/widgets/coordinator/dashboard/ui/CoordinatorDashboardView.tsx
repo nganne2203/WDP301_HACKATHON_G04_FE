@@ -147,9 +147,9 @@ export function CoordinatorDashboard() {
   });
 
   const teamsQuery = useQuery({
-    queryKey: [...queryKeys.teams.all, 'dashboard', activeEventId],
+    queryKey: [...queryKeys.teams.all, 'dashboard', activeEventId, 'confirmed'],
     enabled: Boolean(activeEventId),
-    queryFn: () => teamsApi.list({ eventId: activeEventId, limit: 10 }),
+    queryFn: () => teamsApi.list({ eventId: activeEventId, status: 'CONFIRMED', page: 1, limit: 1 }),
   });
 
   const roundsQuery = useRoundsQuery(
@@ -158,9 +158,9 @@ export function CoordinatorDashboard() {
   );
 
   const submissionsQuery = useQuery({
-    queryKey: queryKeys.submissions.list({ eventId: activeEventId, limit: 10 }),
+    queryKey: queryKeys.submissions.list({ eventId: activeEventId, limit: 100 }),
     enabled: Boolean(activeEventId),
-    queryFn: async () => (await submissionsApi.list({ eventId: activeEventId, limit: 10 })).data,
+    queryFn: async () => (await submissionsApi.list({ eventId: activeEventId, limit: 100 })).data,
   });
 
   const repositoriesQuery = useQuery({
@@ -170,9 +170,15 @@ export function CoordinatorDashboard() {
   });
 
   const checkedInQuery = useQuery({
-    queryKey: queryKeys.participants.list({ eventId: activeEventId, checkInStatus: 'CHECKED_IN', limit: 10 }),
+    queryKey: queryKeys.participants.list({ eventId: activeEventId, confirmedTeamsOnly: true, checkInStatus: 'CHECKED_IN', limit: 1 }),
     enabled: Boolean(activeEventId),
-    queryFn: () => participantsApi.list({ eventId: activeEventId, checkInStatus: 'CHECKED_IN', limit: 10 }),
+    queryFn: () => participantsApi.list({ eventId: activeEventId, confirmedTeamsOnly: true, checkInStatus: 'CHECKED_IN', limit: 1 }),
+  });
+
+  const checkInEligibleQuery = useQuery({
+    queryKey: queryKeys.participants.list({ eventId: activeEventId, confirmedTeamsOnly: true, limit: 1 }),
+    enabled: Boolean(activeEventId),
+    queryFn: () => participantsApi.list({ eventId: activeEventId, confirmedTeamsOnly: true, limit: 1 }),
   });
 
   const timelinesQuery = useQuery({
@@ -190,16 +196,16 @@ export function CoordinatorDashboard() {
   const activeRound = useMemo(() => getCurrentRound(rounds), [rounds]);
 
   const scoreSheetsQuery = useQuery({
-    queryKey: queryKeys.scoreSheets.list({ eventId: activeEventId, roundId: activeRound?.id, limit: 10 }),
-    enabled: Boolean(activeEventId && activeRound?.id),
-    queryFn: () => scoringApi.listSheets({ eventId: activeEventId, roundId: activeRound?.id, limit: 10 }),
+    queryKey: queryKeys.scoreSheets.list({ eventId: activeEventId, limit: 100 }),
+    enabled: Boolean(activeEventId),
+    queryFn: () => scoringApi.listSheets({ eventId: activeEventId, limit: 100 }),
   });
 
   const rankingsQuery = useQuery({
-    queryKey: queryKeys.rankings.list(activeEventId, activeRound?.id),
-    enabled: Boolean(activeEventId && activeRound?.id),
+    queryKey: queryKeys.rankings.list(activeEventId),
+    enabled: Boolean(activeEventId),
     queryFn: async () => (
-      await rankingsApi.list({ eventId: activeEventId, roundId: activeRound?.id, limit: 10 })
+      await rankingsApi.list({ eventId: activeEventId, limit: 100 })
     ).data,
   });
 
@@ -214,6 +220,7 @@ export function CoordinatorDashboard() {
   const auditLogs = Array.isArray(auditPayload) ? auditPayload : auditPayload?.auditLogs || [];
 
   const totalParticipants = participantsQuery.data?.pagination?.totalItems ?? participants.length;
+  const checkInEligibleParticipants = checkInEligibleQuery.data?.pagination?.totalItems ?? 0;
   const totalTeams = teamsQuery.data?.pagination?.totalItems ?? teams.length;
   const totalRepositories = repositoriesQuery.data?.pagination?.totalItems ?? repositories.length;
   const checkedIn = checkedInQuery.data?.pagination?.totalItems ?? participants.filter((participant) => participant.checkInStatus === 'CHECKED_IN').length;
@@ -232,9 +239,10 @@ export function CoordinatorDashboard() {
       .filter((participant) => participant.githubAccessStatus === 'GRANTED')
       .map((participant) => participant.team?.id)
   );
-  const finalists = rankings.filter((ranking) => ranking.isSelectedForFinal).length;
+  const finalists = uniqueCount(
+    rankings.filter((ranking) => ranking.isSelectedForFinal).map((ranking) => ranking.teamId)
+  );
   const maxTeams = activeEvent?.maxTeams || totalTeams;
-  const finalistSlots = activeEvent?.totalFinalistSlots || activeEvent?.finalistSlotsPerTrack || finalists;
   const judgingProgress = percent(teamsEvaluated, totalTeams);
   const loadingValue = eventsQuery.isLoading || participantsQuery.isLoading || teamsQuery.isLoading;
   const lifecycleSteps = buildLifecycleSteps(timelines);
@@ -292,7 +300,7 @@ export function CoordinatorDashboard() {
         />
         <MetricCard
           title="Check-in Rate"
-          value={loadingValue ? '...' : `${percent(checkedIn, totalParticipants)}%`}
+          value={loadingValue || checkInEligibleQuery.isLoading ? '...' : `${percent(checkedIn, checkInEligibleParticipants)}%`}
           icon={ClipboardCheck}
         />
         <MetricCard
@@ -308,11 +316,11 @@ export function CoordinatorDashboard() {
         </CardHeader>
         <CardContent>
           {timelinesQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading event timeline...</p>
+            <p className="text-sm text-muted-foreground">Loading event schedule...</p>
           ) : lifecycleSteps.length > 0 ? (
             <EventStepper steps={lifecycleSteps} />
           ) : (
-            <p className="text-sm text-muted-foreground">No timeline items configured for this event.</p>
+            <p className="text-sm text-muted-foreground">No schedule items yet.</p>
           )}
         </CardContent>
       </Card>
@@ -362,9 +370,9 @@ export function CoordinatorDashboard() {
                   <Trophy className="w-4 h-4 text-muted-foreground" />
                   <span>Finalists Selected</span>
                 </div>
-                <span className="font-medium">{finalists} / {finalistSlots}</span>
+                <span className="font-medium">{finalists} / {totalTeams}</span>
               </div>
-              <Progress value={percent(finalists, finalistSlots)} />
+              <Progress value={percent(finalists, totalTeams)} />
             </div>
           </CardContent>
         </Card>

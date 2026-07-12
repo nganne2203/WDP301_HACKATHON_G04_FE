@@ -45,8 +45,8 @@ export function Judging() {
     previewBoards.length <= 1
       ? 'grid-cols-1'
       : previewBoards.length === 2
-        ? 'grid-cols-2'
-        : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
+        ? 'grid-cols-1 md:grid-cols-2'
+        : 'grid-cols-1 md:grid-cols-3';
 
   return (
     <div className="space-y-6 p-6">
@@ -59,7 +59,7 @@ export function Judging() {
         </div>
         <Button
           onClick={() => view.setShowRandomizeConfirm(true)}
-          disabled={!view.activeRound || view.randomizePreviewMutation.isPending}
+          disabled={view.activeRounds.length === 0 || view.randomizePreviewMutation.isPending}
         >
           {view.randomizePreviewMutation.isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -96,12 +96,12 @@ export function Judging() {
             disabled={!view.activeEvent || view.roundsQuery.isLoading}
           >
             <SelectTrigger>
-              <SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading rounds...' : 'Select round'} />
+              <SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading rounds...' : 'Select judging stage'} />
             </SelectTrigger>
             <SelectContent>
-              {view.rounds.map((round) => (
+              {view.rounds.filter((round, index, all) => all.findIndex((item) => item.roundType === round.roundType) === index).map((round) => (
                 <SelectItem key={round.id} value={round.id}>
-                  {round.name} ({round.roundType})
+                  {round.roundType === 'PRELIMINARY' ? 'Preliminary round' : round.roundType === 'FINAL' ? 'Final round' : round.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -113,7 +113,7 @@ export function Judging() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading judging boards</AlertTitle>
-          <AlertDescription>The system is fetching judging board data...</AlertDescription>
+          <AlertDescription>Loading judging boards.</AlertDescription>
         </Alert>
       )}
 
@@ -144,7 +144,7 @@ export function Judging() {
                 <div>
                   <CardTitle>{board.name}</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {board.teams.length} / {board.maxTeams} teams
+                    {board.teams.length} / {board.maxTeams} teams · {board.round?.name || 'Round'}
                   </p>
                 </div>
                 <Badge variant={statusVariant(board.status)}>{board.status.replace('_', ' ')}</Badge>
@@ -210,7 +210,7 @@ export function Judging() {
               <div className="rounded-lg border p-4">
                 <h3 className="mb-2 text-sm font-medium">Board Count</h3>
                 <p className="text-2xl font-semibold">{view.boards.length}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Active in this round</p>
+                <p className="mt-1 text-xs text-muted-foreground">Across this judging stage</p>
               </div>
               <div className="rounded-lg border p-4">
                 <h3 className="mb-2 text-sm font-medium">Assigned Judges</h3>
@@ -227,8 +227,8 @@ export function Judging() {
           <AlertDialogHeader>
             <AlertDialogTitle>Randomize Board Assignment</AlertDialogTitle>
             <AlertDialogDescription>
-              The system will take eligible teams from <strong>{view.activeEvent?.title}</strong>, create a random
-              assignment plan for the current round, and show a preview for confirmation before saving.
+              Eligible teams from <strong>{view.activeEvent?.title}</strong> will be distributed across all boards in
+              the selected judging stage. You can review the complete lineup before saving.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -243,7 +243,7 @@ export function Judging() {
 
       <Dialog open={view.showRandomizationPreview} onOpenChange={view.setShowRandomizationPreview}>
         <DialogContent
-          className="flex max-h-[92vh] !w-[min(90vw,1040px)] !max-w-[1040px] flex-col overflow-hidden p-0"
+          className="flex max-h-[82vh] !w-[min(90vw,1040px)] !max-w-[1040px] flex-col overflow-hidden p-0"
           style={{ width: 'min(90vw, 1040px)', maxWidth: '1040px' }}
         >
           <div className="flex-shrink-0 px-5 pt-5 sm:px-6 sm:pt-6">
@@ -252,11 +252,11 @@ export function Judging() {
             <DialogDescription>
               {view.randomizationPreview
                 ? `There are ${view.randomizationPreview.eligibleTeamCount} eligible teams and ${view.randomizationPreview.ineligibleTeamCount} ineligible teams. The assignment is saved only after confirmation.`
-                : 'No preview data available.'}
+                : 'No assignment preview available.'}
             </DialogDescription>
           </DialogHeader>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          <div className="min-h-0 max-h-[60vh] flex-none overflow-y-auto px-5 py-4 sm:px-6">
           <div className={`grid w-full items-stretch gap-4 ${previewGridClassName}`}>
             {previewBoards.map((board) => (
               <Card key={board.boardNumber} className="min-w-0 w-full">
@@ -268,7 +268,7 @@ export function Judging() {
                     </Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-2">
+                <CardContent className="max-h-[58vh] space-y-2 overflow-y-auto pr-2">
                   {board.teams.map((team) => (
                     <div key={team.id} className="rounded-md border px-3 py-2 text-sm">
                       <div className="flex items-center justify-between gap-2">
@@ -343,7 +343,7 @@ export function Judging() {
         board={view.selectedBoard}
         open={Boolean(view.selectedBoard)}
         onClose={() => view.setSelectedBoard(null)}
-        roundId={view.activeRound?.id || ''}
+        roundId={view.selectedBoard?.roundId || view.activeRound?.id || ''}
       />
     </div>
   );

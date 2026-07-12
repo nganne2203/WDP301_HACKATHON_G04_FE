@@ -96,7 +96,16 @@ function getResultBadgeClass(result?: string | null): string {
 }
 
 function getActorName(log: AuditLog) {
-  return log.username || log.user?.fullName || log.user?.email || (log.userId ? 'Unknown user' : 'System');
+  return log.user?.fullName?.trim() || log.username || log.user?.email || (log.userId ? 'Unknown user' : 'System');
+}
+
+function getActorEmail(log: AuditLog) {
+  return log.user?.email || (log.username?.includes('@') ? log.username : '') || '-';
+}
+
+function shorten(value?: string | null, maxLength = 88) {
+  const text = value?.trim() || '-';
+  return text.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
 }
 
 function formatDateTime(value?: string | null) {
@@ -154,7 +163,7 @@ function AuditDetailsDialog({
 }) {
   return (
     <Dialog open={Boolean(log)} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="w-[min(920px,calc(100vw-2rem))] max-w-none max-h-[85vh] overflow-y-auto overflow-x-hidden p-0">
+      <DialogContent className="!w-[min(760px,calc(100vw-2rem))] !max-w-none sm:!max-w-none max-h-[85vh] overflow-y-auto overflow-x-hidden p-0">
         <DialogHeader className="px-6 pt-6 pr-14">
           <DialogTitle>Audit Event Details</DialogTitle>
         </DialogHeader>
@@ -176,6 +185,14 @@ function AuditDetailsDialog({
               <div className="min-w-0">
                 <p className="text-muted-foreground">IP Address</p>
                 <p>{log.ipAddress || '-'}</p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-muted-foreground">User</p>
+                <p className="truncate font-medium" title={getActorName(log)}>{getActorName(log)}</p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-muted-foreground">Email</p>
+                <p className="truncate" title={getActorEmail(log)}>{getActorEmail(log)}</p>
               </div>
               <div className="min-w-0">
                 <p className="text-muted-foreground">Source</p>
@@ -301,7 +318,7 @@ export function AuditLogsView() {
             Audit Logs
           </h1>
           <p className="text-sm text-muted-foreground">
-            Chronological security and business activity trail with request context and change details.
+            Review account activity, security events, and system changes.
           </p>
         </div>
         <div className="flex gap-2">
@@ -438,7 +455,7 @@ export function AuditLogsView() {
             <Alert>
               <Loader2 className="h-4 w-4 animate-spin" />
               <AlertTitle>Loading audit logs...</AlertTitle>
-              <AlertDescription>Fetching records from the backend.</AlertDescription>
+              <AlertDescription>Loading activity logs.</AlertDescription>
             </Alert>
           ) : logs.length === 0 ? (
             <Alert>
@@ -463,34 +480,46 @@ export function AuditLogsView() {
                 {logs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(log.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">{getActorName(log)}</p>
+                    <TableCell className="max-w-[180px]">
+                      <div className="min-w-0" title={getActorName(log)}>
+                        <p className="truncate text-sm font-medium">{getActorName(log)}</p>
                         {/* <p className="text-xs text-muted-foreground">{log.userRole || log.userId || ''}</p> */}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getActionColor(log.action ?? '')}>{log.action ?? '-'}</Badge>
-                      {log.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{log.description}</p>}
+                    <TableCell className="max-w-[300px]">
+                      <Badge variant="outline" className={getActionColor(log.action ?? '')}>{shorten(log.action, 32)}</Badge>
+                      {log.description && (
+                        <p className="mt-1 truncate text-xs text-muted-foreground" title={log.description}>
+                          {shorten(log.description, 58)}
+                        </p>
+                      )}
                     </TableCell>
-                    <TableCell>
-                      <div>
+                    <TableCell className="max-w-[160px]">
+                      <div className="min-w-0">
                         <Badge variant="secondary" className="text-xs">{log.entityType || log.resourceType || '-'}</Badge>
-                        {(log.entityId || log.resourceId) && <p className="text-xs text-muted-foreground font-mono mt-1">{log.entityId || log.resourceId}</p>}
+                        {(log.entityId || log.resourceId) && (
+                          <p className="mt-1 truncate font-mono text-xs text-muted-foreground" title={log.entityId || log.resourceId}>
+                            {shorten(log.entityId || log.resourceId, 18)}
+                          </p>
+                        )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="max-w-[180px]">
                       <Badge
                         className={getResultBadgeClass(log.result)}
                         variant={log.result === 'FAILURE' ? 'destructive' : 'outline'}
                       >
                         {log.result || 'SUCCESS'}
                       </Badge>
-                      {log.errorMessage && <p className="text-xs text-destructive mt-1 line-clamp-1">{log.errorMessage}</p>}
+                      {log.errorMessage && (
+                        <p className="mt-1 truncate text-xs text-destructive" title={log.errorMessage}>
+                          {shorten(log.errorMessage, 48)}
+                        </p>
+                      )}
                     </TableCell>
-                    <TableCell>
-                      <p className="text-xs font-mono">{log.requestId || '-'}</p>
-                      <p className="text-xs text-muted-foreground">{log.ipAddress || ''}</p>
+                    <TableCell className="max-w-[130px]">
+                      <p className="truncate font-mono text-xs" title={log.requestId || '-'}>{shorten(log.requestId, 16)}</p>
+                      <p className="truncate text-xs text-muted-foreground" title={log.ipAddress || ''}>{log.ipAddress || ''}</p>
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)} aria-label="View audit details">
