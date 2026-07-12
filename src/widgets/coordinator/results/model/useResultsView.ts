@@ -38,6 +38,7 @@ export function useResultsView() {
   const rounds = roundsQuery.data || [];
   const activeRound = rounds.find((r) => r.id === selectedRoundId) || rounds[0] || null;
   const activeRoundId = activeRound?.id || '';
+  const canGenerateRankingsForRound = canGenerateRankings && activeRound?.roundType === 'FINAL';
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(activeEventId, activeRoundId),
@@ -152,6 +153,7 @@ export function useResultsView() {
     finalistsQuery,
     canManageResults,
     canGenerateRankings,
+    canGenerateRankingsForRound,
     canSelectFinalists,
     canPublishResults,
     isCustomSelectionMode,

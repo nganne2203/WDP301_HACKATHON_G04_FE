@@ -1,7 +1,6 @@
 import type { UseFormReturn } from 'react-hook-form';
 
 import {
-  eventStatusOptions,
   finalistSelectionModeOptions,
   getTodayDateInputValue,
   type EventFormValues,
@@ -84,22 +83,6 @@ export function EventForm({
             <p className="text-sm text-red-600">{form.formState.errors.endDate.message}</p>
           )}
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor={`${prefix}-status`}>Status</Label>
-        <Select value={form.watch('status') || 'DRAFT'} onValueChange={(value) => form.setValue('status', value)}>
-          <SelectTrigger id={`${prefix}-status`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {eventStatusOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="rounded-lg border bg-muted/20 p-4 space-y-4">

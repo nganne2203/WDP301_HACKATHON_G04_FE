@@ -11,6 +11,25 @@ export const eventStatusOptions: { value: EventStatus; label: string }[] = [
   { value: 'ARCHIVED', label: 'Archived' },
 ];
 
+export const eventLifecycleTransitions: Partial<Record<EventStatus, EventStatus>> = {
+  DRAFT: 'OPEN_REGISTRATION',
+  OPEN_REGISTRATION: 'REGISTRATION_CLOSED',
+  REGISTRATION_CLOSED: 'ONGOING',
+  ONGOING: 'SCORING',
+  SCORING: 'COMPLETED',
+  COMPLETED: 'ARCHIVED',
+};
+
+export const eventLifecycleActionLabels: Record<EventStatus, string> = {
+  DRAFT: 'Open registration',
+  OPEN_REGISTRATION: 'Close registration',
+  REGISTRATION_CLOSED: 'Start event',
+  ONGOING: 'Start scoring',
+  SCORING: 'Complete event',
+  COMPLETED: 'Archive event',
+  ARCHIVED: 'Archived',
+};
+
 export const finalistSelectionModeOptions: { value: FinalistSelectionMode; label: string; description: string }[] = [
   {
     value: 'FIXED_PER_BOARD',
@@ -46,7 +65,6 @@ export const eventFormSchema = z.object({
   semester: z.string().max(50).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
-  status: z.string().optional(),
   boardCount: optionalNumber,
   maxTeamsPerBoard: optionalNumber,
   finalistsPerBoard: optionalNumber,
@@ -102,7 +120,6 @@ export function toCreateEventRequest(data: EventFormValues): CreateEventRequest 
     finalistSlotsPerTrack: data.finalistsPerBoard,
     totalFinalistSlots: data.finalistCount,
     competitionConfig,
-    status: (data.status as EventStatus) || 'DRAFT',
   };
 }
 
@@ -118,7 +135,6 @@ export function toUpdateEventRequest(data: EventFormValues): Partial<CreateEvent
     finalistSlotsPerTrack: data.finalistsPerBoard,
     totalFinalistSlots: data.finalistCount,
     competitionConfig,
-    status: (data.status as EventStatus) || undefined,
   };
 }
 
@@ -129,7 +145,6 @@ export function toEditEventFormValues(event: Event): EventFormValues {
     semester: event.semester || '',
     startDate: event.startDate ? event.startDate.split('T')[0] : '',
     endDate: event.endDate ? event.endDate.split('T')[0] : '',
-    status: event.status,
     boardCount: event.competitionConfig?.boardCount,
     maxTeamsPerBoard: event.competitionConfig?.maxTeamsPerBoard,
     finalistsPerBoard: event.competitionConfig?.finalistsPerBoard ?? event.finalistSlotsPerTrack,
@@ -203,6 +218,14 @@ export function formatEventDate(dateStr?: string | null) {
 
 export function mapEventStatus(status: EventStatus) {
   return status.toLowerCase();
+}
+
+export function getNextEventStatus(status: EventStatus) {
+  return eventLifecycleTransitions[status] || null;
+}
+
+export function getEventLifecycleActionLabel(status: EventStatus) {
+  return eventLifecycleActionLabels[status];
 }
 
 export function getTodayDateInputValue() {

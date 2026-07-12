@@ -61,10 +61,8 @@ export function useJudgeDashboardView() {
     if (selectedRoundId) {
       return rounds.find((round) => round.id === selectedRoundId) || null;
     }
-    const ongoingRound = rounds.find(
-      (round) => round.status?.toUpperCase() === 'ONGOING' || round.status?.toUpperCase() === 'ACTIVE'
-    );
-    return ongoingRound || rounds[0] || null;
+    const scoringRound = rounds.find((round) => round.status === 'SCORING');
+    return scoringRound || rounds[0] || null;
   }, [rounds, selectedRoundId]);
 
   // Fetch judging boards for the round
@@ -80,6 +78,7 @@ export function useJudgeDashboardView() {
   }, [boardQuery.data, user?.id]);
 
   const assignedTeams = myBoard?.teams || [];
+  const scoringOpen = activeRound?.status === 'SCORING' && myBoard?.status === 'SCORING';
 
   // Fetch submissions
   const submissionsQuery = useQuery({
@@ -166,6 +165,7 @@ export function useJudgeDashboardView() {
     draftTeamsCount,
     pendingTeamsCount,
     averageScoreGiven,
+    scoringOpen,
     isLoading: eventsQuery.isLoading || roundsQuery.isLoading || boardQuery.isLoading,
   };
 }

@@ -38,22 +38,36 @@ export function useJudgingView() {
     [rounds, selectedRoundId]
   );
 
+  // A judging stage may contain several rounds (for example the three
+  // preliminary boards). Keep the stage selector, but load every round in
+  // that stage so coordinators can see and operate on the complete lineup.
+  const activeRounds = useMemo(
+    () => (activeRound ? rounds.filter((round) => round.roundType === activeRound.roundType) : []),
+    [activeRound, rounds]
+  );
+
   const boardsQuery = useQuery({
-    queryKey: queryKeys.judging.boards(activeRound?.id),
-    enabled: Boolean(activeRound?.id),
-    queryFn: () => judgingBoardsApi.list({ roundId: activeRound!.id, limit: 10 }),
+    queryKey: [...queryKeys.judging.boards(activeEvent?.id), activeRound?.roundType],
+    enabled: Boolean(activeEvent?.id && activeRound?.roundType),
+    queryFn: () => judgingBoardsApi.list({ eventId: activeEvent!.id, limit: 100 }),
   });
-  const boards: JudgingBoard[] = boardsQuery.data?.data || [];
+  const boards: JudgingBoard[] = (boardsQuery.data?.data || []).filter((board) =>
+    activeRounds.some((round) => round.id === board.roundId)
+  );
   const totalTeams = boards.reduce((sum, board) => sum + board.teams.length, 0);
   const totalJudges = new Set(boards.flatMap((board) => board.judgeIds)).size;
 
   const randomizePreviewMutation = useMutation({
-    mutationFn: () => judgingBoardsApi.randomizePreview({ eventId: activeEvent!.id, roundId: activeRound!.id }),
+    mutationFn: async () => {
+      if (!activeEvent || activeRounds.length === 0) throw new Error('No judging round selected');
+      const response = await judgingBoardsApi.randomizePreview({ eventId: activeEvent.id, roundId: activeRound.id });
+      return response.data;
+    },
     onSuccess: (response) => {
-      setRandomizationPreview(response.data);
+      setRandomizationPreview(response as JudgingBoardRandomizationPreview);
       setShowRandomizeConfirm(false);
       setShowRandomizationPreview(true);
-      toast.success(`Created a board assignment preview for ${response.data.eligibleTeamCount} eligible teams`);
+      toast.success(`Created a board assignment preview for ${response.eligibleTeamCount} eligible teams`);
     },
     onError: () => {
       toast.error('Unable to randomize judging boards');
@@ -62,18 +76,14 @@ export function useJudgingView() {
 
   const confirmRandomizationMutation = useMutation({
     mutationFn: () => {
-      if (!activeEvent || !activeRound || !randomizationPreview) {
+      if (!activeEvent || activeRounds.length === 0 || !randomizationPreview) {
         throw new Error('Missing data required to confirm board assignment');
       }
 
       return judgingBoardsApi.confirmRandomization({
         eventId: activeEvent.id,
-        roundId: activeRound.id,
-        boards: randomizationPreview.boards.map((board) => ({
-          boardNumber: board.boardNumber,
-          name: board.name,
-          teamIds: board.teamIds,
-        })),
+        roundId: activeRound!.id,
+        boards: randomizationPreview.boards.map((board) => ({ boardNumber: board.boardNumber, name: board.name, teamIds: board.teamIds }))
       });
     },
     onSuccess: (response) => {
@@ -110,6 +120,7 @@ export function useJudgingView() {
     roundsQuery,
     rounds,
     activeRound,
+    activeRounds,
     boardsQuery,
     boards,
     totalTeams,

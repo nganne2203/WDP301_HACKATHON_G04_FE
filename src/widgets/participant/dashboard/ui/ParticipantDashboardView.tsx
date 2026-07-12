@@ -187,7 +187,7 @@ export function ParticipantDashboard() {
           <CardDescription>
             {view.rounds.length > 0
               ? `${view.completedSubmissionCount} of ${view.rounds.length} round submission(s) completed`
-              : 'No rounds available yet.'}
+              : 'No rounds have been assigned to your team yet.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -220,8 +220,8 @@ export function ParticipantDashboard() {
             </div>
           ) : (
             <Alert>
-              <AlertTitle>No active rounds</AlertTitle>
-              <AlertDescription>The coordinator has not published any round for this event yet.</AlertDescription>
+              <AlertTitle>No rounds assigned</AlertTitle>
+              <AlertDescription>Your confirmed team has not been assigned to a competition round yet.</AlertDescription>
             </Alert>
           )}
 

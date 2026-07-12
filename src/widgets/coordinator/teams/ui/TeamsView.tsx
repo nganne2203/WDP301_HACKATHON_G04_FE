@@ -86,9 +86,15 @@ export function Teams() {
     queryFn: () => teamsApi.list({ eventId: activeEvent?.id, page, limit: 12 }),
   });
 
+  const confirmedTeamsQuery = useQuery({
+    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, status: 'CONFIRMED', page: 1, limit: 1 }),
+    enabled: Boolean(activeEvent?.id),
+    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, status: 'CONFIRMED', page: 1, limit: 1 }),
+  });
+
   const teams = teamsQuery.data?.data || [];
   const pagination = teamsQuery.data?.pagination;
-  const confirmedTeams = teams.filter((team) => team.status === 'CONFIRMED').length;
+  const confirmedTeams = confirmedTeamsQuery.data?.pagination?.totalItems || 0;
   const maxTeams = activeEvent?.maxTeams || 30;
   const capacityPercent = maxTeams > 0 ? Math.min(Math.round((confirmedTeams / maxTeams) * 100), 100) : 0;
 
