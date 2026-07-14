@@ -18,6 +18,10 @@ import { ScoringCriteriaCard } from './ScoringCriteriaCard';
 import { SubmissionSummaryCard } from './SubmissionSummaryCard';
 import { useJudgeScoringView } from '../model/useJudgeScoringView';
 
+function formatScore(value: number) {
+  return (Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100).toFixed(2);
+}
+
 export function JudgeScoring() {
   const view = useJudgeScoringView();
 
@@ -29,16 +33,6 @@ export function JudgeScoring() {
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row">
-        <div className="w-full md:w-60">
-          <Select value={view.activeEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-            <SelectTrigger><SelectValue placeholder="Select event" /></SelectTrigger>
-            <SelectContent>
-              {view.events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
         <div className="w-full md:w-60">
           <Select value={view.activeRound?.id || ''} onValueChange={view.setSelectedRoundId} disabled={!view.activeEvent || view.roundsQuery.isLoading}>
             <SelectTrigger><SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading...' : 'Select round'} /></SelectTrigger>
@@ -135,7 +129,7 @@ export function JudgeScoring() {
             <AlertDialogTitle>Submit Score Sheet</AlertDialogTitle>
             <AlertDialogDescription>
               You are submitting the score sheet for <strong>{view.selectedTeam?.name}</strong> with a total of{' '}
-              <strong>{view.totalScore}</strong> points. This cannot be modified after submission.
+              <strong>{formatScore(view.totalScore)}</strong> points. This cannot be modified after submission.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

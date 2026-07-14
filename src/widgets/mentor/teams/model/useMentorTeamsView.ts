@@ -37,18 +37,9 @@ export function useMentorTeamsView() {
     }
   }, [events, selectedEvent, setSelectedEvent]);
 
-  const handleEventChange = (eventId: string) => {
-    const event = events.find((e) => e.id === eventId);
-    if (event) {
-      setPage(1);
-      setSelectedEvent({
-        id: event.id,
-        title: event.title,
-        semester: event.semester,
-        status: event.status,
-      });
-    }
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [selectedEvent?.id]);
 
   const teamsQuery = useQuery({
     queryKey: queryKeys.teams.list({ eventId: selectedEvent?.id, page, limit: 12 }),
@@ -114,8 +105,6 @@ export function useMentorTeamsView() {
     page,
     setPage,
     pagination,
-    selectedEventId: selectedEvent?.id || '',
-    setSelectedEventId: handleEventChange,
     appRole,
     isSpeaker,
     eventsQuery,

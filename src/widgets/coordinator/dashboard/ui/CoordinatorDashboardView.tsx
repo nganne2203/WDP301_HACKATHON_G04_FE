@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Progress } from '@/shared/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { useStore } from '@/entities/session/model/store';
 import { queryKeys } from '@/lib/queryKeys';
@@ -255,34 +254,6 @@ export function CoordinatorDashboard() {
           <p className="text-sm text-muted-foreground">
             Monitor and manage all aspects of the hackathon
           </p>
-        </div>
-        <div className="flex flex-col gap-3 rounded-lg border bg-white p-3 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Event scope</p>
-            <Select value={activeEventId || ''} onValueChange={handleSelectEvent} disabled={eventsQuery.isLoading}>
-              <SelectTrigger className="w-full min-w-0">
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent className="max-w-[min(560px,calc(100vw-2rem))]">
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id} className="max-w-[520px]">
-                    <span className="block truncate">
-                      {event.title} - {event.status.replace('_', ' ')}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            type="button"
-            variant={activeEvent?.status === 'ONGOING' ? 'default' : 'outline'}
-            className="w-full shrink-0 sm:mt-5 sm:w-auto"
-            disabled={!ongoingEvent || eventsQuery.isLoading}
-            onClick={handleSelectOngoingEvent}
-          >
-            Ongoing Event
-          </Button>
         </div>
       </div>
 

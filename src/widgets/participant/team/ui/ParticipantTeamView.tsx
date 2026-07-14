@@ -1,8 +1,6 @@
 import { Clock, Loader2 } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import { Label } from '@/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { TeamStatusAlert } from '@/features/team/member-invites/ui/TeamStatusAlert';
 import { useParticipantTeamView } from '@/widgets/participant/team/model/useParticipantTeamView';
 import { CreateTeamCard } from '@/widgets/participant/team/ui/CreateTeamCard';
@@ -17,7 +15,6 @@ export function ParticipantTeam() {
     cancelMutation,
     createValidationPending,
     createTeamMutation,
-    events,
     eventsQuery,
     handleCreateTeam,
     handleInvite,
@@ -33,7 +30,6 @@ export function ParticipantTeam() {
     setInvitedMembers,
     setNewInvitedMembers,
     setReplacementEmails,
-    setSelectedEventId,
     setTeamName,
     team,
     teamNameChecking,
@@ -44,25 +40,10 @@ export function ParticipantTeam() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1">My Team</h1>
           <p className="text-sm text-muted-foreground">Create a team, invite members, and track confirmation status.</p>
-        </div>
-        <div className="w-full md:w-80">
-          <Label>Event</Label>
-          <Select value={activeEventId} onValueChange={setSelectedEventId} disabled={eventsQuery.isLoading}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

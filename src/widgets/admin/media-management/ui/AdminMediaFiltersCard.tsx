@@ -11,9 +11,6 @@ export function AdminMediaFiltersCard({
   statisticsLoading,
   statistics,
   mediaTypeCounts,
-  events,
-  eventId,
-  setEventId,
   mediaType,
   setMediaType,
   status,
@@ -38,9 +35,6 @@ export function AdminMediaFiltersCard({
   statisticsLoading: boolean;
   statistics: any;
   mediaTypeCounts: Map<string, number>;
-  events: Array<{ id: string; title: string }>;
-  eventId: string;
-  setEventId: (value: string) => void;
   mediaType: string;
   setMediaType: (value: string) => void;
   status: string;
@@ -84,19 +78,10 @@ export function AdminMediaFiltersCard({
       <Card className="rounded-lg">
         <CardHeader>
           <CardTitle>Uploads</CardTitle>
-          <CardDescription>Filter and moderate all event media.</CardDescription>
+          <CardDescription>Filter and moderate media for the selected event.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <Select value={eventId} onValueChange={(value) => { setEventId(value); resetPage(); }}>
-              <SelectTrigger><SelectValue placeholder="Event" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All events</SelectItem>
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Select value={mediaType} onValueChange={(value) => { setMediaType(value); resetPage(); }}>
               <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
               <SelectContent>

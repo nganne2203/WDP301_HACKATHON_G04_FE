@@ -40,9 +40,14 @@ export function CriterionForm({
           <Input
             id="criterion-max-score"
             type="number"
-            min="0"
+            min="0.01"
+            step="0.01"
             value={form.maxScore}
             onChange={(event) => onChange((current) => ({ ...current, maxScore: event.target.value }))}
+            onBlur={() => onChange((current) => {
+              const value = Number(current.maxScore);
+              return { ...current, maxScore: Number.isFinite(value) && value > 0 ? value.toFixed(2) : current.maxScore };
+            })}
           />
         </div>
         <div className="space-y-2">
@@ -50,9 +55,14 @@ export function CriterionForm({
           <Input
             id="criterion-weight"
             type="number"
-            min="0"
+            min="0.01"
+            step="0.01"
             value={form.weight}
             onChange={(event) => onChange((current) => ({ ...current, weight: event.target.value }))}
+            onBlur={() => onChange((current) => {
+              const value = Number(current.weight);
+              return { ...current, weight: Number.isFinite(value) && value > 0 ? value.toFixed(2) : current.weight };
+            })}
           />
         </div>
         <div className="space-y-2">

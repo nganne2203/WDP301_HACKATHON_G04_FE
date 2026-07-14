@@ -14,7 +14,6 @@ import {
 import { Badge } from '@/shared/ui/badge';
 import { Progress } from '@/shared/ui/progress';
 import { ListPagination } from '@/shared/ui/list-pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { toast } from 'sonner';
 import { participantsApi, workshopsApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
@@ -25,15 +24,6 @@ import { queryKeys } from '@/lib/queryKeys';
 import { EventCheckInQrPanel } from './EventCheckInQrPanel';
 
 const EXPORT_PAGE_SIZE = 100;
-const CHECKIN_EVENT_STORAGE_KEY = 'seal:check-in:selected-event';
-
-function getStoredEventId() {
-  try {
-    return window.sessionStorage.getItem(CHECKIN_EVENT_STORAGE_KEY) || '';
-  } catch {
-    return '';
-  }
-}
 
 function escapeExcelCell(value: unknown) {
   return String(value ?? '')
@@ -117,7 +107,6 @@ function buildAttendanceExcel(eventTitle: string, participants: Participant[]) {
 export function Checkin() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((s) => s.selectedEvent);
-  const [selectedEventId, setSelectedEventId] = useState(getStoredEventId);
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -126,18 +115,8 @@ export function Checkin() {
 
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return (
-      events.find((event) => event.id === selectedEventId) ||
-      events.find((event) => event.id === selectedEvent?.id) ||
-      events[0]
-    );
-  }, [events, selectedEventId, selectedEvent?.id]);
-
-  const handleSelectEvent = (eventId: string) => {
-    setSelectedEventId(eventId);
-    window.sessionStorage.setItem(CHECKIN_EVENT_STORAGE_KEY, eventId);
-    setPage(1);
-  };
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
 
   // Fetch real participants filtered by selected event
   const { data: participantsResponse, isLoading: participantsLoading, error: participantsError } = useQuery({
@@ -248,32 +227,12 @@ export function Checkin() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1">Check-in & Seminar</h1>
           <p className="text-sm text-muted-foreground">
             Manage participant attendance and workshop sessions
           </p>
-        </div>
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <div className="w-full sm:w-80">
-            <Select
-              value={activeEvent?.id || ''}
-              onValueChange={handleSelectEvent}
-              disabled={eventsQuery.isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent>
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </div>
 

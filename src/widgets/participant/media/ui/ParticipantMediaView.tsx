@@ -27,10 +27,7 @@ export function ParticipantMedia() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(360px,440px)_1fr]">
         <MediaUploadCard
-          events={view.events}
-          eventsLoading={view.eventsQuery.isLoading}
           selectedEventId={view.selectedEventId}
-          setSelectedEventId={view.setSelectedEventId}
           title={view.title}
           setTitle={view.setTitle}
           description={view.description}
@@ -47,11 +44,8 @@ export function ParticipantMedia() {
         />
 
         <MediaHistoryCard
-          events={view.events}
           mediaTypes={MEDIA_TYPES}
           mediaStatuses={MEDIA_STATUSES}
-          historyEventId={view.historyEventId}
-          setHistoryEventId={view.setHistoryEventId}
           historyType={view.historyType}
           setHistoryType={view.setHistoryType}
           historyStatus={view.historyStatus}

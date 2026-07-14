@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 
 import { mediaApi } from '@/entities/media/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { MediaItem } from '@/shared/api/types';
 
@@ -13,7 +12,8 @@ import { buildAdminMediaFilters, getAdminMediaErrorMessage } from './admin-media
 export function useAdminMediaView() {
   const queryClient = useQueryClient();
   const hasPermission = useStore((state) => state.hasPermission);
-  const [eventId, setEventId] = useState('ALL');
+  const selectedEvent = useStore((state) => state.selectedEvent);
+  const eventId = selectedEvent?.id || 'ALL';
   const [uploadedBy, setUploadedBy] = useState('');
   const [teamId, setTeamId] = useState('');
   const [mediaType, setMediaType] = useState('ALL');
@@ -51,8 +51,6 @@ export function useAdminMediaView() {
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
   }), [eventId, fromDate, toDate]);
-
-  const eventsQuery = useEventsQuery(undefined, { enabled: canManage });
 
   const mediaQuery = useQuery({
     queryKey: queryKeys.media.admin(filters),
@@ -135,7 +133,6 @@ export function useAdminMediaView() {
   return {
     canManage,
     eventId,
-    setEventId,
     uploadedBy,
     setUploadedBy,
     teamId,
@@ -166,10 +163,8 @@ export function useAdminMediaView() {
     setRejectReason,
     deleteMedia,
     setDeleteMedia,
-    eventsQuery,
     mediaQuery,
     statisticsQuery,
-    events,
     mediaItems,
     pagination,
     statistics,

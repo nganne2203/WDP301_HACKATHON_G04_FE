@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Bot, GitBranch, Loader2, Server, Users, Webhook } from 'lucide-react';
 
@@ -9,7 +9,6 @@ import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import type { StatusCount } from '@/shared/api/types';
 
@@ -92,18 +91,6 @@ export function OperationsView() {
 
   const activeEventId = activeEvent ? (activeEvent.id || (activeEvent as any)._id) : '';
 
-  const setSelectedEventId = (eventId: string) => {
-    const event = events.find((e) => (e.id || (e as any)._id) === eventId);
-    if (event) {
-      setSelectedEvent({
-        id: event.id || (event as any)._id,
-        title: event.title || (event as any).name || '',
-        semester: event.semester || '',
-        status: event.status || '',
-      });
-    }
-  };
-
   const dashboardQuery = useQuery({
     queryKey: queryKeys.operations.dashboard(activeEventId),
     enabled: Boolean(activeEventId),
@@ -135,7 +122,7 @@ export function OperationsView() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1 flex items-center gap-2">
             <Server className="h-6 w-6" />
@@ -144,24 +131,6 @@ export function OperationsView() {
           <p className="text-sm text-muted-foreground">
             Repository pipeline health, AI review status, and job monitoring.
           </p>
-        </div>
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <div className="w-full sm:w-80">
-            {eventsQuery.isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading events…</p>
-            ) : (
-              <Select value={activeEventId} onValueChange={setSelectedEventId}>
-                <SelectTrigger><SelectValue placeholder="Select event" /></SelectTrigger>
-                <SelectContent>
-                  {events.map((event: any) => (
-                    <SelectItem key={event.id ?? event._id} value={event.id ?? event._id}>
-                      {event.title ?? event.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
         </div>
       </div>
 
@@ -224,7 +193,7 @@ export function OperationsView() {
         <Alert>
           <Server className="h-4 w-4" />
           <AlertTitle>Select an event to view metrics</AlertTitle>
-          <AlertDescription>Choose an event above to see operational dashboard metrics.</AlertDescription>
+          <AlertDescription>Choose an event in the header to see operational dashboard metrics.</AlertDescription>
         </Alert>
       ) : null}
 

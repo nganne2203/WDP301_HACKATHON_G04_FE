@@ -73,24 +73,6 @@ export function Judging() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="w-full md:w-72">
           <Select
-            value={view.activeEvent?.id || ''}
-            onValueChange={view.setSelectedEventId}
-            disabled={view.eventsQuery.isLoading}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {view.events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="w-full md:w-72">
-          <Select
             value={view.activeRound?.id || ''}
             onValueChange={view.setSelectedRoundId}
             disabled={!view.activeEvent || view.roundsQuery.isLoading}
