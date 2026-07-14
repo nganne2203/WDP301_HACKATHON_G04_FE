@@ -278,6 +278,7 @@ export interface Event {
   maxTeamMembers?: number;
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
+  roundCount?: number;
   competitionConfig?: CompetitionConfig;
   status: EventStatus;
   createdBy?: EventCreator | null;
