@@ -22,7 +22,6 @@ import {
 export function useWorkshopsView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
-  const [selectedEventId, setSelectedEventId] = useState('');
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -45,8 +44,8 @@ export function useWorkshopsView() {
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEventId, selectedEvent?.id]);
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
 
   const workshopsQuery = useQuery({
     queryKey: queryKeys.workshops.list({ eventId: activeEvent?.id, page, limit: 10 }),
@@ -284,10 +283,6 @@ export function useWorkshopsView() {
       if (!open) {
         setSelectedReviewsWorkshop(null);
       }
-    },
-    setSelectedEventId: (eventId: string) => {
-      setSelectedEventId(eventId);
-      setPage(1);
     },
     page,
     pagination,

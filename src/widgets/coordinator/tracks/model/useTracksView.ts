@@ -20,7 +20,6 @@ import {
 export function useTracksView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
-  const [selectedEventId, setSelectedEventId] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -33,8 +32,8 @@ export function useTracksView() {
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEventId, selectedEvent?.id]);
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
 
   const tracksQuery = useTracksQuery(
     { eventId: activeEvent?.id, page: 1, limit: 10 },
@@ -146,7 +145,6 @@ export function useTracksView() {
     setDeleteOpen,
     setEditForm,
     setEditOpen,
-    setSelectedEventId,
     tracks,
     tracksQuery,
     updateMutation,

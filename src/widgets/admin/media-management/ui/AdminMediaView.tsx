@@ -44,9 +44,6 @@ export function AdminMedia() {
           statisticsLoading={view.statisticsQuery.isLoading}
           statistics={view.statistics}
           mediaTypeCounts={view.mediaTypeCounts}
-          events={view.events}
-          eventId={view.eventId}
-          setEventId={view.setEventId}
           mediaType={view.mediaType}
           setMediaType={view.setMediaType}
           status={view.status}

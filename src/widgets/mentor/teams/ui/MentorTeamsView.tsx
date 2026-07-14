@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { useMentorTeamsView } from '../model/useMentorTeamsView';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Button } from '@/shared/ui/button';
-import { Label } from '@/shared/ui/label';
 import { ListPagination } from '@/shared/ui/list-pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { TeamCard } from './components/TeamCard';
 import { MentorTeamWorkspaceSheet } from './components/MentorTeamWorkspaceSheet';
 
@@ -24,29 +22,14 @@ export function MentorTeams() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1">My Assigned Teams</h1>
           <p className="text-sm text-muted-foreground">
             {view.isSpeaker
               ? 'Speakers manage workshops instead of teams.'
-              : 'View the teams assigned to you.'}
+            : 'View the teams assigned to you.'}
           </p>
-        </div>
-        <div className="w-full md:w-80">
-          <Label>Event</Label>
-          <Select value={view.selectedEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {view.events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -120,4 +103,3 @@ export function MentorTeams() {
     </div>
   );
 }
-

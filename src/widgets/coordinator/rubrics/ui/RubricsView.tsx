@@ -49,21 +49,6 @@ export function Rubrics() {
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
           <div className="w-full sm:w-72">
-            <Select value={view.activeEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent>
-                {view.events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-full sm:w-72">
             <Select value={view.selectedRoundFilter} onValueChange={view.setSelectedRoundFilter} disabled={!view.activeEvent}>
               <SelectTrigger>
                 <SelectValue placeholder="Filter by round" />

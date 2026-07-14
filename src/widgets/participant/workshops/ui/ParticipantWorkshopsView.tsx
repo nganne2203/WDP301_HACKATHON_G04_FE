@@ -4,7 +4,6 @@ import { useParticipantWorkshopsView } from '../model/useParticipantWorkshopsVie
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Textarea } from '@/shared/ui/textarea';
 import { Badge } from '@/shared/ui/badge';
 import { formatDateTime } from '@/widgets/coordinator/workshops/model/workshop-form';
@@ -32,27 +31,10 @@ export function ParticipantWorkshops() {
           </p>
         </div>
 
-        {/* Event Selector */}
         <div className="flex items-center gap-2">
           {view.eventsQuery.isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : (
-            <Select
-              value={view.activeEvent?.id || ''}
-              onValueChange={view.setSelectedEventId}
-            >
-              <SelectTrigger className="w-[260px] bg-background">
-                <SelectValue placeholder="Select Event" />
-              </SelectTrigger>
-              <SelectContent>
-                {view.events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          ) : null}
           <Button
             variant="outline"
             size="icon"

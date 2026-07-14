@@ -30,16 +30,6 @@ export function JudgeScoring() {
 
       <div className="flex flex-col gap-3 md:flex-row">
         <div className="w-full md:w-60">
-          <Select value={view.activeEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-            <SelectTrigger><SelectValue placeholder="Select event" /></SelectTrigger>
-            <SelectContent>
-              {view.events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="w-full md:w-60">
           <Select value={view.activeRound?.id || ''} onValueChange={view.setSelectedRoundId} disabled={!view.activeEvent || view.roundsQuery.isLoading}>
             <SelectTrigger><SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading...' : 'Select round'} /></SelectTrigger>
             <SelectContent>

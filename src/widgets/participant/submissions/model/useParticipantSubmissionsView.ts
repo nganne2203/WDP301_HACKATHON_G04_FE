@@ -35,7 +35,7 @@ export function getRoundSubmissionGateMessage(round?: Round | null) {
 export function useParticipantSubmissionsView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const storeSelectedEvent = useStore((state) => state.selectedEvent);
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
@@ -46,8 +46,8 @@ export function useParticipantSubmissionsView() {
   const events = eventsQuery.data || [];
   const selectedEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events[0];
-  }, [events, selectedEventId]);
+    return events.find((event) => event.id === storeSelectedEvent?.id) || events[0];
+  }, [events, storeSelectedEvent?.id]);
 
   const teamQuery = useMyTeamQuery(selectedEvent?.id);
 
@@ -158,8 +158,6 @@ export function useParticipantSubmissionsView() {
 
   return {
     user,
-    selectedEventId,
-    setSelectedEventId,
     selectedRound,
     formOpen,
     setFormOpen,

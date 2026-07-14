@@ -23,19 +23,14 @@ export function getJudgeScoringErrorMessage(error: unknown) {
 export function useJudgeScoringView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [searchParams] = useSearchParams();
 
-  const urlEventId = searchParams.get('eventId') || '';
   const urlRoundId = searchParams.get('roundId') || '';
   const urlTeamId = searchParams.get('teamId') || '';
 
-  const [selectedEventId, setSelectedEventId] = useState(urlEventId);
   const [selectedRoundId, setSelectedRoundId] = useState(urlRoundId);
   const [selectedTeamId, setSelectedTeamId] = useState(urlTeamId);
-
-  useEffect(() => {
-    if (urlEventId) setSelectedEventId(urlEventId);
-  }, [urlEventId]);
 
   useEffect(() => {
     if (urlRoundId) setSelectedRoundId(urlRoundId);
@@ -54,20 +49,17 @@ export function useJudgeScoringView() {
   const events = eventsQuery.data || [];
   
   const activeEvent = useMemo(() => {
-    if (selectedEventId) {
-      return events.find((event) => event.id === selectedEventId) || null;
-    }
-    return selectDefaultEvent(events);
-  }, [events, selectedEventId]);
+    return events.find((event) => event.id === selectedEvent?.id) || selectDefaultEvent(events);
+  }, [events, selectedEvent?.id]);
 
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
   const rounds: Round[] = roundsQuery.data || [];
   
   const activeRound = useMemo(() => {
-    if (selectedRoundId) {
-      return rounds.find((round) => round.id === selectedRoundId) || null;
-    }
     const scoringRound = rounds.find((round) => round.status === 'SCORING');
+    if (selectedRoundId) {
+      return rounds.find((round) => round.id === selectedRoundId) || scoringRound || rounds[0] || null;
+    }
     return scoringRound || rounds[0] || null;
   }, [rounds, selectedRoundId]);
 
@@ -211,8 +203,6 @@ export function useJudgeScoringView() {
           : '';
 
   return {
-    selectedEventId,
-    setSelectedEventId,
     selectedRoundId,
     setSelectedRoundId,
     selectedTeamId,

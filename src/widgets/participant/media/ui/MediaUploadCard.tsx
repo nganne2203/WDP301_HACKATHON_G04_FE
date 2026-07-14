@@ -7,15 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Progress } from '@/shared/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Textarea } from '@/shared/ui/textarea';
 import { MediaPreview } from '@/widgets/media/ui/MediaComponents';
 
 export function MediaUploadCard({
-  events,
-  eventsLoading,
   selectedEventId,
-  setSelectedEventId,
   title,
   setTitle,
   description,
@@ -30,10 +26,7 @@ export function MediaUploadCard({
   uploadProgress,
   onSubmit,
 }: {
-  events: Array<{ id: string; title: string }>;
-  eventsLoading: boolean;
   selectedEventId: string;
-  setSelectedEventId: (value: string) => void;
   title: string;
   setTitle: (value: string) => void;
   description: string;
@@ -56,32 +49,15 @@ export function MediaUploadCard({
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Event</Label>
-            <div className="grid grid-cols-[1fr_auto] gap-2">
-              <Select value={selectedEventId} onValueChange={setSelectedEventId} disabled={eventsLoading}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select event" />
-                </SelectTrigger>
-                <SelectContent>
-                  {events.map((event) => (
-                    <SelectItem key={event.id} value={event.id}>
-                      {event.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedEventId ? (
-                <Button asChild variant="outline">
-                  <Link to={`/events/${selectedEventId}/gallery`}>Gallery</Link>
-                </Button>
-              ) : (
-                <Button variant="outline" disabled>
-                  Gallery
-                </Button>
-              )}
-            </div>
-          </div>
+          {selectedEventId ? (
+            <Button asChild variant="outline">
+              <Link to={`/events/${selectedEventId}/gallery`}>Open Gallery</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" disabled>
+              Open Gallery
+            </Button>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="media-title">Title</Label>

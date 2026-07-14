@@ -20,12 +20,12 @@ const PLACE_LABELS = ['1st Place', '2nd Place', '3rd Place'];
 export function ParticipantResultsView() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const storeSelectedEvent = useStore((state) => state.selectedEvent);
   const [selectedRoundId, setSelectedRoundId] = useState('');
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
-  const selectedEvent = events.find((event) => event.id === selectedEventId) || events[0] || null;
+  const selectedEvent = events.find((event) => event.id === storeSelectedEvent?.id) || events[0] || null;
   const activeEventId = selectedEvent?.id || '';
 
   const teamQuery = useMyTeamQuery(activeEventId);
@@ -61,22 +61,7 @@ export function ParticipantResultsView() {
           <h1 className="text-2xl font-semibold mb-1">Results</h1>
           <p className="text-sm text-muted-foreground">View published rankings and your team standing for each round.</p>
         </div>
-        <div className="grid w-full gap-3 md:w-auto md:grid-cols-2">
-          <div className="md:w-72">
-            <Label>Event</Label>
-            <Select value={selectedEvent?.id || ''} onValueChange={setSelectedEventId} disabled={eventsQuery.isLoading}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent>
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="grid w-full gap-3 md:w-auto">
           <div className="md:w-72">
             <Label>Round</Label>
             <Select value={activeRound?.id || ''} onValueChange={setSelectedRoundId} disabled={roundsQuery.isLoading}>

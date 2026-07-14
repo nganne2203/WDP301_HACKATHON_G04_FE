@@ -31,7 +31,6 @@ import {
 export function useRubricsView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
-  const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedRoundFilter, setSelectedRoundFilter] = useState('all');
   const [selectedRubric, setSelectedRubric] = useState<Rubric | null>(null);
   const [editingCriterion, setEditingCriterion] = useState<Criterion | null>(null);
@@ -48,12 +47,8 @@ export function useRubricsView() {
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return (
-      events.find((event) => event.id === selectedEventId) ||
-      events.find((event) => event.id === selectedEvent?.id) ||
-      events[0]
-    );
-  }, [events, selectedEventId, selectedEvent?.id]);
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
 
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
 
@@ -211,8 +206,6 @@ export function useRubricsView() {
   };
 
   return {
-    selectedEventId,
-    setSelectedEventId,
     selectedRoundFilter,
     setSelectedRoundFilter,
     selectedRubric,

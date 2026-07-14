@@ -12,10 +12,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { notificationsApi } from '@/shared/api/notifications';
 import { teamsApi } from '@/shared/api/teams';
 import { getApiErrorMessage } from '@/features/team/member-invites/model/helpers';
-import type { ApiSuccessResponse, EventStatus, Notification } from '@/shared/api/types';
+import type { ApiSuccessResponse, Event, EventStatus, Notification } from '@/shared/api/types';
 import { queryKeys } from '@/lib/queryKeys';
+import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { useSocket } from '@/shared/socket/SocketProvider';
 import { SOCKET_EVENTS } from '@/shared/socket/socketEvents';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,9 +57,19 @@ const eventStatusMeta: Record<EventStatus, { label: string; variant: 'default' |
   ARCHIVED: { label: 'Archived', variant: 'secondary' },
 };
 
+function toSelectedEvent(event: Event) {
+  return {
+    id: event.id,
+    title: event.title,
+    semester: event.semester || event.season || String(event.year || ''),
+    status: event.status,
+  };
+}
+
 export const Topbar = memo(function Topbar() {
   const toggleSidebar = useStore((state) => state.toggleSidebar);
   const selectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
   const logoutMutation = useLogoutMutation();
@@ -67,6 +79,33 @@ export const Topbar = memo(function Topbar() {
   const [selectedInvitationNotification, setSelectedInvitationNotification] = useState<Notification | null>(null);
   const notificationListKey = useMemo(() => queryKeys.notifications.list({ limit: 5 }), []);
   const unreadCountKey = useMemo(() => queryKeys.notifications.list({ status: 'UNREAD' as const, limit: 1 }), []);
+
+  const eventsQuery = useEventsQuery(undefined, { enabled: Boolean(user) });
+  const events = eventsQuery.data || [];
+
+  useEffect(() => {
+    if (!events.length) {
+      if (selectedEvent) setSelectedEvent(null);
+      return;
+    }
+
+    const activeEvent =
+      events.find((event) => event.id === selectedEvent?.id) ||
+      events.find((event) => event.status === 'ONGOING') ||
+      events.find((event) => event.status === 'OPEN_REGISTRATION') ||
+      events[0];
+
+    if (!activeEvent) return;
+
+    if (
+      selectedEvent?.id !== activeEvent.id ||
+      selectedEvent.title !== activeEvent.title ||
+      selectedEvent.semester !== (activeEvent.semester || activeEvent.season || String(activeEvent.year || '')) ||
+      selectedEvent.status !== activeEvent.status
+    ) {
+      setSelectedEvent(toSelectedEvent(activeEvent));
+    }
+  }, [events, selectedEvent, setSelectedEvent]);
 
   const notificationsQuery = useQuery({
     queryKey: notificationListKey,
@@ -219,6 +258,12 @@ export const Topbar = memo(function Topbar() {
   const selectedInvitationMetadata = selectedInvitationNotification?.metadata as TeamInvitationNotificationMetadata | undefined;
   const confirmPending = invitationDecisionMutation.isPending;
 
+  const handleEventChange = (eventId: string) => {
+    const event = events.find((item) => item.id === eventId);
+    if (!event) return;
+    setSelectedEvent(toSelectedEvent(event));
+  };
+
   const initials = useMemo(
     () =>
       displayName
@@ -237,17 +282,31 @@ export const Topbar = memo(function Topbar() {
           <Menu className="w-5 h-5" />
         </Button>
 
-        {selectedEvent && (
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold">{selectedEvent.title}</h2>
-              <p className="hidden text-xs text-muted-foreground sm:block">{selectedEvent.semester}</p>
-            </div>
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="w-[min(58vw,22rem)] sm:w-80">
+            <Select value={selectedEvent?.id || ''} onValueChange={handleEventChange} disabled={eventsQuery.isLoading || events.length === 0}>
+              <SelectTrigger className="h-11 border-0 bg-transparent px-0 shadow-none focus:ring-0">
+                <SelectValue placeholder={eventsQuery.isLoading ? 'Loading events...' : 'Select event'} />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map((event) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">{event.semester || event.season || event.year || '-'}</p>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedEvent?.semester && <p className="-mt-2 hidden text-xs text-muted-foreground sm:block">{selectedEvent.semester}</p>}
+          </div>
+          {selectedEvent && (
             <Badge className="hidden sm:inline-flex" variant={selectedEventStatus?.variant || 'secondary'}>
               {selectedEventStatus?.label || selectedEvent.status.replaceAll('_', ' ')}
             </Badge>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">

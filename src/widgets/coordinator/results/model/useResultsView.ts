@@ -19,7 +19,7 @@ export function useResultsView() {
   const queryClient = useQueryClient();
   const appRole = useStore((state) => state.appRole);
   const hasPermission = useStore((state) => state.hasPermission);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [selectedRoundId, setSelectedRoundId] = useState('');
   const [repositoryAccessAction, setRepositoryAccessAction] = useState<RepositoryAccessAction>('NONE');
   const [manualSelectedTeamIds, setManualSelectedTeamIds] = useState<string[]>([]);
@@ -31,7 +31,7 @@ export function useResultsView() {
 
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
-  const activeEvent = events.find((e) => e.id === selectedEventId) || events[0] || null;
+  const activeEvent = events.find((e) => e.id === selectedEvent?.id) || events[0] || null;
   const activeEventId = activeEvent?.id || '';
 
   const roundsQuery = useRoundsQuery({ eventId: activeEventId, limit: 10 }, { enabled: Boolean(activeEventId) });
@@ -137,9 +137,6 @@ export function useResultsView() {
     eventsQuery,
     activeEvent,
     activeEventId,
-    selectedEventId,
-    setSelectedEventId,
-
     rounds,
     roundsQuery,
     activeRound,

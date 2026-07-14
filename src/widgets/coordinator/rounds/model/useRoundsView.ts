@@ -29,7 +29,6 @@ import {
 export function useRoundsView() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((state) => state.selectedEvent);
-  const [selectedEventId, setSelectedEventId] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -42,8 +41,8 @@ export function useRoundsView() {
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEventId, selectedEvent?.id]);
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
 
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
 
@@ -146,7 +145,6 @@ export function useRoundsView() {
     setDeleteOpen,
     setEditForm,
     setEditOpen,
-    setSelectedEventId,
     setSelectedRound,
     teams,
     teamsQuery,

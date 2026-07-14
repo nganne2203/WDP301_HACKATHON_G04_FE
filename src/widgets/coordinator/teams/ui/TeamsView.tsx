@@ -7,7 +7,6 @@ import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Progress } from '@/shared/ui/progress';
 import { ListPagination } from '@/shared/ui/list-pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -17,6 +16,7 @@ import {
   SheetTrigger,
 } from '@/shared/ui/sheet';
 import { TeamDetail, teamsApi } from '@/entities/team';
+import { useStore } from '@/entities/session/model/store';
 import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Team } from '@/shared/api/types';
@@ -69,7 +69,7 @@ function getTotalMemberCount(team: Team) {
 }
 
 export function Teams() {
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [page, setPage] = useState(1);
 
   const eventsQuery = useEventsQuery();
@@ -77,8 +77,8 @@ export function Teams() {
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events[0];
-  }, [events, selectedEventId]);
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
 
   const teamsQuery = useQuery({
     queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, page, limit: 12 }),
@@ -100,31 +100,10 @@ export function Teams() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1">Team Management</h1>
           <p className="text-sm text-muted-foreground">Monitor team confirmation, members, and invitations</p>
-        </div>
-        <div className="w-full md:w-80">
-            <Select
-              value={activeEvent?.id || ''}
-              onValueChange={(value) => {
-                setSelectedEventId(value);
-                setPage(1);
-              }}
-              disabled={eventsQuery.isLoading}
-            >
-            <SelectTrigger>
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
