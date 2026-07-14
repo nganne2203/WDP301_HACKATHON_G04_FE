@@ -187,7 +187,7 @@ export function RoundForm({
 
       <SelectionList
         label={`Assigned Teams (${form.assignedTeamIds.length})`}
-        items={teams.map((team) => ({ id: team.id, primary: team.name, secondary: team.status }))}
+        items={teams.map((team) => ({ id: team.id, primary: team.name }))}
         selectedIds={form.assignedTeamIds}
         onToggle={(id) => onChange((current) => ({ ...current, assignedTeamIds: toggleId(current.assignedTeamIds, id) }))}
         emptyMessage="No teams available for the current track."

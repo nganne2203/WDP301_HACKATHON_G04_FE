@@ -1745,6 +1745,7 @@ export interface Rubric {
   title: string;
   description: string | null;
   totalScore: number | null;
+  criteriaWeightTotal?: number;
   version?: number;
   status?: RubricStatus;
   criteria: Criterion[];
@@ -1765,6 +1766,7 @@ export interface CreateRubricRequest {
 export interface UpdateRubricRequest {
   title?: string;
   description?: string | null;
+  totalScore?: number | null;
   version?: number;
   status?: RubricStatus;
 }

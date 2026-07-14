@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 import {
   createCriterionForm,
+  formatScore,
   mapCriterionToForm,
+  roundScore,
   type CriterionFormState,
 } from '../model/rubric-form';
 import { CriterionForm } from './CriterionForm';
@@ -42,6 +44,16 @@ export function RubricCriteriaDialog({
   onUpdateCriterion: (rubricId: string, criterionId: string, form: CriterionFormState) => void;
   onDeleteCriterion: (rubricId: string, criterionId: string) => void;
 }) {
+  const scale = Number(selectedRubric?.totalScore || 100);
+  const currentWeightTotal = roundScore((selectedRubric?.criteria || []).reduce((sum, criterion) => sum + Number(criterion.weight || 0), 0));
+  const formWeight = Number(criterionForm.weight || 0);
+  const editingWeight = Number(editingCriterion?.weight || 0);
+  const nextWeightTotal = roundScore(currentWeightTotal - editingWeight + (Number.isFinite(formWeight) ? formWeight : 0));
+  const formMaxScore = Number(criterionForm.maxScore);
+  const criterionNumbersValid = Number.isFinite(formMaxScore) && formMaxScore > 0 && Number.isFinite(formWeight) && formWeight > 0;
+  const exceedsScale = nextWeightTotal > scale;
+  const matchesScale = currentWeightTotal === scale;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] !w-[min(96vw,1280px)] !max-w-[min(96vw,1280px)] overflow-y-auto">
@@ -52,6 +64,17 @@ export function RubricCriteriaDialog({
         {selectedRubric && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.95fr)]">
             <div className="space-y-3">
+              <div className="rounded-lg border p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium">Weight total</p>
+                    <p className="text-xs text-muted-foreground">Weights must total the rubric scale before scoring.</p>
+                  </div>
+                  <Badge variant={matchesScale ? 'default' : 'outline'}>
+                    {formatScore(currentWeightTotal)} / {formatScore(scale)}
+                  </Badge>
+                </div>
+              </div>
               {selectedRubric.criteria.length === 0 && (
                 <p className="text-sm text-muted-foreground">No criteria yet. Add one from the form on the right.</p>
               )}
@@ -61,7 +84,7 @@ export function RubricCriteriaDialog({
                     <div>
                       <p className="font-medium">{criterion.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Max {criterion.maxScore} - Weight {criterion.weight} - Order {criterion.order || '-'}
+                        Max {formatScore(criterion.maxScore)} - Weight {formatScore(criterion.weight)} - Order {criterion.order || '-'}
                       </p>
                     </div>
                     <div className="flex gap-1">
@@ -111,6 +134,10 @@ export function RubricCriteriaDialog({
                 </p>
               </div>
               <CriterionForm form={criterionForm} onChange={setCriterionForm} />
+              <div className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                New weight total: {formatScore(nextWeightTotal)} / {formatScore(scale)}
+                {exceedsScale ? ' - exceeds rubric scale.' : ''}
+              </div>
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
@@ -123,7 +150,14 @@ export function RubricCriteriaDialog({
 
                     onCreateCriterion(selectedRubric.id, criterionForm);
                   }}
-                  disabled={createPending || updatePending || !criterionForm.name.trim() || !criterionForm.maxScore}
+                  disabled={
+                    createPending ||
+                    updatePending ||
+                    !criterionForm.name.trim() ||
+                    !criterionForm.maxScore ||
+                    !criterionNumbersValid ||
+                    exceedsScale
+                  }
                 >
                   {(createPending || updatePending) ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
