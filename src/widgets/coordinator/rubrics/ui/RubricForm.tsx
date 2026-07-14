@@ -61,7 +61,7 @@ export function RubricForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">5 pts</SelectItem>
+              <SelectItem value="4">4 pts</SelectItem>
               <SelectItem value="10">10 pts</SelectItem>
               <SelectItem value="100">100 pts</SelectItem>
             </SelectContent>
