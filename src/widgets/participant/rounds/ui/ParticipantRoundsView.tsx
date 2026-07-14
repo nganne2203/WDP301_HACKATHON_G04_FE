@@ -190,7 +190,7 @@ export function ParticipantRoundsView() {
                     <Button asChild variant="outline">
                       <a href={round.examDriveUrl} target="_blank" rel="noreferrer">
                         <ExternalLink className="mr-2 h-4 w-4" />
-                        Open Exam Drive
+                        Open problem document
                       </a>
                     </Button>
                   ) : (

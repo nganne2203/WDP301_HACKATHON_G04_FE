@@ -19,6 +19,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Progress } from '@/shared/ui/progress';
 
+function formatScore(value?: number | null) {
+  const score = Number(value ?? 0);
+  return Number.isFinite(score) ? String(Number(score.toFixed(2))) : '0';
+}
+
 export function JudgeDashboardView() {
   const view = useJudgeDashboardView();
   const navigate = useNavigate();
@@ -230,13 +235,13 @@ export function JudgeDashboardView() {
                         if (sheet?.status === 'DRAFT') {
                           statusBadge = (
                             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                              <Clock className="w-3 h-3 mr-1 shrink-0" /> Draft ({sheet.totalScore} pts)
+                              <Clock className="w-3 h-3 mr-1 shrink-0" /> Draft ({formatScore(sheet.totalScore)} pts)
                             </Badge>
                           );
                         } else if (sheet?.status === 'SUBMITTED' || sheet?.status === 'LOCKED') {
                           statusBadge = (
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              <CheckCircle2 className="w-3 h-3 mr-1 shrink-0" /> Submitted ({sheet.totalScore} pts)
+                              <CheckCircle2 className="w-3 h-3 mr-1 shrink-0" /> Submitted ({formatScore(sheet.totalScore)} pts)
                             </Badge>
                           );
                         }

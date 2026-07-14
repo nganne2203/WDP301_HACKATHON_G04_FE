@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { usersApi } from '@/entities/user/api';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
-import type { User } from '@/shared/api/types';
+import type { User, UserRoleName } from '@/shared/api/types';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 
 import {
@@ -26,7 +26,6 @@ function getParticipantErrorMessage(error: unknown) {
 
 export function useParticipantsView() {
   const queryClient = useQueryClient();
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -35,12 +34,14 @@ export function useParticipantsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebouncedValue(searchQuery.trim(), 300);
   const [activeFilter, setActiveFilter] = useState<ParticipantFilterType>('all');
+  const [roleFilter, setRoleFilter] = useState<UserRoleName | 'all'>('all');
   const [page, setPage] = useState(1);
   const statusFilter = activeFilter === 'all' ? undefined : activeFilter;
+  const rolesFilter = roleFilter === 'all' ? undefined : [roleFilter];
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearchQuery]);
+  }, [debouncedSearchQuery, roleFilter]);
 
   const usersQuery = useQuery({
     queryKey: queryKeys.users.list({
@@ -48,6 +49,7 @@ export function useParticipantsView() {
       limit: 10,
       status: statusFilter,
       search: debouncedSearchQuery || undefined,
+      roles: rolesFilter,
     }),
     queryFn: () =>
       usersApi.list({
@@ -55,37 +57,12 @@ export function useParticipantsView() {
         limit: 10,
         status: statusFilter,
         search: debouncedSearchQuery || undefined,
+        roles: rolesFilter,
       }),
   });
 
   const allUsers = usersQuery.data?.data || [];
   const pagination = usersQuery.data?.pagination;
-  const statusCountQueries = useQueries({
-    queries: [
-      { key: 'all', status: undefined },
-      { key: 'PENDING', status: 'PENDING' as const },
-      { key: 'ACTIVE', status: 'ACTIVE' as const },
-      { key: 'REJECTED', status: 'REJECTED' as const },
-      { key: 'SUSPENDED', status: 'SUSPENDED' as const },
-    ].map(({ key, status }) => ({
-      queryKey: queryKeys.users.list({
-        page: 1,
-        limit: 1,
-        status,
-        search: debouncedSearchQuery || undefined,
-      }),
-      queryFn: async () => usersApi.list({
-        page: 1,
-        limit: 1,
-        status,
-        search: debouncedSearchQuery || undefined,
-      }),
-      staleTime: 30_000,
-      select: (response: Awaited<ReturnType<typeof usersApi.list>>) => response.pagination?.totalItems || 0,
-      enabled: !usersQuery.isLoading,
-      meta: { countKey: key },
-    })),
-  });
 
   const showStatusToast = (user: User, successMessage: string) => {
     const notification = user.emailNotification;
@@ -192,34 +169,6 @@ export function useParticipantsView() {
     },
   });
 
-  const allSelected = filteredUsers.length > 0 && selectedIds.length === filteredUsers.length;
-  const someSelected = selectedIds.length > 0 && !allSelected;
-
-  const filterCounts = useMemo(() => {
-    const [allCount, pendingCount, activeCount, rejectedCount, suspendedCount] = statusCountQueries;
-
-    return {
-      all: allCount.data || 0,
-      PENDING: pendingCount.data || 0,
-      ACTIVE: activeCount.data || 0,
-      REJECTED: rejectedCount.data || 0,
-      SUSPENDED: suspendedCount.data || 0,
-    };
-  }, [statusCountQueries]);
-
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelectedIds([]);
-      return;
-    }
-
-    setSelectedIds(filteredUsers.map((participant) => participant.id));
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
-  };
-
   const validateUserForm = (form: ParticipantUserFormState, mode: 'create' | 'edit') => {
     if (!form.fullName.trim()) {
       toast.error('Full name is required');
@@ -265,9 +214,7 @@ export function useParticipantsView() {
   };
 
   const handleExport = () => {
-    const dataToExport = selectedIds.length > 0
-      ? filteredUsers.filter((participant) => selectedIds.includes(participant.id))
-      : filteredUsers;
+    const dataToExport = filteredUsers;
 
     if (dataToExport.length === 0) {
       toast.error('No users to export');
@@ -303,7 +250,6 @@ export function useParticipantsView() {
   };
 
   return {
-    selectedIds,
     createForm,
     setCreateForm,
     createOpen,
@@ -328,6 +274,11 @@ export function useParticipantsView() {
       setActiveFilter(filter);
       setPage(1);
     },
+    roleFilter,
+    setRoleFilter: (role: UserRoleName | 'all') => {
+      setRoleFilter(role);
+      setPage(1);
+    },
     page,
     setPage,
     usersQuery,
@@ -338,11 +289,6 @@ export function useParticipantsView() {
     rejectMutation,
     suspendMutation,
     activateMutation,
-    allSelected,
-    someSelected,
-    filterCounts,
-    toggleAll,
-    toggleSelect,
     handleCreateUser,
     handleUpdateUser,
     openEditDialog,

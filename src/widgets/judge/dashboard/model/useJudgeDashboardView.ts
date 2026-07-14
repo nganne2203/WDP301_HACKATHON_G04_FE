@@ -83,7 +83,7 @@ export function useJudgeDashboardView() {
   // Fetch submissions
   const submissionsQuery = useQuery({
     queryKey: queryKeys.submissions.list({ roundId: activeRound?.id, limit: 20 }),
-    enabled: Boolean(activeRound?.id && assignedTeams.length > 0 && scoringOpen),
+    enabled: Boolean(activeRound?.id && assignedTeams.length > 0),
     queryFn: () => submissionsApi.list({ roundId: activeRound!.id, limit: 20 }),
   });
   const submissions = submissionsQuery.data?.data || [];
@@ -99,7 +99,7 @@ export function useJudgeDashboardView() {
   // Fetch scoresheets matching the current judge in this round
   const sheetsQuery = useQuery({
     queryKey: queryKeys.scoreSheets.list({ roundId: activeRound?.id, judgeId: user?.id, limit: 20 }),
-    enabled: Boolean(activeRound?.id && user?.id && scoringOpen),
+    enabled: Boolean(activeRound?.id && user?.id),
     queryFn: () => scoringApi.listSheets({ roundId: activeRound!.id, judgeId: user?.id, limit: 20 }),
   });
   const allSheets = sheetsQuery.data?.data || [];

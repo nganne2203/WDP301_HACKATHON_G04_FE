@@ -87,8 +87,8 @@ export function ParticipantSubmissions() {
 
       {view.team && !view.roundsQuery.isLoading && view.rounds.length === 0 && (
         <Alert>
-          <AlertTitle>No rounds available</AlertTitle>
-          <AlertDescription>The coordinator has not opened any rounds for this event yet.</AlertDescription>
+          <AlertTitle>No rounds assigned</AlertTitle>
+          <AlertDescription>Your confirmed team has not been assigned to a competition round yet.</AlertDescription>
         </Alert>
       )}
 

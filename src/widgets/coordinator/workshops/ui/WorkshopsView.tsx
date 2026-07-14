@@ -1,7 +1,8 @@
-import { Loader2, MessageSquare, MoreVertical, Plus, Presentation, RefreshCw, Send, Star, ThumbsUp } from 'lucide-react';
+import { Eye, Loader2, MessageSquare, MoreVertical, Plus, Presentation, RefreshCw, Send, Star, ThumbsUp } from 'lucide-react';
+import { useState } from 'react';
 
 import { ApiError } from '@/shared/api/client';
-import type { WorkshopFeedback, WorkshopQuestion, WorkshopRating } from '@/shared/api/types';
+import type { Workshop, WorkshopFeedback, WorkshopQuestion, WorkshopRating } from '@/shared/api/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +43,7 @@ import { WorkshopForm, WorkshopInlineError, WorkshopMetricCard } from './Worksho
 
 export function Workshops() {
   const view = useWorkshopsView();
+  const [detailsWorkshop, setDetailsWorkshop] = useState<Workshop | null>(null);
 
   return (
     <div className="p-6 space-y-6">
@@ -138,17 +140,15 @@ export function Workshops() {
               <TableHead>Workshop</TableHead>
               <TableHead>Presenter</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Workshop Questionnaire</TableHead>
-              <TableHead>Rating & Feedback</TableHead>
-              <TableHead>Speaker Q&A</TableHead>
+              <TableHead className="w-[210px]">Time</TableHead>
+              <TableHead className="w-[150px]">Actions</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(view.eventsQuery.isLoading || view.workshopsQuery.isLoading) && (
               <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading workshops...
@@ -159,7 +159,7 @@ export function Workshops() {
 
             {!view.eventsQuery.isLoading && !view.workshopsQuery.isLoading && view.workshops.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   No workshops found for this event.
                 </TableCell>
               </TableRow>
@@ -167,20 +167,20 @@ export function Workshops() {
 
             {view.workshops.map((workshop) => (
               <TableRow key={workshop.id}>
-                <TableCell>
+                <TableCell className="max-w-[420px]">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-md bg-violet-100 text-violet-700">
                       <Presentation className="h-4 w-4" />
                     </div>
-                    <div>
-                      <p className="font-medium">{workshop.title}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium" title={workshop.title}>{workshop.title}</p>
+                      <p className="truncate text-xs text-muted-foreground" title={workshop.meetLink || workshop.description || ''}>
                         {workshop.meetLink || workshop.description || 'No meeting link or description yet'}
                       </p>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{workshopPresenterLabel(workshop)}</TableCell>
+                <TableCell className="max-w-[180px]"><span className="block truncate" title={workshopPresenterLabel(workshop)}>{workshopPresenterLabel(workshop)}</span></TableCell>
                 <TableCell>{workshop.status}</TableCell>
                 <TableCell>
                   <div className="text-sm">
@@ -189,33 +189,9 @@ export function Workshops() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {workshop.questionnaire && workshop.questionnaire.length > 0 ? (
-                    <ul className="space-y-1">
-                      {workshop.questionnaire.map((q, i) => (
-                        <li key={i} className="text-sm text-muted-foreground leading-snug">
-                          {i + 1}. {q}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-sm text-muted-foreground italic">No questionnaire prepared</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => view.openReviewsDialog(workshop)}
-                    disabled={!view.canViewWorkshopRatings && !view.canViewWorkshopFeedback}
-                  >
-                    <Star className="h-4 w-4" />
-                    View reviews
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <Button variant="outline" size="sm" onClick={() => view.openQuestionsDialog(workshop)}>
-                    <MessageSquare className="h-4 w-4" />
-                    View questions
+                  <Button variant="outline" size="sm" onClick={() => setDetailsWorkshop(workshop)}>
+                    <Eye className="h-4 w-4" />
+                    View details
                   </Button>
                 </TableCell>
                 <TableCell>
@@ -256,6 +232,39 @@ export function Workshops() {
         </Table>
         <ListPagination page={view.page} pagination={view.pagination} onPageChange={view.setPage} />
       </Card>
+
+      <Dialog open={Boolean(detailsWorkshop)} onOpenChange={(open) => { if (!open) setDetailsWorkshop(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detailsWorkshop?.title || 'Workshop details'}</DialogTitle>
+            <DialogDescription>Workshop schedule, presenter, meeting link, and questionnaire.</DialogDescription>
+          </DialogHeader>
+          {detailsWorkshop && (
+            <div className="space-y-5 text-sm">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div><p className="text-muted-foreground">Presenter</p><p className="font-medium">{workshopPresenterLabel(detailsWorkshop)}</p></div>
+                <div><p className="text-muted-foreground">Status</p><p className="font-medium">{detailsWorkshop.status}</p></div>
+                <div><p className="text-muted-foreground">Starts</p><p>{formatDateTime(detailsWorkshop.startTime)}</p></div>
+                <div><p className="text-muted-foreground">Ends</p><p>{formatDateTime(detailsWorkshop.endTime)}</p></div>
+              </div>
+              {detailsWorkshop.description && <div><p className="text-muted-foreground">Description</p><p className="whitespace-pre-wrap">{detailsWorkshop.description}</p></div>}
+              {detailsWorkshop.meetLink && <div><p className="text-muted-foreground">Meeting link</p><a className="break-all text-primary underline" href={detailsWorkshop.meetLink} target="_blank" rel="noreferrer">{detailsWorkshop.meetLink}</a></div>}
+              <div>
+                <p className="font-medium">Workshop questionnaire</p>
+                {detailsWorkshop.questionnaire?.length ? (
+                  <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
+                    {detailsWorkshop.questionnaire.map((question, index) => <li key={`${question}-${index}`}>{question}</li>)}
+                  </ol>
+                ) : <p className="mt-1 text-muted-foreground">No questionnaire prepared.</p>}
+              </div>
+              <div className="flex flex-wrap gap-2 border-t pt-4">
+                <Button variant="outline" size="sm" onClick={() => { setDetailsWorkshop(null); view.openQuestionsDialog(detailsWorkshop); }}><MessageSquare className="h-4 w-4" />View questions</Button>
+                <Button variant="outline" size="sm" disabled={!view.canViewWorkshopRatings && !view.canViewWorkshopFeedback} onClick={() => { setDetailsWorkshop(null); view.openReviewsDialog(detailsWorkshop); }}><Star className="h-4 w-4" />View reviews</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
         <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
