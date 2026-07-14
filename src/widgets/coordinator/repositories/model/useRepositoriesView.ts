@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { githubApi } from '@/entities/github/api';
 import { repositoriesApi } from '@/entities/repository/api';
+import { useStore } from '@/entities/session/model/store';
 import { useEventsQuery, useRoundsQuery, useTeamsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Repository, RepositoryAccessState, RepositoryStatus, RevokeGitHubMembersResult } from '@/shared/api/types';
@@ -15,7 +16,7 @@ export const PERMISSIONS = ['pull', 'triage', 'push', 'maintain', 'admin'] as co
 
 export function useRepositoriesView() {
   const queryClient = useQueryClient();
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [repositoriesPage, setRepositoriesPage] = useState(1);
   const [repositorySearch, setRepositorySearch] = useState('');
   const [repositoryStatus, setRepositoryStatus] = useState<'all' | RepositoryStatus>('all');
@@ -50,9 +51,17 @@ export function useRepositoriesView() {
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events[0];
-  }, [events, selectedEventId]);
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
   const activeEventId = activeEvent?.id || '';
+
+  useEffect(() => {
+    setRepositoriesPage(1);
+    setSelectedTeamId('');
+    setSelectedRoundId('none');
+    setSelectedRepositoryId('');
+    setSelectedRepository(null);
+  }, [activeEventId]);
 
   const configQuery = useQuery({
     queryKey: queryKeys.github.config(activeEventId),
@@ -386,8 +395,6 @@ export function useRepositoriesView() {
   });
 
   return {
-    selectedEventId,
-    setSelectedEventId,
     organizationName,
     setOrganizationName,
     ownerUsername,

@@ -9,6 +9,10 @@ import { Progress } from '@/shared/ui/progress';
 import { Textarea } from '@/shared/ui/textarea';
 import type { Criterion } from '@/shared/api/types';
 
+function formatScore(value: number) {
+  return (Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100).toFixed(2);
+}
+
 export function ScoringCriteriaCard({
   criteria,
   maxScore,
@@ -57,8 +61,8 @@ export function ScoringCriteriaCard({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Scoring Criteria</CardTitle>
           <div className="text-right">
-            <p className="text-lg font-bold text-blue-700">{totalScore}</p>
-            <p className="text-xs text-muted-foreground">of {maxScore} pts</p>
+            <p className="text-lg font-bold text-blue-700">{formatScore(totalScore)}</p>
+            <p className="text-xs text-muted-foreground">of {formatScore(maxScore)} pts</p>
           </div>
         </div>
         <Progress value={maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0} />
@@ -73,18 +77,42 @@ export function ScoringCriteriaCard({
                   <p className="text-xs text-muted-foreground mt-0.5">{criterion.description}</p>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground shrink-0">{criterion.maxScore} pts</span>
+              <span className="text-xs text-muted-foreground shrink-0">
+                Max {formatScore(criterion.maxScore)} | Weight {formatScore(criterion.weight)}
+              </span>
             </div>
             <Input
               type="number"
               min={0}
               max={criterion.maxScore}
-              placeholder={`0-${criterion.maxScore}`}
+              step="0.01"
+              placeholder={`0-${formatScore(criterion.maxScore)}`}
               value={scores[criterion.id] ?? ''}
               disabled={isSubmitted}
               onChange={(event) => {
-                const value = Math.min(Math.max(0, Number(event.target.value)), criterion.maxScore);
-                setScores((current) => ({ ...current, [criterion.id]: value }));
+                if (event.target.value === '') {
+                  setScores((current) => {
+                    const next = { ...current };
+                    delete next[criterion.id];
+                    return next;
+                  });
+                  return;
+                }
+                const rawValue = Number(event.target.value);
+                if (!Number.isFinite(rawValue)) return;
+                const value = Math.min(Math.max(0, rawValue), criterion.maxScore);
+                setScores((current) => ({
+                  ...current,
+                  [criterion.id]: Math.round((value + Number.EPSILON) * 100) / 100,
+                }));
+              }}
+              onBlur={() => {
+                const value = scores[criterion.id];
+                if (value === undefined) return;
+                setScores((current) => ({
+                  ...current,
+                  [criterion.id]: Math.round((value + Number.EPSILON) * 100) / 100,
+                }));
               }}
               className="w-28"
             />

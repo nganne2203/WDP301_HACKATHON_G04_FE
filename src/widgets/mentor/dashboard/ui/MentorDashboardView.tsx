@@ -43,18 +43,6 @@ export function MentorDashboardView() {
     }
   }, [events, selectedEvent, setSelectedEvent]);
 
-  const handleEventChange = (eventId: string) => {
-    const event = events.find((e) => e.id === eventId);
-    if (event) {
-      setSelectedEvent({
-        id: event.id,
-        title: event.title,
-        semester: event.semester,
-        status: event.status,
-      });
-    }
-  };
-
   const workshopsQuery = useWorkshopsQuery(
     { eventId: selectedEvent?.id, presenterId: user?.id, limit: 20 },
     { enabled: Boolean(selectedEvent?.id && user?.id) }
@@ -120,7 +108,7 @@ export function MentorDashboardView() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1">{isSpeaker ? 'Speaker Dashboard' : 'Mentor Dashboard'}</h1>
           <p className="text-sm text-muted-foreground">
@@ -128,21 +116,6 @@ export function MentorDashboardView() {
               ? 'Track your workshop schedule and event context.'
               : 'Track your mentoring sessions and get a quick event snapshot.'}
           </p>
-        </div>
-        <div className="w-full md:w-80">
-          <Label>Event</Label>
-          <Select value={selectedEvent?.id || ''} onValueChange={handleEventChange} disabled={eventsQuery.isLoading}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

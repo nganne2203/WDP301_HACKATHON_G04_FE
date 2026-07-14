@@ -51,26 +51,7 @@ export function JudgeDashboardView() {
           </p>
         </div>
 
-        {/* Dropdown Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="w-full sm:w-56">
-            <Select
-              value={view.activeEvent?.id || ''}
-              onValueChange={view.setSelectedEventId}
-              disabled={view.eventsQuery.isLoading}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Event" />
-              </SelectTrigger>
-              <SelectContent>
-                {view.events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <div className="w-full sm:w-56">
             <Select
               value={view.activeRound?.id || ''}

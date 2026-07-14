@@ -8,8 +8,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Label } from '@/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 
 function formatDateTime(value?: string | null) {
   if (!value) return 'Not scheduled';
@@ -48,8 +46,6 @@ function getRoundState(round: Round, now: number) {
 
 export function ParticipantRoundsView() {
   const storeSelectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
-  const [selectedEventId, setSelectedEventIdState] = useState('');
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -60,16 +56,7 @@ export function ParticipantRoundsView() {
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
 
-  useEffect(() => {
-    if (!events.length || selectedEventId) return;
-    const defaultEvent = storeSelectedEvent
-      ? events.find((event) => event.id === storeSelectedEvent.id)
-      : selectDefaultEvent(events);
-    const nextEvent = defaultEvent || events[0];
-    setSelectedEventIdState(nextEvent.id);
-  }, [events, selectedEventId, storeSelectedEvent]);
-
-  const selectedEvent = events.find((event) => event.id === selectedEventId) || events[0] || null;
+  const selectedEvent = (storeSelectedEvent ? events.find((event) => event.id === storeSelectedEvent.id) : null) || selectDefaultEvent(events) || events[0] || null;
   const activeEventId = selectedEvent?.id || '';
   const teamQuery = useMyTeamQuery(activeEventId);
   const team = teamQuery.data;
@@ -79,40 +66,12 @@ export function ParticipantRoundsView() {
     [roundsQuery.data, team?.id]
   );
 
-  const setSelectedEventId = (eventId: string) => {
-    setSelectedEventIdState(eventId);
-    const event = events.find((item) => item.id === eventId);
-    if (event) {
-      setSelectedEvent({
-        id: event.id,
-        title: event.title,
-        semester: event.semester || '',
-        status: event.status,
-      });
-    }
-  };
-
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1">Competition Rounds</h1>
           <p className="text-sm text-muted-foreground">View round schedules, exam content, Drive links, and promotion results.</p>
-        </div>
-        <div className="w-full md:w-80">
-          <Label>Event</Label>
-          <Select value={selectedEvent?.id || ''} onValueChange={setSelectedEventId} disabled={eventsQuery.isLoading}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 

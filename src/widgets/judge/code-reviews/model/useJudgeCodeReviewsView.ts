@@ -36,22 +36,10 @@ export function useJudgeCodeReviewsView() {
     return selectDefaultEvent(events) || events[0];
   }, [events, storeSelectedEvent]);
 
-  const setSelectedEventId = (eventId: string) => {
-    const event = events.find((item) => item.id === eventId);
-    if (!event) return;
-    setSelectedEvent({
-      id: event.id,
-      title: event.title,
-      semester: event.semester || '',
-      status: event.status,
-    });
-    setSelectedRoundId('');
-  };
-
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 20 }, { enabled: Boolean(activeEvent?.id) });
   const rounds: Round[] = roundsQuery.data || [];
   const activeRound = selectedRoundId
-    ? rounds.find((round) => round.id === selectedRoundId) || null
+    ? rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null
     : rounds[0] || null;
 
   const boardQuery = useQuery({
@@ -138,7 +126,6 @@ export function useJudgeCodeReviewsView() {
     events,
     eventsQuery,
     activeEvent,
-    setSelectedEventId,
     rounds,
     roundsQuery,
     activeRound,

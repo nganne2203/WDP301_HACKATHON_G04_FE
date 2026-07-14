@@ -21,7 +21,6 @@ export function useParticipantWorkshopsView() {
   const setSelectedEvent = useStore((state) => state.setSelectedEvent);
   const appRole = useStore((state) => state.appRole);
   const userPermissions = useStore((state) => state.user?.permissions || []);
-  const [selectedEventId, setSelectedEventId] = useState('');
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [questionContent, setQuestionContent] = useState('');
   const [ratingValue, setRatingValue] = useState(5);
@@ -34,11 +33,10 @@ export function useParticipantWorkshopsView() {
 
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId)
-      || events.find((event) => event.id === selectedEvent?.id)
+    return events.find((event) => event.id === selectedEvent?.id)
       || selectDefaultEvent(events)
       || events[0];
-  }, [events, selectedEventId, selectedEvent?.id]);
+  }, [events, selectedEvent?.id]);
 
   useEffect(() => {
     if (!activeEvent) return;
@@ -254,6 +252,5 @@ export function useParticipantWorkshopsView() {
     handleFeedbackSubmit,
     createFeedbackMutation,
     canCreateFeedback,
-    setSelectedEventId,
   };
 }

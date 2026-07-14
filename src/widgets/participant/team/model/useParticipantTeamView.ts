@@ -27,7 +27,7 @@ function getTeamAvailabilityMessage(availability?: TeamAvailability | null) {
 export function useParticipantTeamView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const storeSelectedEvent = useStore((state) => state.selectedEvent);
   const [teamName, setTeamName] = useState('');
   const [invitedMembers, setInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [newInvitedMembers, setNewInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
@@ -39,8 +39,8 @@ export function useParticipantTeamView() {
   const events = eventsQuery.data || [];
   const selectedEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events.find(isRegistrationOpen) || events[0];
-  }, [events, selectedEventId]);
+    return events.find((event) => event.id === storeSelectedEvent?.id) || events.find(isRegistrationOpen) || events[0];
+  }, [events, storeSelectedEvent?.id]);
 
   const activeEventId = selectedEvent?.id || '';
 
@@ -233,11 +233,9 @@ export function useParticipantTeamView() {
     replacementEmails,
     replaceMutation,
     selectedEvent,
-    selectedEventId,
     setInvitedMembers,
     setNewInvitedMembers,
     setReplacementEmails,
-    setSelectedEventId,
     setTeamName,
     team,
     teamNameChecking,

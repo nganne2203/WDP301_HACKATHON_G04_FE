@@ -98,25 +98,10 @@ export function Results() {
         )}
       </div>
 
-      {/* Event + Round selector */}
+      {/* Round selector */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <Label>Event</Label>
-              {view.eventsQuery.isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading events…</p>
-              ) : (
-                <Select value={view.selectedEventId || view.activeEventId} onValueChange={view.setSelectedEventId}>
-                  <SelectTrigger><SelectValue placeholder="Select event" /></SelectTrigger>
-                  <SelectContent>
-                    {view.events.map((event) => (
-                      <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
               <Label>Round</Label>
               {view.roundsQuery.isLoading ? (

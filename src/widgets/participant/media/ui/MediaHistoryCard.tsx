@@ -8,11 +8,8 @@ import { MediaHistoryTable } from '@/widgets/media/ui/MediaComponents';
 import type { MediaItem, MediaStatus, MediaType } from '@/shared/api/types';
 
 export function MediaHistoryCard({
-  events,
   mediaTypes,
   mediaStatuses,
-  historyEventId,
-  setHistoryEventId,
   historyType,
   setHistoryType,
   historyStatus,
@@ -35,11 +32,8 @@ export function MediaHistoryCard({
   onView,
   onDelete,
 }: {
-  events: Array<{ id: string; title: string }>;
   mediaTypes: MediaType[];
   mediaStatuses: MediaStatus[];
-  historyEventId: string;
-  setHistoryEventId: (value: string) => void;
   historyType: string;
   setHistoryType: (value: string) => void;
   historyStatus: string;
@@ -66,19 +60,10 @@ export function MediaHistoryCard({
     <Card className="rounded-lg">
       <CardHeader>
         <CardTitle>My Upload History</CardTitle>
-        <CardDescription>Filter media by event, type, status, and upload date.</CardDescription>
+        <CardDescription>Filter media by type, status, and upload date.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <Select value={historyEventId} onValueChange={(value) => { setHistoryEventId(value); setPage(1); }}>
-            <SelectTrigger><SelectValue placeholder="Event" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All events</SelectItem>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Select value={historyType} onValueChange={(value) => { setHistoryType(value); setPage(1); }}>
             <SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger>
             <SelectContent>

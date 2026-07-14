@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 import { judgingBoardsApi } from '@/entities/judging-board/api';
+import { useStore } from '@/entities/session/model/store';
 import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { JudgingBoard, JudgingBoardRandomizationPreview, Round } from '@/shared/api/types';
@@ -15,7 +16,7 @@ export function statusVariant(status: string) {
 
 export function useJudgingView() {
   const queryClient = useQueryClient();
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [selectedRoundId, setSelectedRoundId] = useState('');
   const [selectedBoard, setSelectedBoard] = useState<JudgingBoard | null>(null);
   const [showRandomizeConfirm, setShowRandomizeConfirm] = useState(false);
@@ -27,8 +28,8 @@ export function useJudgingView() {
   const eventsQuery = useEventsQuery();
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(
-    () => events.find((event) => event.id === selectedEventId) || events[0] || null,
-    [events, selectedEventId]
+    () => events.find((event) => event.id === selectedEvent?.id) || events[0] || null,
+    [events, selectedEvent?.id]
   );
 
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
@@ -100,8 +101,6 @@ export function useJudgingView() {
   });
 
   return {
-    selectedEventId,
-    setSelectedEventId,
     selectedRoundId,
     setSelectedRoundId,
     selectedBoard,

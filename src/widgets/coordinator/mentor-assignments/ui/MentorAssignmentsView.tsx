@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Layers3, Loader2, UserRound, UsersRound } from 'lucide-react';
 
 import { TeamDetail, teamsApi } from '@/entities/team';
+import { useStore } from '@/entities/session/model/store';
 import { usersApi } from '@/entities/user/api';
 import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
@@ -39,7 +40,7 @@ function getMentorLabel(mentor: Pick<User, 'fullName' | 'email'>) {
 
 export function MentorAssignmentsView() {
   const queryClient = useQueryClient();
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [selectedBoardNumber, setSelectedBoardNumber] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
@@ -50,8 +51,15 @@ export function MentorAssignmentsView() {
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events[0];
-  }, [events, selectedEventId]);
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
+
+  useEffect(() => {
+    setSelectedBoardNumber('all');
+    setPage(1);
+    setEditingTeam(null);
+    setSelectedMentorIds([]);
+  }, [activeEvent?.id]);
 
   const boardTeamsQuery = useQuery({
     queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, status: 'CONFIRMED', limit: 100 }),
@@ -192,27 +200,7 @@ export function MentorAssignmentsView() {
             Assign active mentors to confirmed teams.
           </p>
         </div>
-        <div className="grid w-full gap-3 xl:w-auto xl:grid-cols-[minmax(280px,420px)_minmax(180px,240px)_auto]">
-          <Select
-            value={activeEvent?.id || ''}
-            onValueChange={(value) => {
-              setSelectedEventId(value);
-              setSelectedBoardNumber('all');
-              setPage(1);
-            }}
-            disabled={eventsQuery.isLoading}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid w-full gap-3 xl:w-auto xl:grid-cols-[minmax(180px,240px)_auto]">
           <Select
             value={selectedBoardNumber}
             onValueChange={(value) => {
