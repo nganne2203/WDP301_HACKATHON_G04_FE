@@ -89,6 +89,7 @@ export function Rounds() {
                 rubrics={view.rubrics}
                 teams={view.filterTeamsByTrack(view.teams, view.createForm.trackId)}
                 judges={view.judges}
+                event={view.activeEvent}
               />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
@@ -229,6 +230,7 @@ export function Rounds() {
             rubrics={view.rubrics}
             teams={view.filterTeamsByTrack(view.teams, view.editForm.trackId)}
             judges={view.judges}
+            event={view.activeEvent}
           />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>

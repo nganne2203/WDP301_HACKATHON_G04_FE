@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Users } from 'lucide-react';
 
-import type { RoundStatus, RoundType, Rubric, Team, Track, User } from '@/shared/api/types';
+import type { Event, RoundStatus, RoundType, Rubric, Team, Track, User } from '@/shared/api/types';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -10,6 +10,9 @@ import { Textarea } from '@/shared/ui/textarea';
 
 import {
   getCurrentDateTimeLocalInputValue,
+  getRoundDateTimeMax,
+  getRoundEndMin,
+  getRoundStartMin,
   roundStatusOptions,
   roundTypeOptions,
   toggleId,
@@ -23,6 +26,7 @@ export function RoundForm({
   rubrics,
   teams,
   judges,
+  event,
 }: {
   form: RoundFormState;
   onChange: Dispatch<SetStateAction<RoundFormState>>;
@@ -30,8 +34,12 @@ export function RoundForm({
   rubrics: Rubric[];
   teams: Team[];
   judges: User[];
+  event?: Event | null;
 }) {
   const now = getCurrentDateTimeLocalInputValue();
+  const roundStartMin = getRoundStartMin(event);
+  const roundEndMin = getRoundEndMin(form, event);
+  const roundDateTimeMax = getRoundDateTimeMax(event);
 
   return (
     <div className="grid gap-4 py-4">
@@ -105,14 +113,16 @@ export function RoundForm({
           id="round-start"
           label="Start Time"
           value={form.startTime}
-          min={now}
+          min={roundStartMin}
+          max={roundDateTimeMax}
           onChange={(value) => onChange((current) => ({ ...current, startTime: value }))}
         />
         <DateTimeField
           id="round-end"
           label="End Time"
           value={form.endTime}
-          min={form.startTime || now}
+          min={roundEndMin}
+          max={roundDateTimeMax}
           onChange={(value) => onChange((current) => ({ ...current, endTime: value }))}
         />
         <DateTimeField
@@ -199,18 +209,20 @@ function DateTimeField({
   label,
   value,
   min,
+  max,
   onChange,
 }: {
   id: string;
   label: string;
   value: string;
   min?: string;
+  max?: string;
   onChange: (value: string) => void;
 }) {
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type="datetime-local" value={value} min={min} onChange={(event) => onChange(event.target.value)} />
+      <Input id={id} type="datetime-local" value={value} min={min} max={max} onChange={(event) => onChange(event.target.value)} />
     </div>
   );
 }

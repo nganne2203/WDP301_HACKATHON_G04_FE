@@ -104,7 +104,7 @@ export function useRoundsView() {
     if (!activeEvent) return;
 
     try {
-      createMutation.mutate(buildCreateRoundPayload(createForm, activeEvent.id));
+      createMutation.mutate(buildCreateRoundPayload(createForm, activeEvent));
     } catch (error) {
       toast.error('Failed to create round', { description: getRoundErrorMessage(error) });
     }
@@ -114,7 +114,7 @@ export function useRoundsView() {
     if (!selectedRound) return;
 
     try {
-      updateMutation.mutate({ id: selectedRound.id, payload: buildUpdateRoundPayload(editForm) });
+      updateMutation.mutate({ id: selectedRound.id, payload: buildUpdateRoundPayload(editForm, activeEvent) });
     } catch (error) {
       toast.error('Failed to update round', { description: getRoundErrorMessage(error) });
     }
