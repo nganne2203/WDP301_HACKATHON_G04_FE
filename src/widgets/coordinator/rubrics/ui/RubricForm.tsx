@@ -37,11 +37,11 @@ export function RubricForm({
           onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
         />
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_minmax(8rem,0.7fr)_minmax(7rem,0.65fr)_minmax(9rem,0.85fr)]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="min-w-0 space-y-2">
           <Label>Round</Label>
           <Select value={form.roundId} onValueChange={(value) => onChange((current) => ({ ...current, roundId: value }))}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -57,11 +57,11 @@ export function RubricForm({
         <div className="min-w-0 space-y-2">
           <Label>Scale</Label>
           <Select value={form.totalScore} onValueChange={(value) => onChange((current) => ({ ...current, totalScore: value }))}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="4">4 pts</SelectItem>
+              <SelectItem value="5">5 pts</SelectItem>
               <SelectItem value="10">10 pts</SelectItem>
               <SelectItem value="100">100 pts</SelectItem>
             </SelectContent>
@@ -77,10 +77,10 @@ export function RubricForm({
             onChange={(event) => onChange((current) => ({ ...current, version: event.target.value }))}
           />
         </div>
-        <div className="min-w-0 space-y-2 sm:col-span-2 lg:col-span-1">
+        <div className="min-w-0 space-y-2">
           <Label>Status</Label>
           <Select value={form.status} onValueChange={(value: RubricStatus) => onChange((current) => ({ ...current, status: value }))}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
