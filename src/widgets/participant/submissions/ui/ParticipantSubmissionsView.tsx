@@ -4,11 +4,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Label } from '@/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 
 import { getSubmissionErrorMessage } from '../model/submission-form';
-import { useParticipantSubmissionsView } from '../model/useParticipantSubmissionsView';
+import {
+  getRoundSubmissionGateMessage,
+  isRoundAcceptingSubmissions,
+  useParticipantSubmissionsView,
+} from '../model/useParticipantSubmissionsView';
 import { SubmissionDialog } from './SubmissionDialog';
 
 export function ParticipantSubmissions() {
@@ -16,25 +18,10 @@ export function ParticipantSubmissions() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1">Submissions</h1>
           <p className="text-sm text-muted-foreground">Manage team deliverables for each round and submit them before the deadline.</p>
-        </div>
-        <div className="w-full md:w-80">
-          <Label>Event</Label>
-          <Select value={view.selectedEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {view.events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -83,8 +70,8 @@ export function ParticipantSubmissions() {
 
       {view.team && !view.roundsQuery.isLoading && view.rounds.length === 0 && (
         <Alert>
-          <AlertTitle>No rounds available</AlertTitle>
-          <AlertDescription>The coordinator has not opened any rounds for this event yet.</AlertDescription>
+          <AlertTitle>No rounds assigned</AlertTitle>
+          <AlertDescription>Your confirmed team has not been assigned to a competition round yet.</AlertDescription>
         </Alert>
       )}
 
@@ -93,6 +80,9 @@ export function ParticipantSubmissions() {
           {view.rounds.map((round) => {
             const submission = view.submissionMap.get(round.id) || null;
             const locked = submission?.status === 'SUBMITTED' || submission?.status === 'ACCEPTED' || submission?.status === 'REJECTED';
+            const accepting = isRoundAcceptingSubmissions(round);
+            const gateMessage = getRoundSubmissionGateMessage(round);
+            const canEdit = Boolean(!locked && accepting);
             return (
               <Card key={round.id}>
                 <CardHeader>
@@ -136,18 +126,20 @@ export function ParticipantSubmissions() {
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {submission?.submittedAt ? `Submitted at ${new Date(submission.submittedAt).toLocaleString()}` : 'No submitted artifacts yet.'}
+                    {submission?.submittedAt
+                      ? `Submitted at ${new Date(submission.submittedAt).toLocaleString()}`
+                      : gateMessage || 'No submitted artifacts yet.'}
                   </div>
                   <Button variant={submission ? 'outline' : 'default'} onClick={() => view.openSubmissionDialog(round)}>
                     {submission ? (
                       <>
                         <FileText className="mr-2 h-4 w-4" />
-                        {locked ? 'View submission' : 'Edit draft'}
+                        {canEdit ? 'Edit draft' : 'View submission'}
                       </>
                     ) : (
                       <>
                         <Plus className="mr-2 h-4 w-4" />
-                        Start submission
+                        {accepting ? 'Start submission' : 'View round'}
                       </>
                     )}
                   </Button>
@@ -165,6 +157,7 @@ export function ParticipantSubmissions() {
         onSubmitConfirmOpenChange={view.setSubmitConfirmOpen}
         selectedRound={view.selectedRound}
         currentSubmission={view.selectedRound ? view.submissionMap.get(view.selectedRound.id) || null : null}
+        gateMessage={getRoundSubmissionGateMessage(view.selectedRound)}
         form={view.form}
         setForm={view.setForm}
         saveDraftPending={view.saveDraftMutation.isPending}

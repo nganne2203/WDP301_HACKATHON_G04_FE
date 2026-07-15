@@ -25,20 +25,7 @@ export function JudgeCodeReviewsView() {
           </h1>
           <p className="text-sm text-muted-foreground">Inspect submitted repositories, static analysis, and AI review findings for your assigned teams.</p>
         </div>
-        <div className="grid w-full gap-3 md:w-auto md:grid-cols-2">
-          <div className="md:w-64">
-            <Label>Event</Label>
-            <Select value={view.activeEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent>
-                {view.events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>{event.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="grid w-full gap-3 md:w-auto">
           <div className="md:w-64">
             <Label>Round</Label>
             <Select value={view.activeRound?.id || ''} onValueChange={view.setSelectedRoundId} disabled={view.roundsQuery.isLoading}>
@@ -58,8 +45,8 @@ export function JudgeCodeReviewsView() {
       {view.isLoading && (
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
-          <AlertTitle>Loading code review data</AlertTitle>
-          <AlertDescription>Fetching assigned repositories and review signals.</AlertDescription>
+          <AlertTitle>Loading code reviews</AlertTitle>
+          <AlertDescription>Loading repositories assigned to you.</AlertDescription>
         </Alert>
       )}
 

@@ -34,6 +34,7 @@ import {
 import { RubricCriteriaDialog } from './RubricCriteriaDialog';
 import { RubricForm } from './RubricForm';
 import { useRubricsView } from '../model/useRubricsView';
+import { formatScore } from '../model/rubric-form';
 
 export function Rubrics() {
   const view = useRubricsView();
@@ -48,21 +49,6 @@ export function Rubrics() {
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <div className="w-full sm:w-72">
-            <Select value={view.activeEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent>
-                {view.events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="w-full sm:w-72">
             <Select value={view.selectedRoundFilter} onValueChange={view.setSelectedRoundFilter} disabled={!view.activeEvent}>
               <SelectTrigger>
@@ -122,14 +108,15 @@ export function Rubrics() {
               <TableHead>Round</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Criteria</TableHead>
-              <TableHead>Total Score</TableHead>
+              <TableHead>Weight Total</TableHead>
+              <TableHead>Scale</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(view.eventsQuery.isLoading || view.rubricsQuery.isLoading) && (
               <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading rubrics...
@@ -140,7 +127,7 @@ export function Rubrics() {
 
             {!view.eventsQuery.isLoading && !view.rubricsQuery.isLoading && view.rubrics.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
                   No rubrics found for this filter.
                 </TableCell>
               </TableRow>
@@ -166,7 +153,12 @@ export function Rubrics() {
                   </Badge>
                 </TableCell>
                 <TableCell>{rubric.criteria.length}</TableCell>
-                <TableCell>{rubric.totalScore ?? 0}</TableCell>
+                <TableCell>
+                  <span className={(rubric.criteriaWeightTotal ?? 0) === (rubric.totalScore ?? 100) ? '' : 'text-amber-600'}>
+                    {formatScore(rubric.criteriaWeightTotal)}
+                  </span>
+                </TableCell>
+                <TableCell>{formatScore(rubric.totalScore)}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -197,7 +189,7 @@ export function Rubrics() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Rubric</DialogTitle>
-            <DialogDescription>Update rubric metadata. Criteria are managed separately.</DialogDescription>
+            <DialogDescription>Update the rubric details. Scoring criteria are managed separately.</DialogDescription>
           </DialogHeader>
           <RubricForm form={view.editForm} onChange={view.setEditForm} rounds={view.rounds} />
           <div className="flex justify-end gap-2">
@@ -232,7 +224,7 @@ export function Rubrics() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete rubric</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete "{view.selectedRubric?.title}"? This removes it from future FE selections.
+              Delete "{view.selectedRubric?.title}"? It will no longer be available for scoring.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

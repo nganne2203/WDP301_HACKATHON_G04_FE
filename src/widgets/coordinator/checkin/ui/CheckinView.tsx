@@ -14,7 +14,6 @@ import {
 import { Badge } from '@/shared/ui/badge';
 import { Progress } from '@/shared/ui/progress';
 import { ListPagination } from '@/shared/ui/list-pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { toast } from 'sonner';
 import { participantsApi, workshopsApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
@@ -108,7 +107,6 @@ function buildAttendanceExcel(eventTitle: string, participants: Participant[]) {
 export function Checkin() {
   const queryClient = useQueryClient();
   const selectedEvent = useStore((s) => s.selectedEvent);
-  const [selectedEventId, setSelectedEventId] = useState('');
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -117,23 +115,15 @@ export function Checkin() {
 
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return (
-      events.find((event) => event.id === selectedEventId) ||
-      events.find((event) => event.id === selectedEvent?.id) ||
-      events[0]
-    );
-  }, [events, selectedEventId, selectedEvent?.id]);
-
-  const handleSelectEvent = (eventId: string) => {
-    setSelectedEventId(eventId);
-    setPage(1);
-  };
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
 
   // Fetch real participants filtered by selected event
   const { data: participantsResponse, isLoading: participantsLoading, error: participantsError } = useQuery({
     queryKey: queryKeys.participants.list({ eventId: activeEvent?.id, page, limit: 10 }),
     queryFn: () => participantsApi.list({
       eventId: activeEvent?.id,
+      confirmedTeamsOnly: true,
       page,
       limit: 10,
     }),
@@ -144,6 +134,7 @@ export function Checkin() {
     queryKey: queryKeys.participants.list({ eventId: activeEvent?.id, checkInStatus: 'CHECKED_IN', page: 1, limit: 10 }),
     queryFn: () => participantsApi.list({
       eventId: activeEvent?.id,
+      confirmedTeamsOnly: true,
       checkInStatus: 'CHECKED_IN',
       page: 1,
       limit: 10,
@@ -189,6 +180,7 @@ export function Checkin() {
     try {
       const firstPage = await participantsApi.list({
         eventId: activeEvent.id,
+        confirmedTeamsOnly: true,
         page: 1,
         limit: EXPORT_PAGE_SIZE,
       });
@@ -197,6 +189,7 @@ export function Checkin() {
         ? await Promise.all(
           Array.from({ length: totalPages - 1 }, (_, index) => participantsApi.list({
             eventId: activeEvent.id,
+            confirmedTeamsOnly: true,
             page: index + 2,
             limit: EXPORT_PAGE_SIZE,
           }))
@@ -234,32 +227,12 @@ export function Checkin() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div>
         <div>
           <h1 className="text-2xl font-semibold mb-1">Check-in & Seminar</h1>
           <p className="text-sm text-muted-foreground">
             Manage participant attendance and workshop sessions
           </p>
-        </div>
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <div className="w-full sm:w-80">
-            <Select
-              value={activeEvent?.id || ''}
-              onValueChange={handleSelectEvent}
-              disabled={eventsQuery.isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent>
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </div>
 
@@ -287,7 +260,7 @@ export function Checkin() {
                   <div className="text-4xl font-semibold mb-1">
                     {checkedInCount}/{totalCount}
                   </div>
-                  <p className="text-sm text-muted-foreground">Participants checked in</p>
+                  <p className="text-sm text-muted-foreground">Confirmed team members checked in</p>
                 </div>
                 <Progress value={checkinRate} />
                 <div className="flex items-center justify-between text-sm">
@@ -378,7 +351,7 @@ export function Checkin() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Attendance List</CardTitle>
+            <CardTitle>Attendance List — Confirmed Teams</CardTitle>
             <div className="flex gap-2">
               <Button
                 variant="outline"

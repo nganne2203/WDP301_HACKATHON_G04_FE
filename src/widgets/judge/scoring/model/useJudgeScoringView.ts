@@ -14,6 +14,10 @@ import { useEventsQuery, useRoundsQuery, selectDefaultEvent } from '@/hooks/quer
 import { queryKeys } from '@/lib/queryKeys';
 import type { Criterion, JudgingBoard, Round, ScoreSheet } from '@/shared/api/types';
 
+function roundScore(value: number) {
+  return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+}
+
 export function getJudgeScoringErrorMessage(error: unknown) {
   if (error instanceof ApiError) return error.firstError;
   if (error instanceof Error) return error.message;
@@ -23,19 +27,14 @@ export function getJudgeScoringErrorMessage(error: unknown) {
 export function useJudgeScoringView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [searchParams] = useSearchParams();
 
-  const urlEventId = searchParams.get('eventId') || '';
   const urlRoundId = searchParams.get('roundId') || '';
   const urlTeamId = searchParams.get('teamId') || '';
 
-  const [selectedEventId, setSelectedEventId] = useState(urlEventId);
   const [selectedRoundId, setSelectedRoundId] = useState(urlRoundId);
   const [selectedTeamId, setSelectedTeamId] = useState(urlTeamId);
-
-  useEffect(() => {
-    if (urlEventId) setSelectedEventId(urlEventId);
-  }, [urlEventId]);
 
   useEffect(() => {
     if (urlRoundId) setSelectedRoundId(urlRoundId);
@@ -54,23 +53,18 @@ export function useJudgeScoringView() {
   const events = eventsQuery.data || [];
   
   const activeEvent = useMemo(() => {
-    if (selectedEventId) {
-      return events.find((event) => event.id === selectedEventId) || null;
-    }
-    return selectDefaultEvent(events);
-  }, [events, selectedEventId]);
+    return events.find((event) => event.id === selectedEvent?.id) || selectDefaultEvent(events);
+  }, [events, selectedEvent?.id]);
 
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
   const rounds: Round[] = roundsQuery.data || [];
   
   const activeRound = useMemo(() => {
+    const scoringRound = rounds.find((round) => round.status === 'SCORING');
     if (selectedRoundId) {
-      return rounds.find((round) => round.id === selectedRoundId) || null;
+      return rounds.find((round) => round.id === selectedRoundId) || scoringRound || rounds[0] || null;
     }
-    const ongoingRound = rounds.find(
-      (round) => round.status?.toUpperCase() === 'ONGOING' || round.status?.toUpperCase() === 'ACTIVE'
-    );
-    return ongoingRound || rounds[0] || null;
+    return scoringRound || rounds[0] || null;
   }, [rounds, selectedRoundId]);
 
   const boardQuery = useQuery({
@@ -99,33 +93,35 @@ export function useJudgeScoringView() {
     return map;
   }, [submissions]);
 
+  const activeRoundRubricId = activeRound?.rubricId ?? undefined;
   const rubricQuery = useQuery({
-    queryKey: queryKeys.rubrics.detail(activeRound?.rubricId),
-    enabled: Boolean(activeRound?.rubricId),
-    queryFn: () => rubricsApi.getById(activeRound!.rubricId!),
+    queryKey: queryKeys.rubrics.detail(activeRoundRubricId),
+    enabled: Boolean(activeRoundRubricId),
+    queryFn: () => rubricsApi.getById(activeRoundRubricId!),
   });
   const criteria: Criterion[] = rubricQuery.data?.data?.criteria || [];
-  const maxScore = criteria.reduce((sum, criterion) => sum + criterion.maxScore, 0);
+  const maxScore = Number(rubricQuery.data?.data?.totalScore || 0);
 
   const selectedTeam = assignedTeams.find((team) => team.id === selectedTeamId) || assignedTeams[0] || null;
   const submission = selectedTeam ? submissionByTeam[selectedTeam.id] : null;
+  const repositoryId = submission?.repositoryId ?? undefined;
 
   const repositoryQuery = useQuery({
-    queryKey: queryKeys.repositories.detail(submission?.repositoryId),
-    enabled: Boolean(submission?.repositoryId),
-    queryFn: async () => (await repositoriesApi.getById(submission!.repositoryId!)).data,
+    queryKey: queryKeys.repositories.detail(repositoryId),
+    enabled: Boolean(repositoryId),
+    queryFn: async () => (await repositoriesApi.getById(repositoryId!)).data,
   });
 
   const repositoryAnalysisQuery = useQuery({
-    queryKey: queryKeys.repositories.analysis(submission?.repositoryId),
-    enabled: Boolean(submission?.repositoryId),
-    queryFn: async () => (await repositoriesApi.listStaticAnalysis(submission!.repositoryId!, 1, 3)).data,
+    queryKey: queryKeys.repositories.analysis(repositoryId),
+    enabled: Boolean(repositoryId),
+    queryFn: async () => (await repositoriesApi.listStaticAnalysis(repositoryId!, 1, 3)).data,
   });
 
   const repositoryAiQuery = useQuery({
-    queryKey: queryKeys.repositories.aiReviews(submission?.repositoryId),
-    enabled: Boolean(submission?.repositoryId),
-    queryFn: async () => (await repositoriesApi.listAiReviews(submission!.repositoryId!, 1, 3)).data,
+    queryKey: queryKeys.repositories.aiReviews(repositoryId),
+    enabled: Boolean(repositoryId),
+    queryFn: async () => (await repositoriesApi.listAiReviews(repositoryId!, 1, 3)).data,
   });
 
   const sheetsQuery = useQuery({
@@ -149,7 +145,7 @@ export function useJudgeScoringView() {
       const nextComments: Record<string, string> = {};
       for (const entry of existingSheet.scores) {
         if (entry.criterionId) {
-          nextScores[entry.criterionId] = entry.scoreValue;
+          nextScores[entry.criterionId] = roundScore(entry.scoreValue);
           if (entry.comment) {
             nextComments[entry.criterionId] = entry.comment;
           }
@@ -166,7 +162,16 @@ export function useJudgeScoringView() {
     setGeneralComment('');
   }, [existingSheet?.id]);
 
-  const totalScore = useMemo(() => Object.values(scores).reduce((sum, value) => sum + (value || 0), 0), [scores]);
+  const criteriaById = useMemo(() => new Map(criteria.map((criterion) => [criterion.id, criterion])), [criteria]);
+  const totalScore = useMemo(() => {
+    return roundScore(Object.entries(scores).reduce((sum, [criterionId, value]) => {
+      const criterion = criteriaById.get(criterionId);
+      const maxCriterionScore = Number(criterion?.maxScore || 0);
+      const weight = Number(criterion?.weight || 0);
+      if (!criterion || maxCriterionScore <= 0) return sum;
+      return sum + ((Number(value || 0) / maxCriterionScore) * weight);
+    }, 0));
+  }, [criteriaById, scores]);
 
   const saveMutation = useMutation({
     mutationFn: (submit: boolean) =>
@@ -182,7 +187,7 @@ export function useJudgeScoringView() {
         submit,
         scores: Object.entries(scores).map(([criterionId, scoreValue]) => ({
           criterionId,
-          scoreValue,
+          scoreValue: roundScore(scoreValue),
           comment: comments[criterionId] || null,
         })),
       }),
@@ -200,10 +205,19 @@ export function useJudgeScoringView() {
   const latestAnalysis = repositoryAnalysisQuery.data?.[0] || null;
   const latestAiReview = repositoryAiQuery.data?.aiReviews?.[0] || null;
   const hasIncompleteCriteria = criteria.some((criterion) => scores[criterion.id] === undefined);
+  const submissionReady = submission?.status === 'SUBMITTED' || submission?.status === 'ACCEPTED';
+  const scoringOpen = activeRound?.status === 'SCORING' && myBoard?.status === 'SCORING';
+  const scoringGateMessage = !activeRound
+    ? 'Select a round to begin scoring.'
+    : activeRound.status !== 'SCORING'
+      ? 'This round is not in scoring status yet.'
+      : myBoard && myBoard.status !== 'SCORING'
+        ? 'Your judging board is not open for scoring yet.'
+        : submission && !submissionReady
+          ? 'This team does not have a submitted artifact ready for scoring.'
+          : '';
 
   return {
-    selectedEventId,
-    setSelectedEventId,
     selectedRoundId,
     setSelectedRoundId,
     selectedTeamId,
@@ -240,5 +254,8 @@ export function useJudgeScoringView() {
     latestAnalysis,
     latestAiReview,
     hasIncompleteCriteria,
+    scoringOpen,
+    submissionReady,
+    scoringGateMessage,
   };
 }

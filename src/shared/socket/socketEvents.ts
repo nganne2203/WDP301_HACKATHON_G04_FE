@@ -13,5 +13,9 @@ export const SOCKET_EVENTS = {
 
   MESSAGE_SEEN: 'message_seen',
 
+  NOTIFICATION_CREATED: 'notification_created',
+  NOTIFICATION_READ: 'notification_read',
+  NOTIFICATIONS_READ_ALL: 'notifications_read_all',
+
   ERROR: 'error',
 } as const;

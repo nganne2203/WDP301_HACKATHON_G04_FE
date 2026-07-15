@@ -161,6 +161,7 @@ export interface Notification {
   message?: string | null;
   type: NotificationType;
   status: NotificationStatus;
+  dedupeKey?: string | null;
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -277,6 +278,7 @@ export interface Event {
   maxTeamMembers?: number;
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
+  roundCount?: number;
   competitionConfig?: CompetitionConfig;
   status: EventStatus;
   createdBy?: EventCreator | null;
@@ -317,7 +319,6 @@ export interface CreateEventRequest {
   finalistSlotsPerTrack?: number;
   totalFinalistSlots?: number;
   competitionConfig?: CompetitionConfig;
-  status?: EventStatus;
 }
 
 export type UpdateEventRequest = Partial<CreateEventRequest>;
@@ -1294,6 +1295,7 @@ export interface ListParticipantsQuery {
   eventId?: string;
   userId?: string;
   teamId?: string;
+  confirmedTeamsOnly?: boolean;
   checkInStatus?: CheckInStatus;
   status?: ParticipantStatus;
   eligibilityStatus?: EligibilityStatus;
@@ -1432,6 +1434,11 @@ export interface WorkshopRating {
 export interface WorkshopRatingStats {
   averageRating: number;
   totalRatings: number;
+}
+
+export interface WorkshopRatingListData {
+  ratings: WorkshopRating[];
+  stats: WorkshopRatingStats;
 }
 
 export interface WorkshopFeedback {
@@ -1738,6 +1745,7 @@ export interface Rubric {
   title: string;
   description: string | null;
   totalScore: number | null;
+  criteriaWeightTotal?: number;
   version?: number;
   status?: RubricStatus;
   criteria: Criterion[];
@@ -1758,6 +1766,7 @@ export interface CreateRubricRequest {
 export interface UpdateRubricRequest {
   title?: string;
   description?: string | null;
+  totalScore?: number | null;
   version?: number;
   status?: RubricStatus;
 }

@@ -1,5 +1,6 @@
 import type {
   CreateRoundRequest,
+  Event,
   Round,
   RoundStatus,
   RoundType,
@@ -70,9 +71,34 @@ function toComparableDate(value: string) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boolean }) {
+function getEventDateInputValue(value?: string | null) {
+  if (!value) return '';
+  return value.split('T')[0] || '';
+}
+
+export function getEventStartDateTimeInputValue(event?: Event | null) {
+  const date = getEventDateInputValue(event?.startDate);
+  return date ? `${date}T00:00` : '';
+}
+
+export function getEventEndDateTimeInputValue(event?: Event | null) {
+  const date = getEventDateInputValue(event?.endDate);
+  return date ? `${date}T23:59` : '';
+}
+
+function maxDateTimeInput(...values: Array<string | undefined>) {
+  return values.filter(Boolean).sort().at(-1) || undefined;
+}
+
+function minDateTimeInput(...values: Array<string | undefined>) {
+  return values.filter(Boolean).sort()[0] || undefined;
+}
+
+function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boolean; event?: Event | null }) {
   const now = toComparableDate(getCurrentDateTimeLocalInputValue());
   const allowPast = options?.allowPast === true;
+  const eventStartDate = getEventDateInputValue(options?.event?.startDate);
+  const eventEndDate = getEventDateInputValue(options?.event?.endDate);
   const timeFields = [
     { key: 'startTime', label: 'Start time', value: form.startTime },
     { key: 'endTime', label: 'End time', value: form.endTime },
@@ -90,6 +116,33 @@ function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boo
         code: 'VALIDATION_ERROR',
         message: `${field.label} cannot be in the past`,
         errors: [`${field.label} cannot be in the past`],
+      }, 400);
+    }
+  }
+
+  const eventWindowFields = [
+    { label: 'Start time', value: form.startTime },
+    { label: 'End time', value: form.endTime },
+  ];
+
+  for (const field of eventWindowFields) {
+    if (!field.value) continue;
+    const datePart = field.value.split('T')[0];
+    if (eventStartDate && datePart < eventStartDate) {
+      throw new ApiError({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: `${field.label} must be within the event date range`,
+        errors: [`${field.label} must be within the event date range`],
+      }, 400);
+    }
+
+    if (eventEndDate && datePart > eventEndDate) {
+      throw new ApiError({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: `${field.label} must be within the event date range`,
+        errors: [`${field.label} must be within the event date range`],
       }, 400);
     }
   }
@@ -146,11 +199,11 @@ export function mapRoundToForm(round: Round): RoundFormState {
   };
 }
 
-export function buildCreateRoundPayload(form: RoundFormState, eventId: string): CreateRoundRequest {
-  validateRoundSchedule(form);
+export function buildCreateRoundPayload(form: RoundFormState, event: Event): CreateRoundRequest {
+  validateRoundSchedule(form, { event });
 
   return {
-    eventId,
+    eventId: event.id,
     name: form.name.trim(),
     roundType: form.roundType,
     problemStatement: normalizeText(form.problemStatement),
@@ -171,8 +224,8 @@ export function buildCreateRoundPayload(form: RoundFormState, eventId: string): 
   };
 }
 
-export function buildUpdateRoundPayload(form: RoundFormState): UpdateRoundRequest {
-  validateRoundSchedule(form, { allowPast: true });
+export function buildUpdateRoundPayload(form: RoundFormState, event?: Event | null): UpdateRoundRequest {
+  validateRoundSchedule(form, { allowPast: true, event });
 
   return {
     name: form.name.trim(),
@@ -199,6 +252,18 @@ export function toggleId(ids: string[], id: string) {
   return ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id];
 }
 
+export function getRoundStartMin(event?: Event | null) {
+  return maxDateTimeInput(getCurrentDateTimeLocalInputValue(), getEventStartDateTimeInputValue(event));
+}
+
+export function getRoundEndMin(form: RoundFormState, event?: Event | null) {
+  return maxDateTimeInput(form.startTime || getCurrentDateTimeLocalInputValue(), getEventStartDateTimeInputValue(event));
+}
+
+export function getRoundDateTimeMax(event?: Event | null) {
+  return minDateTimeInput(getEventEndDateTimeInputValue(event));
+}
+
 export function isJudgeUser(user: User) {
   const roleNames = user.roles
     .map((role) => (typeof role === 'string' ? role : role.code || role.name))
@@ -206,9 +271,14 @@ export function isJudgeUser(user: User) {
   return roleNames.includes('JUDGE') || roleNames.includes('ADMIN');
 }
 
+const ROUND_ASSIGNABLE_TEAM_STATUSES: Team['status'][] = ['CONFIRMED'];
+
 export function filterTeamsByTrack(teams: Team[], trackId: string) {
-  if (trackId === 'none') return teams;
-  return teams.filter((team) => team.trackId === trackId);
+  return teams.filter((team) => {
+    const hasAssignableStatus = ROUND_ASSIGNABLE_TEAM_STATUSES.includes(team.status);
+    const matchesTrack = trackId === 'none' || team.trackId === trackId;
+    return hasAssignableStatus && matchesTrack;
+  });
 }
 
 export function getRoundErrorMessage(error: unknown) {

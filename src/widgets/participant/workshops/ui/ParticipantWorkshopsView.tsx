@@ -4,7 +4,6 @@ import { useParticipantWorkshopsView } from '../model/useParticipantWorkshopsVie
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Textarea } from '@/shared/ui/textarea';
 import { Badge } from '@/shared/ui/badge';
 import { formatDateTime } from '@/widgets/coordinator/workshops/model/workshop-form';
@@ -32,27 +31,10 @@ export function ParticipantWorkshops() {
           </p>
         </div>
 
-        {/* Event Selector */}
         <div className="flex items-center gap-2">
           {view.eventsQuery.isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : (
-            <Select
-              value={view.activeEvent?.id || ''}
-              onValueChange={view.setSelectedEventId}
-            >
-              <SelectTrigger className="w-[260px] bg-background">
-                <SelectValue placeholder="Select Event" />
-              </SelectTrigger>
-              <SelectContent>
-                {view.events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          ) : null}
           <Button
             variant="outline"
             size="icon"
@@ -260,14 +242,52 @@ export function ParticipantWorkshops() {
                 </div>
               )}
 
-              {(view.canCreateRating || view.canCreateFeedback) && (
+              {(view.canCreateRating || view.canCreateFeedback || view.ownRating || view.ownFeedback) && (
                 <div className="space-y-4 border-t pt-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
-                    Leave Feedback & Rating
+                    Feedback & Rating
                   </h3>
                   <div className="space-y-4">
-                    {view.canCreateRating && (
+                    {(view.ownRatingQuery.isLoading || view.ownFeedbackQuery.isLoading) && (
+                      <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading your workshop review...
+                      </div>
+                    )}
+
+                    {view.ownRating && (
+                      <div className="rounded-lg border bg-amber-50/40 p-3">
+                        <p className="text-sm font-medium">Your submitted rating</p>
+                        <div className="mt-2 flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-5 w-5 ${
+                                star <= view.ownRating!.rating
+                                  ? 'text-amber-500 fill-amber-500'
+                                  : 'text-muted-foreground/30'
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            Submitted {formatDateTime(view.ownRating.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {view.ownFeedback && (
+                      <div className="rounded-lg border bg-muted/30 p-3">
+                        <p className="text-sm font-medium">Your submitted feedback</p>
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{view.ownFeedback.comment}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Submitted {formatDateTime(view.ownFeedback.createdAt)}
+                        </p>
+                      </div>
+                    )}
+
+                    {view.canCreateRating && !view.ownRating && !view.ownRatingQuery.isLoading && (
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium mr-2">Your Rating:</span>
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -297,7 +317,7 @@ export function ParticipantWorkshops() {
                       </div>
                     )}
 
-                    {view.canCreateFeedback && (
+                    {view.canCreateFeedback && !view.ownFeedback && !view.ownFeedbackQuery.isLoading && (
                       <div className="space-y-2">
                         <Textarea
                           placeholder="Share your thoughts about this session..."
@@ -334,7 +354,7 @@ export function ParticipantWorkshops() {
                 </p>
 
                 {/* Submitting a question */}
-                {view.canCreateQuestion && ['SCHEDULED', 'LIVE'].includes(view.selectedWorkshop.status) ? (
+                {view.canCreateQuestion && view.canSubmitQuestionForSelectedWorkshop ? (
                   <div className="flex gap-2">
                     <Textarea
                       placeholder="Ask the presenter a question..."
@@ -356,7 +376,7 @@ export function ParticipantWorkshops() {
                       )}
                     </Button>
                   </div>
-                ) : ['SCHEDULED', 'LIVE'].includes(view.selectedWorkshop.status) ? (
+                ) : view.canSubmitQuestionForSelectedWorkshop ? (
                   <p className="text-xs text-muted-foreground">You can view workshop questions, but this account cannot submit new ones.</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">Q&A session is closed for this workshop.</p>

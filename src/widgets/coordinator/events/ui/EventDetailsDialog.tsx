@@ -48,7 +48,7 @@ export function EventDetailsDialog({
                 <p className="font-medium mt-1">{formatEventDate(event.endDate)}</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div>
                 <Label className="text-muted-foreground">Status</Label>
                 <div className="mt-1">
@@ -64,6 +64,10 @@ export function EventDetailsDialog({
                 <p className="font-medium mt-1">
                   {event.minTeamMembers || '?'} - {event.maxTeamMembers || '?'} members
                 </p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Rounds</Label>
+                <p className="font-medium mt-1">{event.roundCount ?? 0}</p>
               </div>
             </div>
             <div className="rounded-lg border bg-muted/20 p-4">

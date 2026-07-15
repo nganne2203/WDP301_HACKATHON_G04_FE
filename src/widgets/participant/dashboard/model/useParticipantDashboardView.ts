@@ -57,19 +57,6 @@ export function useParticipantDashboardView() {
     return selectDefaultEvent(events) || events[0];
   }, [events, storeSelectedEvent]);
 
-  const selectedEventId = selectedEvent?.id || '';
-  const setSelectedEventId = (eventId: string) => {
-    const event = events.find((e) => e.id === eventId);
-    if (event) {
-      setSelectedEvent({
-        id: event.id,
-        title: event.title,
-        semester: event.semester || '',
-        status: event.status,
-      });
-    }
-  };
-
   const clearCheckInTokenFromUrl = useCallback(() => {
     const params = new URLSearchParams(location.search);
     if (!params.has('checkInToken') && !params.has('token')) return;
@@ -188,8 +175,6 @@ export function useParticipantDashboardView() {
 
   return {
     user,
-    selectedEventId,
-    setSelectedEventId,
     eventsQuery,
     events,
     selectedEvent,

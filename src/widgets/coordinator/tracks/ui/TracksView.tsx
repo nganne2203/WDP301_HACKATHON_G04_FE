@@ -21,7 +21,6 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { Label } from '@/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
   Table,
   TableBody,
@@ -42,28 +41,14 @@ export function Tracks() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold mb-1">Track Management</h1>
           <p className="text-sm text-muted-foreground">
-            Organize event problem tracks and keep the FE aligned with backend constraints.
+            Create tracks and manage team capacity for this event.
           </p>
         </div>
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <div className="w-full sm:w-80">
-            <Select value={view.activeEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent>
-                {view.events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex shrink-0">
           <Dialog
             open={view.createOpen}
             onOpenChange={(open) => {
@@ -203,7 +188,7 @@ export function Tracks() {
           <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Edit Track</DialogTitle>
-            <DialogDescription>Update track metadata to match the current backend rules.</DialogDescription>
+            <DialogDescription>Update the track details and team capacity.</DialogDescription>
           </DialogHeader>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6">

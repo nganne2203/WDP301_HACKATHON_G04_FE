@@ -10,6 +10,7 @@ export const Sidebar = memo(function Sidebar() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
   const sidebarCollapsed = useStore((state) => state.sidebarCollapsed);
+  const setSidebarCollapsed = useStore((state) => state.setSidebarCollapsed);
   const selectedEvent = useStore((state) => state.selectedEvent);
 
   const navItems = useMemo(() => {
@@ -33,12 +34,17 @@ export const Sidebar = memo(function Sidebar() {
 
   const displayName = user?.fullName || 'User';
   const primaryRole = appRole || 'participant';
+  const closeSidebarOnMobile = () => {
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setSidebarCollapsed(true);
+    }
+  };
 
   return (
     <div
       className={cn(
-        'flex flex-col h-screen bg-white border-r border-border transition-all duration-300',
-        sidebarCollapsed ? 'w-16' : 'w-64'
+        'fixed inset-y-0 left-0 z-40 flex h-screen flex-col bg-white border-r border-border transition-all duration-300 md:relative md:z-auto',
+        sidebarCollapsed ? '-translate-x-full md:translate-x-0 md:w-16' : 'w-64 translate-x-0 shadow-xl md:shadow-none'
       )}
     >
       <div className="flex items-center gap-3 h-16 px-4 border-b border-border">
@@ -92,6 +98,7 @@ export const Sidebar = memo(function Sidebar() {
               key={item.href}
               to={item.href}
               className={itemClassName}
+              onClick={closeSidebarOnMobile}
             >
               {content}
             </Link>

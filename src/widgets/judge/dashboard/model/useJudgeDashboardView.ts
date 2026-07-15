@@ -41,30 +41,15 @@ export function useJudgeDashboardView() {
     return selectDefaultEvent(events) || events[0];
   }, [events, storeSelectedEvent]);
 
-  const selectedEventId = activeEvent?.id || '';
-  const setSelectedEventId = (eventId: string) => {
-    const event = events.find((e) => e.id === eventId);
-    if (event) {
-      setSelectedEvent({
-        id: event.id,
-        title: event.title,
-        semester: event.semester || '',
-        status: event.status,
-      });
-    }
-  };
-
   const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
   const rounds: Round[] = roundsQuery.data || [];
   
   const activeRound = useMemo(() => {
     if (selectedRoundId) {
-      return rounds.find((round) => round.id === selectedRoundId) || null;
+      return rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null;
     }
-    const ongoingRound = rounds.find(
-      (round) => round.status?.toUpperCase() === 'ONGOING' || round.status?.toUpperCase() === 'ACTIVE'
-    );
-    return ongoingRound || rounds[0] || null;
+    const scoringRound = rounds.find((round) => round.status === 'SCORING');
+    return scoringRound || rounds[0] || null;
   }, [rounds, selectedRoundId]);
 
   // Fetch judging boards for the round
@@ -80,6 +65,7 @@ export function useJudgeDashboardView() {
   }, [boardQuery.data, user?.id]);
 
   const assignedTeams = myBoard?.teams || [];
+  const scoringOpen = activeRound?.status === 'SCORING' && myBoard?.status === 'SCORING';
 
   // Fetch submissions
   const submissionsQuery = useQuery({
@@ -142,8 +128,6 @@ export function useJudgeDashboardView() {
   }, [allSheets]);
 
   return {
-    selectedEventId,
-    setSelectedEventId,
     selectedRoundId,
     setSelectedRoundId,
     eventsQuery,
@@ -166,6 +150,7 @@ export function useJudgeDashboardView() {
     draftTeamsCount,
     pendingTeamsCount,
     averageScoreGiven,
+    scoringOpen,
     isLoading: eventsQuery.isLoading || roundsQuery.isLoading || boardQuery.isLoading,
   };
 }

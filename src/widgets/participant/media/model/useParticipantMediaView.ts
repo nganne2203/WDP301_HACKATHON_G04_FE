@@ -19,14 +19,13 @@ import {
 export function useParticipantMediaView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [historyEventId, setHistoryEventId] = useState('ALL');
   const [historyType, setHistoryType] = useState('ALL');
   const [historyStatus, setHistoryStatus] = useState('ALL');
   const [fromDate, setFromDate] = useState('');
@@ -56,14 +55,13 @@ export function useParticipantMediaView() {
 
   const events = eventsQuery.data || [];
 
-  useEffect(() => {
-    if (!selectedEventId && events.length > 0) {
-      setSelectedEventId(events[0].id);
-    }
-  }, [events, selectedEventId]);
+  const activeEvent = useMemo(() => {
+    if (!events.length) return null;
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
 
   const historyFilters = buildHistoryFilters({
-    eventId: historyEventId,
+    eventId: activeEvent?.id || 'ALL',
     mediaType: historyType,
     status: historyStatus,
     fromDate,
@@ -129,8 +127,8 @@ export function useParticipantMediaView() {
 
   const handleUpload = (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedEventId) {
-      toast.error('Select an event before uploading.');
+    if (!activeEvent?.id) {
+      toast.error('Select an event in the header before uploading.');
       return;
     }
     if (!title.trim()) {
@@ -147,7 +145,7 @@ export function useParticipantMediaView() {
     }
 
     const formData = new FormData();
-    formData.append('eventId', selectedEventId);
+    formData.append('eventId', activeEvent.id);
     formData.append('title', title.trim());
     formData.append('description', description.trim());
     formData.append('tags', tags.trim());
@@ -163,8 +161,7 @@ export function useParticipantMediaView() {
 
   return {
     user,
-    selectedEventId,
-    setSelectedEventId,
+    selectedEventId: activeEvent?.id || '',
     title,
     setTitle,
     description,
@@ -174,8 +171,6 @@ export function useParticipantMediaView() {
     file,
     previewUrl,
     uploadProgress,
-    historyEventId,
-    setHistoryEventId,
     historyType,
     setHistoryType,
     historyStatus,

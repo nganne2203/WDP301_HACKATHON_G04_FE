@@ -44,9 +44,6 @@ export function AdminMedia() {
           statisticsLoading={view.statisticsQuery.isLoading}
           statistics={view.statistics}
           mediaTypeCounts={view.mediaTypeCounts}
-          events={view.events}
-          eventId={view.eventId}
-          setEventId={view.setEventId}
           mediaType={view.mediaType}
           setMediaType={view.setMediaType}
           status={view.status}
@@ -108,7 +105,7 @@ export function AdminMedia() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete media?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the stored file and metadata for {view.deleteMedia?.title || view.deleteMedia?.originalFileName || 'this item'}.
+              Permanently delete {view.deleteMedia?.title || view.deleteMedia?.originalFileName || 'this item'}? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

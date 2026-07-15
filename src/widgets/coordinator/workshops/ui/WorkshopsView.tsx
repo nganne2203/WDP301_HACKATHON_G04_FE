@@ -1,7 +1,8 @@
-import { Loader2, MessageSquare, MoreVertical, Plus, Presentation, RefreshCw, Send, ThumbsUp } from 'lucide-react';
+import { Eye, Loader2, MessageSquare, MoreVertical, Plus, Presentation, RefreshCw, Send, Star, ThumbsUp } from 'lucide-react';
+import { useState } from 'react';
 
 import { ApiError } from '@/shared/api/client';
-import type { WorkshopQuestion } from '@/shared/api/types';
+import type { Workshop, WorkshopFeedback, WorkshopQuestion, WorkshopRating } from '@/shared/api/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,31 +43,18 @@ import { WorkshopForm, WorkshopInlineError, WorkshopMetricCard } from './Worksho
 
 export function Workshops() {
   const view = useWorkshopsView();
+  const [detailsWorkshop, setDetailsWorkshop] = useState<Workshop | null>(null);
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold mb-1">Workshop Management</h1>
           <p className="text-sm text-muted-foreground">
-            Manage seminars, speakers, questionnaire prompts, and workshop links from the FE.
+            Manage workshops, speakers, questions, and meeting links.
           </p>
         </div>
-        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-          <div className="w-full sm:w-80">
-            <Select value={view.activeEvent?.id || ''} onValueChange={view.setSelectedEventId} disabled={view.eventsQuery.isLoading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select event" />
-              </SelectTrigger>
-              <SelectContent>
-                {view.events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex shrink-0">
           <Dialog
             open={view.createOpen}
             onOpenChange={(open) => {
@@ -138,16 +126,15 @@ export function Workshops() {
               <TableHead>Workshop</TableHead>
               <TableHead>Presenter</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Workshop Questionnaire</TableHead>
-              <TableHead>Speaker Q&A</TableHead>
+              <TableHead className="w-[210px]">Time</TableHead>
+              <TableHead className="w-[150px]">Actions</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(view.eventsQuery.isLoading || view.workshopsQuery.isLoading) && (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading workshops...
@@ -158,7 +145,7 @@ export function Workshops() {
 
             {!view.eventsQuery.isLoading && !view.workshopsQuery.isLoading && view.workshops.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
                   No workshops found for this event.
                 </TableCell>
               </TableRow>
@@ -166,20 +153,20 @@ export function Workshops() {
 
             {view.workshops.map((workshop) => (
               <TableRow key={workshop.id}>
-                <TableCell>
+                <TableCell className="max-w-[420px]">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-md bg-violet-100 text-violet-700">
                       <Presentation className="h-4 w-4" />
                     </div>
-                    <div>
-                      <p className="font-medium">{workshop.title}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium" title={workshop.title}>{workshop.title}</p>
+                      <p className="truncate text-xs text-muted-foreground" title={workshop.meetLink || workshop.description || ''}>
                         {workshop.meetLink || workshop.description || 'No meeting link or description yet'}
                       </p>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{workshopPresenterLabel(workshop)}</TableCell>
+                <TableCell className="max-w-[180px]"><span className="block truncate" title={workshopPresenterLabel(workshop)}>{workshopPresenterLabel(workshop)}</span></TableCell>
                 <TableCell>{workshop.status}</TableCell>
                 <TableCell>
                   <div className="text-sm">
@@ -188,22 +175,9 @@ export function Workshops() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {workshop.questionnaire && workshop.questionnaire.length > 0 ? (
-                    <ul className="space-y-1">
-                      {workshop.questionnaire.map((q, i) => (
-                        <li key={i} className="text-sm text-muted-foreground leading-snug">
-                          {i + 1}. {q}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span className="text-sm text-muted-foreground italic">No questionnaire prepared</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Button variant="outline" size="sm" onClick={() => view.openQuestionsDialog(workshop)}>
-                    <MessageSquare className="h-4 w-4" />
-                    View questions
+                  <Button variant="outline" size="sm" onClick={() => setDetailsWorkshop(workshop)}>
+                    <Eye className="h-4 w-4" />
+                    View details
                   </Button>
                 </TableCell>
                 <TableCell>
@@ -214,6 +188,12 @@ export function Workshops() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        disabled={!view.canViewWorkshopRatings && !view.canViewWorkshopFeedback}
+                        onClick={() => view.openReviewsDialog(workshop)}
+                      >
+                        View rating & feedback
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => view.openQuestionsDialog(workshop)}>
                         View speaker questions
                       </DropdownMenuItem>
@@ -239,12 +219,45 @@ export function Workshops() {
         <ListPagination page={view.page} pagination={view.pagination} onPageChange={view.setPage} />
       </Card>
 
+      <Dialog open={Boolean(detailsWorkshop)} onOpenChange={(open) => { if (!open) setDetailsWorkshop(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detailsWorkshop?.title || 'Workshop details'}</DialogTitle>
+            <DialogDescription>Workshop schedule, presenter, meeting link, and questionnaire.</DialogDescription>
+          </DialogHeader>
+          {detailsWorkshop && (
+            <div className="space-y-5 text-sm">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div><p className="text-muted-foreground">Presenter</p><p className="font-medium">{workshopPresenterLabel(detailsWorkshop)}</p></div>
+                <div><p className="text-muted-foreground">Status</p><p className="font-medium">{detailsWorkshop.status}</p></div>
+                <div><p className="text-muted-foreground">Starts</p><p>{formatDateTime(detailsWorkshop.startTime)}</p></div>
+                <div><p className="text-muted-foreground">Ends</p><p>{formatDateTime(detailsWorkshop.endTime)}</p></div>
+              </div>
+              {detailsWorkshop.description && <div><p className="text-muted-foreground">Description</p><p className="whitespace-pre-wrap">{detailsWorkshop.description}</p></div>}
+              {detailsWorkshop.meetLink && <div><p className="text-muted-foreground">Meeting link</p><a className="break-all text-primary underline" href={detailsWorkshop.meetLink} target="_blank" rel="noreferrer">{detailsWorkshop.meetLink}</a></div>}
+              <div>
+                <p className="font-medium">Workshop questionnaire</p>
+                {detailsWorkshop.questionnaire?.length ? (
+                  <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
+                    {detailsWorkshop.questionnaire.map((question, index) => <li key={`${question}-${index}`}>{question}</li>)}
+                  </ol>
+                ) : <p className="mt-1 text-muted-foreground">No questionnaire prepared.</p>}
+              </div>
+              <div className="flex flex-wrap gap-2 border-t pt-4">
+                <Button variant="outline" size="sm" onClick={() => { setDetailsWorkshop(null); view.openQuestionsDialog(detailsWorkshop); }}><MessageSquare className="h-4 w-4" />View questions</Button>
+                <Button variant="outline" size="sm" disabled={!view.canViewWorkshopRatings && !view.canViewWorkshopFeedback} onClick={() => { setDetailsWorkshop(null); view.openReviewsDialog(detailsWorkshop); }}><Star className="h-4 w-4" />View reviews</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
         <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
           <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Edit Workshop</DialogTitle>
-            <DialogDescription>Update workshop speaker info and scheduling fields to match the backend.</DialogDescription>
+            <DialogDescription>Update the speaker, schedule, and meeting details.</DialogDescription>
           </DialogHeader>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6">
@@ -396,6 +409,136 @@ export function Workshops() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={view.reviewsOpen} onOpenChange={view.setReviewsOpen}>
+        <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden p-0">
+          <div className="flex-shrink-0 px-6 pt-6">
+            <DialogHeader>
+              <DialogTitle>Rating & Feedback History</DialogTitle>
+              <DialogDescription>
+                Participant reviews for {view.selectedReviewsWorkshop?.title || 'this workshop'}.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+            <div className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-md border p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Average rating</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-2xl font-semibold">{view.workshopRatingStats.averageRating.toFixed(1)}</span>
+                    <RatingStars rating={Math.round(view.workshopRatingStats.averageRating)} />
+                  </div>
+                </div>
+                <div className="rounded-md border p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ratings</p>
+                  <p className="mt-2 text-2xl font-semibold">{view.workshopRatingStats.totalRatings}</p>
+                </div>
+                <div className="rounded-md border p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Feedback</p>
+                  <p className="mt-2 text-2xl font-semibold">{view.workshopFeedback.length}</p>
+                </div>
+              </div>
+
+              {!view.canViewWorkshopRatings && !view.canViewWorkshopFeedback && (
+                <WorkshopInlineError message="You do not have permission to view workshop rating or feedback history." />
+              )}
+
+              {(view.workshopRatingsQuery.error || view.workshopFeedbackQuery.error) && (
+                <WorkshopInlineError
+                  message={
+                    view.workshopRatingsQuery.error instanceof ApiError
+                      ? view.workshopRatingsQuery.error.firstError
+                      : view.workshopFeedbackQuery.error instanceof ApiError
+                        ? view.workshopFeedbackQuery.error.firstError
+                        : 'Failed to load workshop reviews'
+                  }
+                />
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (view.canViewWorkshopRatings) view.workshopRatingsQuery.refetch();
+                    if (view.canViewWorkshopFeedback) view.workshopFeedbackQuery.refetch();
+                  }}
+                  disabled={view.workshopRatingsQuery.isFetching || view.workshopFeedbackQuery.isFetching}
+                >
+                  {view.workshopRatingsQuery.isFetching || view.workshopFeedbackQuery.isFetching ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Refresh
+                </Button>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <section className="rounded-md border p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">Participant Ratings</p>
+                      <p className="text-xs text-muted-foreground">Individual scores submitted after the workshop.</p>
+                    </div>
+                  </div>
+
+                  {view.workshopRatingsQuery.isLoading && (
+                    <ReviewLoadingState label="Loading ratings..." />
+                  )}
+
+                  {!view.canViewWorkshopRatings && (
+                    <ReviewEmptyState label="You do not have permission to view participant ratings." />
+                  )}
+
+                  {!view.workshopRatingsQuery.isLoading && view.canViewWorkshopRatings && view.workshopRatings.length === 0 && (
+                    <ReviewEmptyState label="No ratings submitted yet." />
+                  )}
+
+                  {!view.workshopRatingsQuery.isLoading && view.workshopRatings.length > 0 && (
+                    <div className="space-y-3">
+                      {view.workshopRatings.map((rating) => (
+                        <WorkshopRatingItem key={rating.id} rating={rating} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="rounded-md border p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">Participant Feedback</p>
+                      <p className="text-xs text-muted-foreground">Written comments submitted by participants.</p>
+                    </div>
+                  </div>
+
+                  {view.workshopFeedbackQuery.isLoading && (
+                    <ReviewLoadingState label="Loading feedback..." />
+                  )}
+
+                  {!view.canViewWorkshopFeedback && (
+                    <ReviewEmptyState label="You do not have permission to view participant feedback." />
+                  )}
+
+                  {!view.workshopFeedbackQuery.isLoading && view.canViewWorkshopFeedback && view.workshopFeedback.length === 0 && (
+                    <ReviewEmptyState label="No feedback submitted yet." />
+                  )}
+
+                  {!view.workshopFeedbackQuery.isLoading && view.workshopFeedback.length > 0 && (
+                    <div className="space-y-3">
+                      {view.workshopFeedback.map((feedback) => (
+                        <WorkshopFeedbackItem key={feedback.id} feedback={feedback} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -427,4 +570,64 @@ function WorkshopQuestionItem({
       )}
     </div>
   );
+}
+
+function WorkshopRatingItem({ rating }: { rating: WorkshopRating }) {
+  return (
+    <div className="rounded-md border bg-muted/20 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">{reviewAuthorLabel(rating.author)}</p>
+          <p className="text-xs text-muted-foreground">{formatDateTime(rating.createdAt)}</p>
+        </div>
+        <RatingStars rating={rating.rating} />
+      </div>
+    </div>
+  );
+}
+
+function WorkshopFeedbackItem({ feedback }: { feedback: WorkshopFeedback }) {
+  return (
+    <div className="rounded-md border bg-muted/20 p-3">
+      <p className="text-sm leading-relaxed">{feedback.comment}</p>
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <span>{reviewAuthorLabel(feedback.author)}</span>
+        <span>{formatDateTime(feedback.createdAt)}</span>
+      </div>
+    </div>
+  );
+}
+
+function RatingStars({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`h-4 w-4 ${star <= rating ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground/30'}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ReviewLoadingState({ label }: { label: string }) {
+  return (
+    <div className="flex items-center justify-center gap-2 rounded-md border py-10 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      {label}
+    </div>
+  );
+}
+
+function ReviewEmptyState({ label }: { label: string }) {
+  return (
+    <div className="rounded-md border py-10 text-center text-sm text-muted-foreground">
+      {label}
+    </div>
+  );
+}
+
+function reviewAuthorLabel(author: WorkshopRating['author'] | WorkshopFeedback['author']) {
+  return author?.fullName || author?.email || 'Anonymous participant';
 }

@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Layers3, Loader2, UserRound, UsersRound } from 'lucide-react';
 
 import { TeamDetail, teamsApi } from '@/entities/team';
+import { useStore } from '@/entities/session/model/store';
 import { usersApi } from '@/entities/user/api';
 import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
@@ -39,7 +40,7 @@ function getMentorLabel(mentor: Pick<User, 'fullName' | 'email'>) {
 
 export function MentorAssignmentsView() {
   const queryClient = useQueryClient();
-  const [selectedEventId, setSelectedEventId] = useState('');
+  const selectedEvent = useStore((state) => state.selectedEvent);
   const [selectedBoardNumber, setSelectedBoardNumber] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
@@ -50,18 +51,26 @@ export function MentorAssignmentsView() {
   const events = eventsQuery.data || [];
   const activeEvent = useMemo(() => {
     if (!events.length) return null;
-    return events.find((event) => event.id === selectedEventId) || events[0];
-  }, [events, selectedEventId]);
+    return events.find((event) => event.id === selectedEvent?.id) || events[0];
+  }, [events, selectedEvent?.id]);
+
+  useEffect(() => {
+    setSelectedBoardNumber('all');
+    setPage(1);
+    setEditingTeam(null);
+    setSelectedMentorIds([]);
+  }, [activeEvent?.id]);
 
   const boardTeamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, limit: 100 }),
+    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, status: 'CONFIRMED', limit: 100 }),
     enabled: Boolean(activeEvent?.id),
-    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, limit: 100 }),
+    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, status: 'CONFIRMED', limit: 100 }),
   });
 
   const teamsQuery = useQuery({
     queryKey: queryKeys.teams.list({
       eventId: activeEvent?.id,
+      status: 'CONFIRMED',
       boardNumber: selectedBoardNumber === 'all' ? undefined : Number(selectedBoardNumber),
       page,
       limit: 12,
@@ -69,6 +78,7 @@ export function MentorAssignmentsView() {
     enabled: Boolean(activeEvent?.id),
     queryFn: () => teamsApi.list({
       eventId: activeEvent?.id,
+      status: 'CONFIRMED',
       boardNumber: selectedBoardNumber === 'all' ? undefined : Number(selectedBoardNumber),
       page,
       limit: 12,
@@ -83,12 +93,12 @@ export function MentorAssignmentsView() {
   const updateMentorsMutation = useMutation({
     mutationFn: ({ teamId, mentorIds }: { teamId: string; mentorIds: string[] }) =>
       teamsApi.updateMentors(teamId, { mentorIds }),
-    onSuccess: async (response) => {
+    onSuccess: (response) => {
       const updatedTeam = response.data;
       toast.success('Mentor assignments saved', { description: updatedTeam.name });
-      setEditingTeam(updatedTeam);
-      setSelectedMentorIds(updatedTeam.mentorIds || []);
-      await Promise.all([
+      setEditingTeam(null);
+      setSelectedMentorIds([]);
+      void Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.teams.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.users.all }),
       ]);
@@ -101,13 +111,13 @@ export function MentorAssignmentsView() {
   const assignBoardMentorsMutation = useMutation({
     mutationFn: ({ eventId, boardNumber, mentorIds }: { eventId: string; boardNumber: number; mentorIds: string[] }) =>
       teamsApi.assignMentorsByBoard({ eventId, boardNumber, mentorIds }),
-    onSuccess: async (response) => {
+    onSuccess: (response) => {
       toast.success('Board mentor assignment saved', {
         description: `${response.data.updatedCount} team(s) updated in board ${response.data.boardNumber}.`,
       });
       setBulkAssignOpen(false);
       setSelectedMentorIds([]);
-      await Promise.all([
+      void Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.teams.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.users.all }),
       ]);
@@ -187,30 +197,10 @@ export function MentorAssignmentsView() {
         <div className="max-w-2xl">
           <h1 className="text-2xl font-semibold mb-1">Mentor Assignments</h1>
           <p className="text-sm text-muted-foreground">
-            Assign active mentor accounts to teams and surface ownership clearly.
+            Assign active mentors to confirmed teams.
           </p>
         </div>
-        <div className="grid w-full gap-3 xl:w-auto xl:grid-cols-[minmax(280px,420px)_minmax(180px,240px)_auto]">
-          <Select
-            value={activeEvent?.id || ''}
-            onValueChange={(value) => {
-              setSelectedEventId(value);
-              setSelectedBoardNumber('all');
-              setPage(1);
-            }}
-            disabled={eventsQuery.isLoading}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select event" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid w-full gap-3 xl:w-auto xl:grid-cols-[minmax(180px,240px)_auto]">
           <Select
             value={selectedBoardNumber}
             onValueChange={(value) => {
@@ -246,7 +236,7 @@ export function MentorAssignmentsView() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading mentor assignment data</AlertTitle>
-          <AlertDescription>Fetching teams and active mentor accounts for the selected event.</AlertDescription>
+          <AlertDescription>Loading confirmed teams and active mentors.</AlertDescription>
         </Alert>
       )}
 
@@ -261,8 +251,8 @@ export function MentorAssignmentsView() {
       {!teamsQuery.isLoading && teams.length === 0 && activeEvent?.id && (
         <Alert>
           <UsersRound className="h-4 w-4" />
-          <AlertTitle>No teams in this event</AlertTitle>
-          <AlertDescription>Teams will appear here after participants create or confirm registrations.</AlertDescription>
+          <AlertTitle>No confirmed teams in this event</AlertTitle>
+          <AlertDescription>Teams appear here only after their registration is confirmed.</AlertDescription>
         </Alert>
       )}
 
@@ -273,7 +263,7 @@ export function MentorAssignmentsView() {
           <AlertDescription>
             {teamsInSelectedBoard.length > 0
               ? `${teamsInSelectedBoard.length} team(s) are in this board. You can assign mentors to the entire board in one action.`
-              : 'No teams were found in this board for the selected event.'}
+              : 'No confirmed teams were found in this board for the selected event.'}
           </AlertDescription>
         </Alert>
       )}

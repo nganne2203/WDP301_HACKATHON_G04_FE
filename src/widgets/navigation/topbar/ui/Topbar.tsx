@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Bell, Loader2, LogOut, Menu, UserCircle } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
@@ -12,8 +12,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { notificationsApi } from '@/shared/api/notifications';
 import { teamsApi } from '@/shared/api/teams';
 import { getApiErrorMessage } from '@/features/team/member-invites/model/helpers';
-import type { EventStatus, Notification } from '@/shared/api/types';
+import type { ApiSuccessResponse, Event, EventStatus, Notification } from '@/shared/api/types';
 import { queryKeys } from '@/lib/queryKeys';
+import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useSocket } from '@/shared/socket/SocketProvider';
+import { SOCKET_EVENTS } from '@/shared/socket/socketEvents';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +44,7 @@ type TeamInvitationNotificationMetadata = {
   eventTitle?: string;
   leaderName?: string;
   leaderEmail?: string;
+  targetPath?: string;
 };
 
 const eventStatusMeta: Record<EventStatus, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
@@ -52,21 +57,136 @@ const eventStatusMeta: Record<EventStatus, { label: string; variant: 'default' |
   ARCHIVED: { label: 'Archived', variant: 'secondary' },
 };
 
+function toSelectedEvent(event: Event) {
+  return {
+    id: event.id,
+    title: event.title,
+    semester: event.semester || event.season || String(event.year || ''),
+    status: event.status,
+  };
+}
+
 export const Topbar = memo(function Topbar() {
   const toggleSidebar = useStore((state) => state.toggleSidebar);
   const selectedEvent = useStore((state) => state.selectedEvent);
+  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
   const logoutMutation = useLogoutMutation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { socket, connected: socketConnected } = useSocket();
   const [selectedInvitationNotification, setSelectedInvitationNotification] = useState<Notification | null>(null);
+  const notificationListKey = useMemo(() => queryKeys.notifications.list({ limit: 5 }), []);
+  const unreadCountKey = useMemo(() => queryKeys.notifications.list({ status: 'UNREAD' as const, limit: 1 }), []);
+
+  const eventsQuery = useEventsQuery(undefined, { enabled: Boolean(user) });
+  const events = eventsQuery.data || [];
+
+  useEffect(() => {
+    if (!events.length) {
+      if (selectedEvent) setSelectedEvent(null);
+      return;
+    }
+
+    const activeEvent =
+      events.find((event) => event.id === selectedEvent?.id) ||
+      events.find((event) => event.status === 'ONGOING') ||
+      events.find((event) => event.status === 'OPEN_REGISTRATION') ||
+      events[0];
+
+    if (!activeEvent) return;
+
+    if (
+      selectedEvent?.id !== activeEvent.id ||
+      selectedEvent.title !== activeEvent.title ||
+      selectedEvent.semester !== (activeEvent.semester || activeEvent.season || String(activeEvent.year || '')) ||
+      selectedEvent.status !== activeEvent.status
+    ) {
+      setSelectedEvent(toSelectedEvent(activeEvent));
+    }
+  }, [events, selectedEvent, setSelectedEvent]);
 
   const notificationsQuery = useQuery({
-    queryKey: queryKeys.notifications.list({ limit: 5 }),
+    queryKey: notificationListKey,
     queryFn: async () => (await notificationsApi.list({ limit: 5 })).data,
     enabled: Boolean(user),
+    refetchInterval: socketConnected ? 300_000 : 45_000,
   });
+
+  const unreadCountQuery = useQuery({
+    queryKey: unreadCountKey,
+    queryFn: () => notificationsApi.list({ status: 'UNREAD', limit: 1 }),
+    enabled: Boolean(user),
+    refetchInterval: socketConnected ? 300_000 : 45_000,
+  });
+
+  useEffect(() => {
+    if (!socket || !user) return;
+
+    const incrementUnreadCount = (delta: number) => {
+      queryClient.setQueryData<ApiSuccessResponse<Notification[]> | undefined>(unreadCountKey, (current) => {
+        if (!current?.pagination) return current;
+        return {
+          ...current,
+          pagination: {
+            ...current.pagination,
+            totalItems: Math.max(0, current.pagination.totalItems + delta),
+          },
+        };
+      });
+    };
+
+    const handleNotificationCreated = (notification: Notification) => {
+      queryClient.setQueryData<Notification[] | undefined>(notificationListKey, (current = []) => {
+        const withoutDuplicate = current.filter((item) => item.id !== notification.id);
+        return [notification, ...withoutDuplicate].slice(0, 5);
+      });
+
+      if (notification.status === 'UNREAD') incrementUnreadCount(1);
+    };
+
+    const handleNotificationRead = (notification: Notification) => {
+      queryClient.setQueryData<Notification[] | undefined>(notificationListKey, (current = []) =>
+        current.map((item) => item.id === notification.id ? notification : item)
+      );
+
+      incrementUnreadCount(-1);
+    };
+
+    const handleNotificationsReadAll = () => {
+      queryClient.setQueryData<Notification[] | undefined>(notificationListKey, (current = []) =>
+        current.map((item) => ({ ...item, status: 'READ' as const }))
+      );
+
+      queryClient.setQueryData<ApiSuccessResponse<Notification[]> | undefined>(unreadCountKey, (current) => {
+        if (!current?.pagination) return current;
+        return {
+          ...current,
+          pagination: {
+            ...current.pagination,
+            totalItems: 0,
+          },
+        };
+      });
+    };
+
+    const handleReconnect = () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    };
+
+    socket.on(SOCKET_EVENTS.NOTIFICATION_CREATED, handleNotificationCreated);
+    socket.on(SOCKET_EVENTS.NOTIFICATION_READ, handleNotificationRead);
+    socket.on(SOCKET_EVENTS.NOTIFICATIONS_READ_ALL, handleNotificationsReadAll);
+    socket.on(SOCKET_EVENTS.CONNECT, handleReconnect);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.NOTIFICATION_CREATED, handleNotificationCreated);
+      socket.off(SOCKET_EVENTS.NOTIFICATION_READ, handleNotificationRead);
+      socket.off(SOCKET_EVENTS.NOTIFICATIONS_READ_ALL, handleNotificationsReadAll);
+      socket.off(SOCKET_EVENTS.CONNECT, handleReconnect);
+    };
+  }, [notificationListKey, queryClient, socket, unreadCountKey, user]);
 
   const handleLogout = async () => {
     await logoutMutation.mutateAsync();
@@ -122,6 +242,10 @@ export const Topbar = memo(function Topbar() {
       await notificationsApi.markAsRead(notification.id);
       await queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
     }
+
+    if (metadata?.targetPath) {
+      navigate(metadata.targetPath);
+    }
   };
 
   const displayName = user?.fullName || 'User';
@@ -129,9 +253,16 @@ export const Topbar = memo(function Topbar() {
   const displayRole = getRoleLabel(appRole);
   const selectedEventStatus = selectedEvent ? eventStatusMeta[selectedEvent.status as EventStatus] : null;
   const notifications = notificationsQuery.data || [];
-  const unreadCount = notifications.filter((notification) => notification.status === 'UNREAD').length;
+  const unreadCount = unreadCountQuery.data?.pagination?.totalItems
+    ?? notifications.filter((notification) => notification.status === 'UNREAD').length;
   const selectedInvitationMetadata = selectedInvitationNotification?.metadata as TeamInvitationNotificationMetadata | undefined;
   const confirmPending = invitationDecisionMutation.isPending;
+
+  const handleEventChange = (eventId: string) => {
+    const event = events.find((item) => item.id === eventId);
+    if (!event) return;
+    setSelectedEvent(toSelectedEvent(event));
+  };
 
   const initials = useMemo(
     () =>
@@ -145,48 +276,84 @@ export const Topbar = memo(function Topbar() {
   );
 
   return (
-    <div className="h-16 border-b border-border bg-white flex items-center justify-between px-6">
-      <div className="flex items-center gap-4">
+    <div className="h-16 border-b border-border bg-white flex items-center justify-between gap-2 px-3 sm:px-6">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <Button variant="ghost" size="icon" onClick={toggleSidebar}>
           <Menu className="w-5 h-5" />
         </Button>
 
-        {selectedEvent && (
-          <div className="flex items-center gap-3">
-            <div>
-              <h2 className="text-sm font-semibold">{selectedEvent.title}</h2>
-              <p className="text-xs text-muted-foreground">{selectedEvent.semester}</p>
-            </div>
-            <Badge variant={selectedEventStatus?.variant || 'secondary'}>
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="w-[min(58vw,22rem)] sm:w-80">
+            <Select value={selectedEvent?.id || ''} onValueChange={handleEventChange} disabled={eventsQuery.isLoading || events.length === 0}>
+              <SelectTrigger className="h-11 border-0 bg-transparent px-0 shadow-none focus:ring-0">
+                <SelectValue placeholder={eventsQuery.isLoading ? 'Loading events...' : 'Select event'} />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map((event) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{event.title}</p>
+                      <p className="text-xs text-muted-foreground">{event.semester || event.season || event.year || '-'}</p>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedEvent?.semester && <p className="-mt-2 hidden text-xs text-muted-foreground sm:block">{selectedEvent.semester}</p>}
+          </div>
+          {selectedEvent && (
+            <Badge className="hidden sm:inline-flex" variant={selectedEventStatus?.variant || 'secondary'}>
               {selectedEventStatus?.label || selectedEvent.status.replaceAll('_', ' ')}
             </Badge>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5" />
-              {unreadCount > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />}
+              {unreadCount > 0 && (
+                <span className="absolute right-1 top-1 min-w-4 rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-4 text-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
+          <DropdownMenuContent align="end" className="max-h-[min(30rem,calc(100vh-5rem))] w-[calc(100vw-1rem)] max-w-sm overflow-y-auto sm:w-80">
             <DropdownMenuLabel className="flex items-center justify-between gap-3">
               <span>Notifications</span>
-              {unreadCount > 0 && (
+              <span className="flex items-center gap-2">
                 <button
                   type="button"
                   className="text-xs font-normal text-blue-600 hover:text-blue-700"
-                  onClick={handleMarkAllNotificationsRead}
+                  onClick={() => navigate('/notifications')}
                 >
-                  Mark all read
+                  View all
                 </button>
-              )}
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    className="text-xs font-normal text-blue-600 hover:text-blue-700"
+                    onClick={handleMarkAllNotificationsRead}
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {notifications.length === 0 ? (
+            {notificationsQuery.isLoading ? (
+              <div className="flex items-center justify-center gap-2 px-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading notifications...
+              </div>
+            ) : notificationsQuery.isError ? (
+              <div className="px-2 py-6 text-center text-sm text-red-600">
+                Could not load notifications.
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                 No notifications yet.
               </div>
@@ -211,6 +378,9 @@ export const Topbar = memo(function Topbar() {
                   {notification.message && (
                     <span className="text-xs text-muted-foreground">{notification.message}</span>
                   )}
+                  <span className="text-[11px] text-muted-foreground">
+                    {new Date(notification.createdAt).toLocaleString()}
+                  </span>
                   {actionable && <span className="text-xs font-medium text-blue-600">Review invitation</span>}
                 </DropdownMenuItem>
                 );
