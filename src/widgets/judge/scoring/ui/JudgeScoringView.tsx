@@ -129,7 +129,7 @@ export function JudgeScoring() {
             <AlertDialogTitle>Submit Score Sheet</AlertDialogTitle>
             <AlertDialogDescription>
               You are submitting the score sheet for <strong>{view.selectedTeam?.name}</strong> with a total of{' '}
-              <strong>{formatScore(view.totalScore)}</strong> points. This cannot be modified after submission.
+              <strong>{formatScore(view.totalScore)}</strong> final points. This cannot be modified after submission.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

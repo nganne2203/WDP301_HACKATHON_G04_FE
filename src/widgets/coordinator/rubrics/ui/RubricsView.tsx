@@ -107,9 +107,9 @@ export function Rubrics() {
               <TableHead>Rubric</TableHead>
               <TableHead>Round</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Criteria</TableHead>
-              <TableHead>Weight Total</TableHead>
-              <TableHead>Scale</TableHead>
+              <TableHead>Scoring coefficient</TableHead>
+              <TableHead>Assigned Weight</TableHead>
+              <TableHead>Total Weight</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
@@ -152,7 +152,7 @@ export function Rubrics() {
                     {rubric.status || 'DRAFT'}
                   </Badge>
                 </TableCell>
-                <TableCell>{rubric.criteria.length}</TableCell>
+                <TableCell>{formatScore(rubric.criterionMaxScore)}</TableCell>
                 <TableCell>
                   <span className={(rubric.criteriaWeightTotal ?? 0) === (rubric.totalScore ?? 100) ? '' : 'text-amber-600'}>
                     {formatScore(rubric.criteriaWeightTotal)}

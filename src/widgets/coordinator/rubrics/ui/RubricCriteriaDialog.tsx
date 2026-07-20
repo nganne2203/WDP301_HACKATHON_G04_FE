@@ -49,8 +49,7 @@ export function RubricCriteriaDialog({
   const formWeight = Number(criterionForm.weight || 0);
   const editingWeight = Number(editingCriterion?.weight || 0);
   const nextWeightTotal = roundScore(currentWeightTotal - editingWeight + (Number.isFinite(formWeight) ? formWeight : 0));
-  const formMaxScore = Number(criterionForm.maxScore);
-  const criterionNumbersValid = Number.isFinite(formMaxScore) && formMaxScore > 0 && Number.isFinite(formWeight) && formWeight > 0;
+  const criterionNumbersValid = Number.isInteger(formWeight) && formWeight > 0;
   const exceedsScale = nextWeightTotal > scale;
   const matchesScale = currentWeightTotal === scale;
 
@@ -67,8 +66,8 @@ export function RubricCriteriaDialog({
               <div className="rounded-lg border p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium">Weight total</p>
-                    <p className="text-xs text-muted-foreground">Weights must total the rubric scale before scoring.</p>
+                    <p className="text-sm font-medium">Assigned Weight</p>
+                    <p className="text-xs text-muted-foreground">All criterion weights must equal the total weight before this rubric can leave Draft.</p>
                   </div>
                   <Badge variant={matchesScale ? 'default' : 'outline'}>
                     {formatScore(currentWeightTotal)} / {formatScore(scale)}
@@ -84,7 +83,7 @@ export function RubricCriteriaDialog({
                     <div>
                       <p className="font-medium">{criterion.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Max {formatScore(criterion.maxScore)} - Weight {formatScore(criterion.weight)} - Order {criterion.order || '-'}
+                        Coefficient {formatScore(criterion.weight)} · Order {criterion.order || '-'}
                       </p>
                     </div>
                     <div className="flex gap-1">
@@ -135,8 +134,8 @@ export function RubricCriteriaDialog({
               </div>
               <CriterionForm form={criterionForm} onChange={setCriterionForm} />
               <div className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-                New weight total: {formatScore(nextWeightTotal)} / {formatScore(scale)}
-                {exceedsScale ? ' - exceeds rubric scale.' : ''}
+                Assigned Weight after saving: {formatScore(nextWeightTotal)} / {formatScore(scale)}
+                {exceedsScale ? ' - exceeds the total weight.' : ''}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -154,7 +153,6 @@ export function RubricCriteriaDialog({
                     createPending ||
                     updatePending ||
                     !criterionForm.name.trim() ||
-                    !criterionForm.maxScore ||
                     !criterionNumbersValid ||
                     exceedsScale
                   }

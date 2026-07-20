@@ -13,6 +13,10 @@ function formatScore(value: number) {
   return (Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100).toFixed(2);
 }
 
+function formatWeight(value: number) {
+  return String(Math.round(Number(value || 0)));
+}
+
 export function ScoringCriteriaCard({
   criteria,
   maxScore,
@@ -62,7 +66,7 @@ export function ScoringCriteriaCard({
           <CardTitle className="text-base">Scoring Criteria</CardTitle>
           <div className="text-right">
             <p className="text-lg font-bold text-blue-700">{formatScore(totalScore)}</p>
-            <p className="text-xs text-muted-foreground">of {formatScore(maxScore)} pts</p>
+            <p className="text-xs text-muted-foreground">of {formatScore(maxScore)} total weight</p>
           </div>
         </div>
         <Progress value={maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0} />
@@ -78,7 +82,7 @@ export function ScoringCriteriaCard({
                 )}
               </div>
               <span className="text-xs text-muted-foreground shrink-0">
-                Max {formatScore(criterion.maxScore)} | Weight {formatScore(criterion.weight)}
+                Scoring coefficient {formatWeight(criterion.maxScore)} | Weight {formatWeight(criterion.weight)}
               </span>
             </div>
             <Input

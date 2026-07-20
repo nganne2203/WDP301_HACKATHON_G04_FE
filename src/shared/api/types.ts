@@ -1745,6 +1745,7 @@ export interface Rubric {
   title: string;
   description: string | null;
   totalScore: number | null;
+  criterionMaxScore: number;
   criteriaWeightTotal?: number;
   version?: number;
   status?: RubricStatus;
@@ -1759,6 +1760,7 @@ export interface CreateRubricRequest {
   title: string;
   description?: string | null;
   totalScore?: number | null;
+  criterionMaxScore?: number;
   version?: number;
   status?: RubricStatus;
 }
@@ -1767,6 +1769,7 @@ export interface UpdateRubricRequest {
   title?: string;
   description?: string | null;
   totalScore?: number | null;
+  criterionMaxScore?: number;
   version?: number;
   status?: RubricStatus;
 }
@@ -1774,7 +1777,6 @@ export interface UpdateRubricRequest {
 export interface CreateCriterionRequest {
   name: string;
   description?: string | null;
-  maxScore: number;
   weight?: number;
   order?: number;
   judgeOnly?: boolean;
@@ -1785,7 +1787,6 @@ export interface CreateCriterionRequest {
 export interface UpdateCriterionRequest {
   name?: string;
   description?: string | null;
-  maxScore?: number;
   weight?: number;
   order?: number;
   judgeOnly?: boolean;

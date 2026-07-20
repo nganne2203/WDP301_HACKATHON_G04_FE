@@ -16,6 +16,7 @@ export interface RubricFormState {
   description: string;
   roundId: string;
   totalScore: string;
+  criterionMaxScore: string;
   version: string;
   status: RubricStatus;
 }
@@ -23,7 +24,6 @@ export interface RubricFormState {
 export interface CriterionFormState {
   name: string;
   description: string;
-  maxScore: string;
   weight: string;
   order: string;
   judgeOnly: boolean;
@@ -37,6 +37,7 @@ export function createRubricForm(): RubricFormState {
     description: '',
     roundId: 'none',
     totalScore: '100',
+    criterionMaxScore: '10',
     version: '1',
     status: 'DRAFT',
   };
@@ -46,11 +47,10 @@ export function createCriterionForm(): CriterionFormState {
   return {
     name: '',
     description: '',
-    maxScore: '',
     weight: '1',
     order: '',
     judgeOnly: false,
-    aiSupportForAudit: true,
+    aiSupportForAudit: false,
     aiInstruction: '',
   };
 }
@@ -72,6 +72,7 @@ export function mapRubricToForm(rubric: Rubric): RubricFormState {
     description: rubric.description || '',
     roundId: rubric.roundId || 'none',
     totalScore: String(rubric.totalScore || 100),
+    criterionMaxScore: String(rubric.criterionMaxScore || 10),
     version: String(rubric.version || 1),
     status: rubric.status || 'DRAFT',
   };
@@ -81,11 +82,10 @@ export function mapCriterionToForm(criterion: Criterion): CriterionFormState {
   return {
     name: criterion.name,
     description: criterion.description || '',
-    maxScore: String(criterion.maxScore),
     weight: String(criterion.weight),
     order: criterion.order ? String(criterion.order) : '',
     judgeOnly: Boolean(criterion.judgeOnly),
-    aiSupportForAudit: criterion.aiSupportForAudit !== false,
+    aiSupportForAudit: Boolean(criterion.aiSupportForAudit),
     aiInstruction: criterion.aiInstruction || '',
   };
 }
@@ -97,6 +97,7 @@ export function buildRubricPayload(form: RubricFormState, competitionId: string)
     description: normalizeText(form.description),
     roundId: form.roundId === 'none' ? null : form.roundId,
     totalScore: Number(form.totalScore || 100),
+    criterionMaxScore: Number(form.criterionMaxScore || 10),
     version: Number(form.version || 1),
     status: form.status,
   };
@@ -107,6 +108,7 @@ export function buildRubricUpdatePayload(form: RubricFormState): UpdateRubricReq
     title: form.title.trim(),
     description: normalizeText(form.description),
     totalScore: Number(form.totalScore || 100),
+    criterionMaxScore: Number(form.criterionMaxScore || 10),
     version: Number(form.version || 1),
     status: form.status,
   };
@@ -117,15 +119,14 @@ export function roundScore(value: number) {
 }
 
 export function formatScore(value: number | null | undefined) {
-  return roundScore(Number(value || 0)).toFixed(2);
+  return String(Math.round(Number(value || 0)));
 }
 
 export function buildCriterionPayload(form: CriterionFormState): CreateCriterionRequest {
   return {
     name: form.name.trim(),
     description: normalizeText(form.description),
-    maxScore: roundScore(Number(form.maxScore)),
-    weight: roundScore(Number(form.weight || 1)),
+    weight: Number(form.weight || 1),
     order: form.order ? Number(form.order) : undefined,
     judgeOnly: form.judgeOnly,
     aiSupportForAudit: form.aiSupportForAudit,

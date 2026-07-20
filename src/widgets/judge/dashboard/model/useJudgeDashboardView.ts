@@ -105,8 +105,10 @@ export function useJudgeDashboardView() {
     enabled: Boolean(activeRound?.rubricId),
     queryFn: () => rubricsApi.getById(activeRound!.rubricId!),
   });
-  const criteria: Criterion[] = rubricQuery.data?.data?.criteria || [];
-  const maxScore = criteria.reduce((sum, criterion) => sum + criterion.maxScore, 0);
+  const rubric = rubricQuery.data?.data;
+  const criteria: Criterion[] = rubric?.criteria || [];
+  const totalWeight = Number(rubric?.totalScore || 0);
+  const scoringCoefficient = Number(rubric?.criterionMaxScore || 0);
 
   // Calculate metrics
   const totalTeamsCount = assignedTeams.length;
@@ -123,7 +125,7 @@ export function useJudgeDashboardView() {
   const averageScoreGiven = useMemo(() => {
     const completedSheets = allSheets.filter(s => s.status === 'SUBMITTED' || s.status === 'LOCKED');
     if (!completedSheets.length) return 0;
-    const sum = completedSheets.reduce((acc, s) => acc + (s.totalScore || 0), 0);
+    const sum = completedSheets.reduce((acc, s) => acc + (s.finalScore || 0), 0);
     return Number((sum / completedSheets.length).toFixed(1));
   }, [allSheets]);
 
@@ -142,9 +144,10 @@ export function useJudgeDashboardView() {
     submissionByTeam,
     sheetByTeamId,
     rubricQuery,
-    rubricName: rubricQuery.data?.data?.name || 'Round Rubric',
+    rubricName: rubric?.title || 'Round Rubric',
     criteriaCount: criteria.length,
-    maxScore,
+    totalWeight,
+    scoringCoefficient,
     totalTeamsCount,
     scoredTeamsCount,
     draftTeamsCount,
