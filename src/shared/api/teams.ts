@@ -22,17 +22,17 @@ export const teamsApi = {
   create: (data: CreateTeamRequest) =>
     api.post<Team>('/teams', data),
 
-  checkAvailability: (query: { eventId: string; name: string }) =>
+  checkAvailability: (query: { competitionId: string; name: string }) =>
     api.get<TeamAvailability>('/teams/availability', { params: query }),
 
-  checkInviteEligibility: (query: { eventId: string; email: string; githubUsername?: string }) =>
+  checkInviteEligibility: (query: { competitionId: string; email: string; githubUsername?: string }) =>
     api.get<TeamInviteEligibility>('/teams/invite-eligibility', { params: query }),
 
   getById: (id: string) =>
     api.get<Team>(`/teams/${id}`),
 
-  getMyTeam: (eventId: string) =>
-    api.get<Team>('/teams/my', { params: { eventId } }),
+  getMyTeam: (competitionId: string) =>
+    api.get<Team>('/teams/my', { params: { competitionId } }),
 
   leave: (teamId: string) =>
     api.post<Team>(`/teams/${teamId}/leave`),

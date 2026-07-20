@@ -29,8 +29,8 @@ export function JudgeDashboardView() {
   const navigate = useNavigate();
 
   const handleScoreTeam = (teamId: string) => {
-    if (!view.activeEvent || !view.activeRound) return;
-    navigate(`/judge/scoring?teamId=${teamId}&roundId=${view.activeRound.id}&eventId=${view.activeEvent.id}`);
+    if (!view.activeCompetition || !view.activeRound) return;
+    navigate(`/judge/scoring?teamId=${teamId}&roundId=${view.activeRound.id}&competitionId=${view.activeCompetition.id}`);
   };
 
   const progressPercent = view.totalTeamsCount > 0 
@@ -56,7 +56,7 @@ export function JudgeDashboardView() {
             <Select
               value={view.activeRound?.id || ''}
               onValueChange={view.setSelectedRoundId}
-              disabled={!view.activeEvent || view.roundsQuery.isLoading}
+              disabled={!view.activeCompetition || view.roundsQuery.isLoading}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading rounds...' : 'Select Round'} />
@@ -81,13 +81,13 @@ export function JudgeDashboardView() {
         </div>
       )}
 
-      {/* Error state / Empty event & round selection */}
+      {/* Error state / Empty competition & round selection */}
       {!view.isLoading && !view.activeRound && (
         <Alert variant="default" className="border-blue-200 bg-blue-50">
           <Scale className="h-4 w-4 text-blue-600" />
           <AlertTitle className="text-blue-800">Ready to score?</AlertTitle>
           <AlertDescription className="text-blue-700">
-            Please select an event and a evaluation round to display your assigned teams.
+            Please select an competition and a evaluation round to display your assigned teams.
           </AlertDescription>
         </Alert>
       )}

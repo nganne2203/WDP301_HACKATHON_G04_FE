@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { AlertCircle } from 'lucide-react';
 
-import type { TimelineEventType, TimelineStatus } from '@/shared/api/types';
+import type { TimelineActivityType, TimelineStatus } from '@/shared/api/types';
 import { Card } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -24,7 +24,7 @@ export function TimelineForm({
         <Input
           id="timeline-title"
           value={form.title}
-          onChange={(event) => onChange((current) => ({ ...current, title: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, title: competition.target.value }))}
           placeholder="Opening ceremony"
         />
       </div>
@@ -33,8 +33,8 @@ export function TimelineForm({
         <div className="space-y-2">
           <Label>Type</Label>
           <Select
-            value={form.eventType}
-            onValueChange={(value: TimelineEventType) => onChange((current) => ({ ...current, eventType: value }))}
+            value={form.activityType}
+            onValueChange={(value: TimelineActivityType) => onChange((current) => ({ ...current, activityType: value }))}
           >
             <SelectTrigger>
               <SelectValue />
@@ -75,7 +75,7 @@ export function TimelineForm({
             id="timeline-start"
             type="datetime-local"
             value={form.startTime}
-            onChange={(event) => onChange((current) => ({ ...current, startTime: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, startTime: competition.target.value }))}
           />
         </div>
         <div className="space-y-2">
@@ -84,7 +84,7 @@ export function TimelineForm({
             id="timeline-end"
             type="datetime-local"
             value={form.endTime}
-            onChange={(event) => onChange((current) => ({ ...current, endTime: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, endTime: competition.target.value }))}
           />
         </div>
       </div>
@@ -95,7 +95,7 @@ export function TimelineForm({
           id="timeline-description"
           rows={4}
           value={form.description}
-          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, description: competition.target.value }))}
           placeholder="Optional agenda details, logistics, or reminders."
         />
       </div>

@@ -90,9 +90,9 @@ export function mapCriterionToForm(criterion: Criterion): CriterionFormState {
   };
 }
 
-export function buildRubricPayload(form: RubricFormState, eventId: string): CreateRubricRequest {
+export function buildRubricPayload(form: RubricFormState, competitionId: string): CreateRubricRequest {
   return {
-    eventId,
+    competitionId,
     title: form.title.trim(),
     description: normalizeText(form.description),
     roundId: form.roundId === 'none' ? null : form.roundId,

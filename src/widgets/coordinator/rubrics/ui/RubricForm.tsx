@@ -24,7 +24,7 @@ export function RubricForm({
         <Input
           id="rubric-title"
           value={form.title}
-          onChange={(event) => onChange((current) => ({ ...current, title: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, title: competition.target.value }))}
           placeholder="Final Presentation Rubric"
         />
       </div>
@@ -34,7 +34,7 @@ export function RubricForm({
           id="rubric-description"
           rows={4}
           value={form.description}
-          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, description: competition.target.value }))}
         />
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -74,7 +74,7 @@ export function RubricForm({
             type="number"
             min="1"
             value={form.version}
-            onChange={(event) => onChange((current) => ({ ...current, version: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, version: competition.target.value }))}
           />
         </div>
         <div className="min-w-0 space-y-2">

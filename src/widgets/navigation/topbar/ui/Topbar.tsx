@@ -12,9 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { notificationsApi } from '@/shared/api/notifications';
 import { teamsApi } from '@/shared/api/teams';
 import { getApiErrorMessage } from '@/features/team/member-invites/model/helpers';
-import type { ApiSuccessResponse, Event, EventStatus, Notification } from '@/shared/api/types';
+import type { ApiSuccessResponse, Competition, CompetitionStatus, Notification } from '@/shared/api/types';
 import { queryKeys } from '@/lib/queryKeys';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { useSocket } from '@/shared/socket/SocketProvider';
 import { SOCKET_EVENTS } from '@/shared/socket/socketEvents';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
@@ -47,7 +47,7 @@ type TeamInvitationNotificationMetadata = {
   targetPath?: string;
 };
 
-const eventStatusMeta: Record<EventStatus, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+const competitionStatusMeta: Record<CompetitionStatus, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   DRAFT: { label: 'Draft', variant: 'secondary' },
   OPEN_REGISTRATION: { label: 'Open Registration', variant: 'default' },
   REGISTRATION_CLOSED: { label: 'Registration Closed', variant: 'secondary' },
@@ -57,19 +57,19 @@ const eventStatusMeta: Record<EventStatus, { label: string; variant: 'default' |
   ARCHIVED: { label: 'Archived', variant: 'secondary' },
 };
 
-function toSelectedEvent(event: Event) {
+function toSelectedCompetition(competition: Competition) {
   return {
-    id: event.id,
-    title: event.title,
-    semester: event.semester || event.season || String(event.year || ''),
-    status: event.status,
+    id: competition.id,
+    title: competition.title,
+    semester: competition.semester || competition.season || String(competition.year || ''),
+    status: competition.status,
   };
 }
 
 export const Topbar = memo(function Topbar() {
   const toggleSidebar = useStore((state) => state.toggleSidebar);
-  const selectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
   const logoutMutation = useLogoutMutation();
@@ -80,32 +80,32 @@ export const Topbar = memo(function Topbar() {
   const notificationListKey = useMemo(() => queryKeys.notifications.list({ limit: 5 }), []);
   const unreadCountKey = useMemo(() => queryKeys.notifications.list({ status: 'UNREAD' as const, limit: 1 }), []);
 
-  const eventsQuery = useEventsQuery(undefined, { enabled: Boolean(user) });
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery(undefined, { enabled: Boolean(user) });
+  const competitions = eventsQuery.data || [];
 
   useEffect(() => {
-    if (!events.length) {
-      if (selectedEvent) setSelectedEvent(null);
+    if (!competitions.length) {
+      if (selectedCompetition) setSelectedCompetition(null);
       return;
     }
 
-    const activeEvent =
-      events.find((event) => event.id === selectedEvent?.id) ||
-      events.find((event) => event.status === 'ONGOING') ||
-      events.find((event) => event.status === 'OPEN_REGISTRATION') ||
-      events[0];
+    const activeCompetition =
+      competitions.find((competition) => competition.id === selectedCompetition?.id) ||
+      competitions.find((competition) => competition.status === 'ONGOING') ||
+      competitions.find((competition) => competition.status === 'OPEN_REGISTRATION') ||
+      competitions[0];
 
-    if (!activeEvent) return;
+    if (!activeCompetition) return;
 
     if (
-      selectedEvent?.id !== activeEvent.id ||
-      selectedEvent.title !== activeEvent.title ||
-      selectedEvent.semester !== (activeEvent.semester || activeEvent.season || String(activeEvent.year || '')) ||
-      selectedEvent.status !== activeEvent.status
+      selectedCompetition?.id !== activeCompetition.id ||
+      selectedCompetition.title !== activeCompetition.title ||
+      selectedCompetition.semester !== (activeCompetition.semester || activeCompetition.season || String(activeCompetition.year || '')) ||
+      selectedCompetition.status !== activeCompetition.status
     ) {
-      setSelectedEvent(toSelectedEvent(activeEvent));
+      setSelectedCompetition(toSelectedCompetition(activeCompetition));
     }
-  }, [events, selectedEvent, setSelectedEvent]);
+  }, [competitions, selectedCompetition, setSelectedCompetition]);
 
   const notificationsQuery = useQuery({
     queryKey: notificationListKey,
@@ -251,17 +251,17 @@ export const Topbar = memo(function Topbar() {
   const displayName = user?.fullName || 'User';
   const displayEmail = user?.email || '';
   const displayRole = getRoleLabel(appRole);
-  const selectedEventStatus = selectedEvent ? eventStatusMeta[selectedEvent.status as EventStatus] : null;
+  const selectedCompetitionStatus = selectedCompetition ? competitionStatusMeta[selectedCompetition.status as CompetitionStatus] : null;
   const notifications = notificationsQuery.data || [];
   const unreadCount = unreadCountQuery.data?.pagination?.totalItems
     ?? notifications.filter((notification) => notification.status === 'UNREAD').length;
   const selectedInvitationMetadata = selectedInvitationNotification?.metadata as TeamInvitationNotificationMetadata | undefined;
   const confirmPending = invitationDecisionMutation.isPending;
 
-  const handleEventChange = (eventId: string) => {
-    const event = events.find((item) => item.id === eventId);
-    if (!event) return;
-    setSelectedEvent(toSelectedEvent(event));
+  const handleCompetitionChange = (competitionId: string) => {
+    const competition = competitions.find((item) => item.id === competitionId);
+    if (!competition) return;
+    setSelectedCompetition(toSelectedCompetition(competition));
   };
 
   const initials = useMemo(
@@ -284,26 +284,32 @@ export const Topbar = memo(function Topbar() {
 
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="w-[min(58vw,22rem)] sm:w-80">
-            <Select value={selectedEvent?.id || ''} onValueChange={handleEventChange} disabled={eventsQuery.isLoading || events.length === 0}>
+            <Select value={selectedCompetition?.id || ''} onValueChange={handleCompetitionChange} disabled={eventsQuery.isLoading || competitions.length === 0}>
               <SelectTrigger className="h-11 border-0 bg-transparent px-0 shadow-none focus:ring-0">
-                <SelectValue placeholder={eventsQuery.isLoading ? 'Loading events...' : 'Select event'} />
+                {selectedCompetition ? (
+                  <div className="min-w-0 text-left leading-tight">
+                    <p className="truncate font-medium">{selectedCompetition.title}</p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{selectedCompetition.semester}</p>
+                  </div>
+                ) : (
+                  <SelectValue placeholder={eventsQuery.isLoading ? 'Loading competitions...' : 'Select competition'} />
+                )}
               </SelectTrigger>
               <SelectContent>
-                {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
+                {competitions.map((competition) => (
+                  <SelectItem key={competition.id} value={competition.id}>
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">{event.semester || event.season || event.year || '-'}</p>
+                      <p className="truncate font-medium">{competition.title}</p>
+                      <p className="text-xs text-muted-foreground">{competition.semester || competition.season || competition.year || '-'}</p>
                     </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {selectedEvent?.semester && <p className="-mt-2 hidden text-xs text-muted-foreground sm:block">{selectedEvent.semester}</p>}
           </div>
-          {selectedEvent && (
-            <Badge className="hidden sm:inline-flex" variant={selectedEventStatus?.variant || 'secondary'}>
-              {selectedEventStatus?.label || selectedEvent.status.replaceAll('_', ' ')}
+          {selectedCompetition && (
+            <Badge className="hidden sm:inline-flex" variant={selectedCompetitionStatus?.variant || 'secondary'}>
+              {selectedCompetitionStatus?.label || selectedCompetition.status.replaceAll('_', ' ')}
             </Badge>
           )}
         </div>
@@ -366,8 +372,8 @@ export const Topbar = memo(function Topbar() {
                 <DropdownMenuItem
                   key={notification.id}
                   className="flex cursor-pointer flex-col items-start gap-1 whitespace-normal"
-                  onSelect={(event) => {
-                    event.preventDefault();
+                  onSelect={(competition) => {
+                    competition.preventDefault();
                     void handleNotificationClick(notification);
                   }}
                 >
@@ -455,8 +461,8 @@ export const Topbar = memo(function Topbar() {
             </Button>
             <AlertDialogAction
               disabled={confirmPending}
-              onClick={(event) => {
-                event.preventDefault();
+              onClick={(competition) => {
+                competition.preventDefault();
                 invitationDecisionMutation.mutate('accept');
               }}
             >

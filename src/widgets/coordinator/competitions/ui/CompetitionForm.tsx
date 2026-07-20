@@ -3,8 +3,8 @@ import type { UseFormReturn } from 'react-hook-form';
 import {
   finalistSelectionModeOptions,
   getTodayDateInputValue,
-  type EventFormValues,
-} from '@/features/event-management/model/event-form';
+  type CompetitionFormValues,
+} from '@/features/competition-management/model/competition-form';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/shared/ui/switch';
 import { Textarea } from '@/shared/ui/textarea';
 
-export function EventForm({
+export function CompetitionForm({
   form,
   onSubmit,
   pending,
@@ -22,8 +22,8 @@ export function EventForm({
   prefix,
   allowPastDates = false,
 }: {
-  form: UseFormReturn<EventFormValues>;
-  onSubmit: (data: EventFormValues) => void;
+  form: UseFormReturn<CompetitionFormValues>;
+  onSubmit: (data: CompetitionFormValues) => void;
   pending: boolean;
   submitLabel: string;
   pendingLabel: string;
@@ -46,7 +46,7 @@ export function EventForm({
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor={`${prefix}-title`}>Event Title</Label>
+          <Label htmlFor={`${prefix}-title`}>Competition Title</Label>
           <Input id={`${prefix}-title`} placeholder="SEAL Hackathon 2026" {...form.register('title')} />
           {form.formState.errors.title && (
             <p className="text-sm text-red-600">{form.formState.errors.title.message}</p>
@@ -62,7 +62,7 @@ export function EventForm({
         <Label htmlFor={`${prefix}-description`}>Description</Label>
         <Textarea
           id={`${prefix}-description`}
-          placeholder="Enter event description..."
+          placeholder="Enter competition description..."
           rows={3}
           {...form.register('description')}
         />
@@ -126,7 +126,7 @@ export function EventForm({
           <Label htmlFor={`${prefix}-finalistSelectionMode`}>Selection mode</Label>
           <Select
             value={finalistSelectionMode}
-            onValueChange={(value) => form.setValue('finalistSelectionMode', value as EventFormValues['finalistSelectionMode'], { shouldValidate: true })}
+            onValueChange={(value) => form.setValue('finalistSelectionMode', value as CompetitionFormValues['finalistSelectionMode'], { shouldValidate: true })}
           >
             <SelectTrigger id={`${prefix}-finalistSelectionMode`}>
               <SelectValue />

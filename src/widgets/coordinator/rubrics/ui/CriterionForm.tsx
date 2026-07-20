@@ -21,7 +21,7 @@ export function CriterionForm({
         <Input
           id="criterion-name"
           value={form.name}
-          onChange={(event) => onChange((current) => ({ ...current, name: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, name: competition.target.value }))}
           placeholder="Technical quality"
         />
       </div>
@@ -31,7 +31,7 @@ export function CriterionForm({
           id="criterion-description"
           rows={3}
           value={form.description}
-          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, description: competition.target.value }))}
         />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -43,7 +43,7 @@ export function CriterionForm({
             min="0.01"
             step="0.01"
             value={form.maxScore}
-            onChange={(event) => onChange((current) => ({ ...current, maxScore: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, maxScore: competition.target.value }))}
             onBlur={() => onChange((current) => {
               const value = Number(current.maxScore);
               return { ...current, maxScore: Number.isFinite(value) && value > 0 ? value.toFixed(2) : current.maxScore };
@@ -58,7 +58,7 @@ export function CriterionForm({
             min="0.01"
             step="0.01"
             value={form.weight}
-            onChange={(event) => onChange((current) => ({ ...current, weight: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, weight: competition.target.value }))}
             onBlur={() => onChange((current) => {
               const value = Number(current.weight);
               return { ...current, weight: Number.isFinite(value) && value > 0 ? value.toFixed(2) : current.weight };
@@ -72,7 +72,7 @@ export function CriterionForm({
             type="number"
             min="1"
             value={form.order}
-            onChange={(event) => onChange((current) => ({ ...current, order: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, order: competition.target.value }))}
           />
         </div>
       </div>
@@ -82,7 +82,7 @@ export function CriterionForm({
           id="criterion-ai-instruction"
           rows={3}
           value={form.aiInstruction}
-          onChange={(event) => onChange((current) => ({ ...current, aiInstruction: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, aiInstruction: competition.target.value }))}
         />
       </div>
       <label className="flex items-center gap-3 text-sm">

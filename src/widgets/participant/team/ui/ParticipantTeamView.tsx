@@ -9,7 +9,7 @@ import { TeamOverviewCard } from '@/widgets/participant/team/ui/TeamOverviewCard
 
 export function ParticipantTeam() {
   const {
-    activeEventId,
+    activeCompetitionId,
     canChangeInvitations,
     canLeaveTeam,
     cancelMutation,
@@ -26,7 +26,7 @@ export function ParticipantTeam() {
     registrationOpen,
     replacementEmails,
     replaceMutation,
-    selectedEvent,
+    selectedCompetition,
     setInvitedMembers,
     setNewInvitedMembers,
     setReplacementEmails,
@@ -50,16 +50,16 @@ export function ParticipantTeam() {
       {eventsQuery.isLoading && (
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
-          <AlertTitle>Loading events</AlertTitle>
-          <AlertDescription>Please wait while available events are loaded.</AlertDescription>
+          <AlertTitle>Loading competitions</AlertTitle>
+          <AlertDescription>Please wait while available competitions are loaded.</AlertDescription>
         </Alert>
       )}
 
-      {selectedEvent && !registrationOpen && (
+      {selectedCompetition && !registrationOpen && (
         <Alert>
           <Clock className="h-4 w-4" />
           <AlertTitle>Registration is not open</AlertTitle>
-          <AlertDescription>Team creation and invitations are only available during event registration.</AlertDescription>
+          <AlertDescription>Team creation and invitations are only available during competition registration.</AlertDescription>
         </Alert>
       )}
 
@@ -67,13 +67,13 @@ export function ParticipantTeam() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading team</AlertTitle>
-          <AlertDescription>Checking your team for this event.</AlertDescription>
+          <AlertDescription>Checking your team for this competition.</AlertDescription>
         </Alert>
       )}
 
       {!teamQuery.isLoading && !team && (
         <CreateTeamCard
-          activeEventId={activeEventId}
+          activeCompetitionId={activeCompetitionId}
           createPending={createTeamMutation.isPending || createValidationPending}
           invitedMembers={invitedMembers}
           onCreateTeam={handleCreateTeam}
@@ -92,10 +92,10 @@ export function ParticipantTeam() {
 
           <TeamOverviewCard
             team={team}
-            eventTitle={selectedEvent?.title}
+            eventTitle={selectedCompetition?.title}
             isLeader={isLeader}
             leavePending={leaveTeamMutation.isPending}
-            minTeamMembers={selectedEvent?.minTeamMembers}
+            minTeamMembers={selectedCompetition?.minTeamMembers}
             onLeaveTeam={() => leaveTeamMutation.mutate(team.id)}
             canLeaveTeam={canLeaveTeam}
           />

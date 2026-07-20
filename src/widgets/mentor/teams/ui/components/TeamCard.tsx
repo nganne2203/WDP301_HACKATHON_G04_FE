@@ -33,7 +33,7 @@ export function TeamCard({ team, isSpeaker, footer }: TeamCardProps) {
           <div>
             <CardTitle className="line-clamp-2">{team.name}</CardTitle>
             <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
-              {team.track?.name || team.event?.title}
+              {team.track?.name || team.competition?.title}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">

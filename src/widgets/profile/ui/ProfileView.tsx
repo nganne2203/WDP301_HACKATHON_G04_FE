@@ -7,7 +7,7 @@ import { useStore } from '@/entities/session/model/store';
 import { GitHubUserPicker } from '@/features/github/user-picker/ui/GitHubUserPicker';
 import { queryKeys } from '@/lib/queryKeys';
 import { usersApi } from '@/shared/api/users';
-import { eventsApi } from '@/shared/api/events';
+import { eventsApi } from '@/shared/api/competitions';
 import { participantsApi } from '@/shared/api/participants';
 import { ApiError } from '@/shared/api/client';
 import type { Participant, UpdateProfileRequest } from '@/shared/api/types';
@@ -49,7 +49,7 @@ function normalizeOptional(value: string) {
 
 function isStartedJoinedParticipant(participant: Participant | null | undefined) {
   if (!participant || participant.status !== 'JOINED') return false;
-  const startDate = participant.event?.startDate;
+  const startDate = participant.competition?.startDate;
   if (!startDate) return false;
   const startTime = new Date(startDate).getTime();
   return Number.isFinite(startTime) && startTime <= Date.now();
@@ -101,16 +101,16 @@ export function ProfileView() {
   }, [avatarFile]);
 
   const eventsQuery = useQuery({
-    queryKey: queryKeys.events.list({ page: 1, limit: 100 }),
+    queryKey: queryKeys.competitions.list({ page: 1, limit: 100 }),
     queryFn: async () => (await eventsApi.list({ page: 1, limit: 100 })).data,
     enabled: Boolean(user),
   });
 
   const participantQueries = useQueries({
-    queries: (eventsQuery.data || []).map((event) => ({
-      queryKey: [...queryKeys.participants.all, 'me', event.id],
-      queryFn: async () => (await participantsApi.getMine(event.id)).data as Participant | null,
-      enabled: Boolean(user && event.id),
+    queries: (eventsQuery.data || []).map((competition) => ({
+      queryKey: [...queryKeys.participants.all, 'me', competition.id],
+      queryFn: async () => (await participantsApi.getMine(competition.id)).data as Participant | null,
+      enabled: Boolean(user && competition.id),
       retry: false,
     })),
   });
@@ -193,8 +193,8 @@ export function ProfileView() {
     );
   }
 
-  const submitProfile = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submitProfile = (competition: FormEvent<HTMLFormElement>) => {
+    competition.preventDefault();
     if (githubError) return;
 
     const payload: UpdateProfileRequest = {
@@ -211,8 +211,8 @@ export function ProfileView() {
     profileMutation.mutate(payload);
   };
 
-  const handleAvatarFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
+  const handleAvatarFileChange = (competition: React.ChangeEvent<HTMLInputElement>) => {
+    const file = competition.target.files?.[0] || null;
     setAvatarFile(file);
   };
 
@@ -270,7 +270,7 @@ export function ProfileView() {
             <CardHeader>
               <CardTitle>Personal information</CardTitle>
               <CardDescription>
-                GitHub username can only be changed before your joined event starts.
+                GitHub username can only be changed before your joined competition starts.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -279,7 +279,7 @@ export function ProfileView() {
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>GitHub username is locked</AlertTitle>
                   <AlertDescription>
-                    You are joined in {githubLockedParticipant?.event?.title || 'an event'} that has already started.
+                    You are joined in {githubLockedParticipant?.competition?.title || 'an competition'} that has already started.
                   </AlertDescription>
                 </Alert>
               )}
@@ -289,7 +289,7 @@ export function ProfileView() {
                 <Input
                   id="fullName"
                   value={form.fullName}
-                  onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
+                  onChange={(competition) => setForm((current) => ({ ...current, fullName: competition.target.value }))}
                   required
                   minLength={2}
                   maxLength={120}
@@ -317,7 +317,7 @@ export function ProfileView() {
                 <Input
                   id="phone"
                   value={form.phone}
-                  onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                  onChange={(competition) => setForm((current) => ({ ...current, phone: competition.target.value }))}
                   maxLength={30}
                 />
               </div>
@@ -349,7 +349,7 @@ export function ProfileView() {
                   <Input
                     id="avatarUrl"
                     value={form.avatarUrl}
-                    onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))}
+                    onChange={(competition) => setForm((current) => ({ ...current, avatarUrl: competition.target.value }))}
                     placeholder="https://..."
                   />
                 ) : (
@@ -415,7 +415,7 @@ export function ProfileView() {
                 <Textarea
                   id="bio"
                   value={form.bio}
-                  onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))}
+                  onChange={(competition) => setForm((current) => ({ ...current, bio: competition.target.value }))}
                   maxLength={500}
                   className="min-h-24"
                 />

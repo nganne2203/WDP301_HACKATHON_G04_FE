@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
 import { tracksApi } from '@/shared/api';
-import { useEventsQuery, useTracksQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useTracksQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { CreateTrackRequest, Track, UpdateTrackRequest } from '@/shared/api/types';
@@ -19,7 +19,7 @@ import {
 
 export function useTracksView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -27,17 +27,17 @@ export function useTracksView() {
   const [createForm, setCreateForm] = useState<TrackFormState>(createEmptyTrackForm());
   const [editForm, setEditForm] = useState<TrackFormState>(createEmptyTrackForm());
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
   const tracksQuery = useTracksQuery(
-    { eventId: activeEvent?.id, page: 1, limit: 10 },
-    { enabled: Boolean(activeEvent?.id) }
+    { competitionId: activeCompetition?.id, page: 1, limit: 10 },
+    { enabled: Boolean(activeCompetition?.id) }
   );
 
   const tracks = tracksQuery.data || [];
@@ -99,13 +99,13 @@ export function useTracksView() {
   };
 
   const handleCreate = () => {
-    if (!activeEvent?.id) return;
+    if (!activeCompetition?.id) return;
     if (!createForm.name.trim()) {
       toast.error('Track name is required');
       return;
     }
 
-    createMutation.mutate(buildTrackPayload(createForm, activeEvent.id));
+    createMutation.mutate(buildTrackPayload(createForm, activeCompetition.id));
   };
 
   const handleUpdate = () => {
@@ -124,7 +124,7 @@ export function useTracksView() {
   const confirmedTracks = tracks.filter((track) => track.status === 'OPEN' || track.status === 'COMPLETED').length;
 
   return {
-    activeEvent,
+    activeCompetition,
     confirmedTracks,
     createForm,
     createMutation,
@@ -133,7 +133,7 @@ export function useTracksView() {
     deleteOpen,
     editForm,
     editOpen,
-    events,
+    competitions,
     eventsQuery,
     handleCreate,
     handleUpdate,

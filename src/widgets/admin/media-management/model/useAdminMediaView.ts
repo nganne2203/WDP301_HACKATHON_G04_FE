@@ -12,8 +12,8 @@ import { buildAdminMediaFilters, getAdminMediaErrorMessage } from './admin-media
 export function useAdminMediaView() {
   const queryClient = useQueryClient();
   const hasPermission = useStore((state) => state.hasPermission);
-  const selectedEvent = useStore((state) => state.selectedEvent);
-  const eventId = selectedEvent?.id || 'ALL';
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
+  const competitionId = selectedCompetition?.id || 'ALL';
   const [uploadedBy, setUploadedBy] = useState('');
   const [teamId, setTeamId] = useState('');
   const [mediaType, setMediaType] = useState('ALL');
@@ -30,10 +30,10 @@ export function useAdminMediaView() {
   const [rejectReason, setRejectReason] = useState('');
   const [deleteMedia, setDeleteMedia] = useState<MediaItem | null>(null);
 
-  const canManage = hasPermission('EVENT_UPDATE');
+  const canManage = hasPermission('COMPETITION_UPDATE');
 
   const filters = buildAdminMediaFilters({
-    eventId,
+    competitionId,
     uploadedBy,
     teamId,
     mediaType,
@@ -47,10 +47,10 @@ export function useAdminMediaView() {
   });
 
   const statisticsFilters = useMemo(() => ({
-    eventId: eventId === 'ALL' ? undefined : eventId,
+    competitionId: competitionId === 'ALL' ? undefined : competitionId,
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
-  }), [eventId, fromDate, toDate]);
+  }), [competitionId, fromDate, toDate]);
 
   const mediaQuery = useQuery({
     queryKey: queryKeys.media.admin(filters),
@@ -64,7 +64,7 @@ export function useAdminMediaView() {
     enabled: canManage,
   });
 
-  const events = eventsQuery.data || [];
+  const competitions = eventsQuery.data || [];
   const mediaItems = mediaQuery.data?.data || [];
   const pagination = mediaQuery.data?.pagination;
   const statistics = statisticsQuery.data?.data;
@@ -132,7 +132,7 @@ export function useAdminMediaView() {
 
   return {
     canManage,
-    eventId,
+    competitionId,
     uploadedBy,
     setUploadedBy,
     teamId,

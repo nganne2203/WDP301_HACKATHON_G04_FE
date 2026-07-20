@@ -25,7 +25,7 @@ export function MetricCard({ title, value, icon: Icon, subtitle, trend }: Metric
             </div>
             {trend && (
               <p className={`text-xs ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                {trend.isPositive ? '+' : '-'}{Math.abs(trend.value)}% from last event
+                {trend.isPositive ? '+' : '-'}{Math.abs(trend.value)}% from last competition
               </p>
             )}
           </div>

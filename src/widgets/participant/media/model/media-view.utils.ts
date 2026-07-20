@@ -43,7 +43,7 @@ export const validateFile = (file: File | null) => {
 };
 
 export const buildHistoryFilters = ({
-  eventId,
+  competitionId,
   mediaType,
   status,
   fromDate,
@@ -53,7 +53,7 @@ export const buildHistoryFilters = ({
   year,
   page,
 }: {
-  eventId: string;
+  competitionId: string;
   mediaType: string;
   status: string;
   fromDate: string;
@@ -63,7 +63,7 @@ export const buildHistoryFilters = ({
   year: string;
   page: number;
 }): MediaHistoryFilter => ({
-  eventId: eventId === 'ALL' ? undefined : eventId,
+  competitionId: competitionId === 'ALL' ? undefined : competitionId,
   mediaType: mediaType === 'ALL' ? undefined : mediaType as MediaType,
   status: status === 'ALL' ? undefined : status as MediaStatus,
   fromDate: fromDate || undefined,

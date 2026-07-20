@@ -50,7 +50,7 @@ export function Rubrics() {
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
           <div className="w-full sm:w-72">
-            <Select value={view.selectedRoundFilter} onValueChange={view.setSelectedRoundFilter} disabled={!view.activeEvent}>
+            <Select value={view.selectedRoundFilter} onValueChange={view.setSelectedRoundFilter} disabled={!view.activeCompetition}>
               <SelectTrigger>
                 <SelectValue placeholder="Filter by round" />
               </SelectTrigger>
@@ -67,7 +67,7 @@ export function Rubrics() {
 
           <Dialog open={view.createOpen} onOpenChange={view.openCreateDialog}>
             <DialogTrigger asChild>
-              <Button disabled={!view.activeEvent}>
+              <Button disabled={!view.activeCompetition}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Rubric
               </Button>
@@ -75,7 +75,7 @@ export function Rubrics() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create Rubric</DialogTitle>
-                <DialogDescription>Create a reusable rubric for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
+                <DialogDescription>Create a reusable rubric for {view.activeCompetition?.title || 'the selected competition'}.</DialogDescription>
               </DialogHeader>
               <RubricForm form={view.createForm} onChange={view.setCreateForm} rounds={view.rounds} />
               <div className="flex justify-end gap-2">

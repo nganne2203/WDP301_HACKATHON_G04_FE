@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Users } from 'lucide-react';
 
-import type { Event, RoundStatus, RoundType, Rubric, Team, Track, User } from '@/shared/api/types';
+import type { Competition, RoundStatus, RoundType, Rubric, Team, Track, User } from '@/shared/api/types';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -26,7 +26,7 @@ export function RoundForm({
   rubrics,
   teams,
   judges,
-  event,
+  competition,
 }: {
   form: RoundFormState;
   onChange: Dispatch<SetStateAction<RoundFormState>>;
@@ -34,19 +34,19 @@ export function RoundForm({
   rubrics: Rubric[];
   teams: Team[];
   judges: User[];
-  event?: Event | null;
+  competition?: Competition | null;
 }) {
   const now = getCurrentDateTimeLocalInputValue();
-  const roundStartMin = getRoundStartMin(event);
-  const roundEndMin = getRoundEndMin(form, event);
-  const roundDateTimeMax = getRoundDateTimeMax(event);
+  const roundStartMin = getRoundStartMin(competition);
+  const roundEndMin = getRoundEndMin(form, competition);
+  const roundDateTimeMax = getRoundDateTimeMax(competition);
 
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="round-name">Round Name</Label>
-          <Input id="round-name" value={form.name} onChange={(event) => onChange((current) => ({ ...current, name: event.target.value }))} placeholder="Preliminary Round" />
+          <Input id="round-name" value={form.name} onChange={(competition) => onChange((current) => ({ ...current, name: competition.target.value }))} placeholder="Preliminary Round" />
         </div>
         <div className="space-y-2">
           <Label>Round Type</Label>
@@ -144,22 +144,22 @@ export function RoundForm({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="round-max-promoted">Max Promoted Teams</Label>
-          <Input id="round-max-promoted" type="number" min="1" value={form.maxPromotedTeams} onChange={(event) => onChange((current) => ({ ...current, maxPromotedTeams: event.target.value }))} />
+          <Input id="round-max-promoted" type="number" min="1" value={form.maxPromotedTeams} onChange={(competition) => onChange((current) => ({ ...current, maxPromotedTeams: competition.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="round-tie-duration">Tie-break Duration (minutes)</Label>
-          <Input id="round-tie-duration" type="number" min="1" value={form.tieBreakDurationMinutes} onChange={(event) => onChange((current) => ({ ...current, tieBreakDurationMinutes: event.target.value }))} />
+          <Input id="round-tie-duration" type="number" min="1" value={form.tieBreakDurationMinutes} onChange={(competition) => onChange((current) => ({ ...current, tieBreakDurationMinutes: competition.target.value }))} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="round-promotion-rule">Promotion Rule</Label>
-          <Textarea id="round-promotion-rule" rows={3} value={form.promotionRule} onChange={(event) => onChange((current) => ({ ...current, promotionRule: event.target.value }))} />
+          <Textarea id="round-promotion-rule" rows={3} value={form.promotionRule} onChange={(competition) => onChange((current) => ({ ...current, promotionRule: competition.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="round-tie-break-rule">Tie-break Rule</Label>
-          <Textarea id="round-tie-break-rule" rows={3} value={form.tieBreakRule} onChange={(event) => onChange((current) => ({ ...current, tieBreakRule: event.target.value }))} />
+          <Textarea id="round-tie-break-rule" rows={3} value={form.tieBreakRule} onChange={(competition) => onChange((current) => ({ ...current, tieBreakRule: competition.target.value }))} />
         </div>
       </div>
 
@@ -170,7 +170,7 @@ export function RoundForm({
             id="round-problem-statement"
             rows={5}
             value={form.problemStatement}
-            onChange={(event) => onChange((current) => ({ ...current, problemStatement: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, problemStatement: competition.target.value }))}
             placeholder="Describe the exam problem, constraints, and expected deliverables."
           />
         </div>
@@ -179,7 +179,7 @@ export function RoundForm({
           <Input
             id="round-drive-url"
             value={form.examDriveUrl}
-            onChange={(event) => onChange((current) => ({ ...current, examDriveUrl: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, examDriveUrl: competition.target.value }))}
             placeholder="https://drive.google.com/..."
           />
         </div>
@@ -222,7 +222,7 @@ function DateTimeField({
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type="datetime-local" value={value} min={min} max={max} onChange={(event) => onChange(event.target.value)} />
+      <Input id={id} type="datetime-local" value={value} min={min} max={max} onChange={(competition) => onChange(competition.target.value)} />
     </div>
   );
 }

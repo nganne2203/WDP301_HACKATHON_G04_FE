@@ -73,7 +73,7 @@ export function Participants() {
             placeholder="Search by name or email..."
             className="pl-9 pr-10"
             value={view.searchQuery}
-            onChange={(event) => view.setSearchQuery(event.target.value)}
+            onChange={(competition) => view.setSearchQuery(competition.target.value)}
           />
           {view.searchQuery ? (
             <button
@@ -311,7 +311,7 @@ function ParticipantUserDialog({
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Create User' : 'Edit User'}</DialogTitle>
           <DialogDescription>
-            {mode === 'create' ? 'Add a local account for a participant or event staff member.' : 'Update account profile fields and assigned roles.'}
+            {mode === 'create' ? 'Add a local account for a participant or competition staff member.' : 'Update account profile fields and assigned roles.'}
           </DialogDescription>
         </DialogHeader>
         </div>
@@ -324,7 +324,7 @@ function ParticipantUserDialog({
               <Input
                 id={`${mode}-user-full-name`}
                 value={form.fullName}
-                onChange={(event) => onChange((current) => ({ ...current, fullName: event.target.value }))}
+                onChange={(competition) => onChange((current) => ({ ...current, fullName: competition.target.value }))}
                 placeholder="Nguyen Van A"
               />
             </div>
@@ -334,7 +334,7 @@ function ParticipantUserDialog({
                 id={`${mode}-user-email`}
                 type="email"
                 value={form.email}
-                onChange={(event) => onChange((current) => ({ ...current, email: event.target.value }))}
+                onChange={(competition) => onChange((current) => ({ ...current, email: competition.target.value }))}
                 placeholder="participant@example.com"
               />
             </div>
@@ -348,7 +348,7 @@ function ParticipantUserDialog({
                   id="create-user-password"
                   type="password"
                   value={form.password}
-                  onChange={(event) => onChange((current) => ({ ...current, password: event.target.value }))}
+                  onChange={(competition) => onChange((current) => ({ ...current, password: competition.target.value }))}
                   placeholder="At least 8 characters"
                 />
               </div>
@@ -412,7 +412,7 @@ function ParticipantUserDialog({
                 <Input
                   id={`${mode}-student-id`}
                   value={form.studentId}
-                  onChange={(event) => onChange((current) => ({ ...current, studentId: event.target.value }))}
+                  onChange={(competition) => onChange((current) => ({ ...current, studentId: competition.target.value }))}
                   placeholder="SE123456"
                 />
               </div>
@@ -422,7 +422,7 @@ function ParticipantUserDialog({
                   <Input
                     id={`${mode}-school-name`}
                     value={form.schoolName}
-                    onChange={(event) => onChange((current) => ({ ...current, schoolName: event.target.value }))}
+                    onChange={(competition) => onChange((current) => ({ ...current, schoolName: competition.target.value }))}
                     placeholder="University name"
                   />
                 </div>
@@ -436,7 +436,7 @@ function ParticipantUserDialog({
               <Input
                 id={`${mode}-github-username`}
                 value={form.githubUsername}
-                onChange={(event) => onChange((current) => ({ ...current, githubUsername: event.target.value }))}
+                onChange={(competition) => onChange((current) => ({ ...current, githubUsername: competition.target.value }))}
                 placeholder="octocat"
               />
             </div>
@@ -445,7 +445,7 @@ function ParticipantUserDialog({
               <Input
                 id={`${mode}-phone`}
                 value={form.phone}
-                onChange={(event) => onChange((current) => ({ ...current, phone: event.target.value }))}
+                onChange={(competition) => onChange((current) => ({ ...current, phone: competition.target.value }))}
                 placeholder="+84901234567"
               />
             </div>
@@ -457,7 +457,7 @@ function ParticipantUserDialog({
               id={`${mode}-bio`}
               rows={3}
               value={form.bio}
-              onChange={(event) => onChange((current) => ({ ...current, bio: event.target.value }))}
+              onChange={(competition) => onChange((current) => ({ ...current, bio: competition.target.value }))}
               placeholder="Short profile note"
             />
           </div>

@@ -19,8 +19,8 @@ function SessionExpiredHandler() {
       queryClient.clear();
     };
 
-    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
-    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    window.addCompetitionListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => window.removeCompetitionListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
   }, [setAuthLoading, setUser]);
 
   return null;

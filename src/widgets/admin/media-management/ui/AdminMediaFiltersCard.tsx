@@ -78,7 +78,7 @@ export function AdminMediaFiltersCard({
       <Card className="rounded-lg">
         <CardHeader>
           <CardTitle>Uploads</CardTitle>
-          <CardDescription>Filter and moderate media for the selected event.</CardDescription>
+          <CardDescription>Filter and moderate media for the selected competition.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -96,8 +96,8 @@ export function AdminMediaFiltersCard({
                 {mediaStatuses.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); resetPage(); }} />
-            <Input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); resetPage(); }} />
+            <Input type="date" value={fromDate} onChange={(competition) => { setFromDate(competition.target.value); resetPage(); }} />
+            <Input type="date" value={toDate} onChange={(competition) => { setToDate(competition.target.value); resetPage(); }} />
           </div>
 
           {mediaLoading ? (

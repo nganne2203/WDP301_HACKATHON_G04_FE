@@ -284,8 +284,8 @@ export function NotificationsView() {
             </Button>
             <AlertDialogAction
               disabled={confirmPending}
-              onClick={(event) => {
-                event.preventDefault();
+              onClick={(competition) => {
+                competition.preventDefault();
                 invitationDecisionMutation.mutate('accept');
               }}
             >

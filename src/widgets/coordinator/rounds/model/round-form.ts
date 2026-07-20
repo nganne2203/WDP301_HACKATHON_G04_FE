@@ -1,6 +1,6 @@
 import type {
   CreateRoundRequest,
-  Event,
+  Competition,
   Round,
   RoundStatus,
   RoundType,
@@ -71,18 +71,18 @@ function toComparableDate(value: string) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function getEventDateInputValue(value?: string | null) {
+function getCompetitionDateInputValue(value?: string | null) {
   if (!value) return '';
   return value.split('T')[0] || '';
 }
 
-export function getEventStartDateTimeInputValue(event?: Event | null) {
-  const date = getEventDateInputValue(event?.startDate);
+export function getCompetitionStartDateTimeInputValue(competition?: Competition | null) {
+  const date = getCompetitionDateInputValue(competition?.startDate);
   return date ? `${date}T00:00` : '';
 }
 
-export function getEventEndDateTimeInputValue(event?: Event | null) {
-  const date = getEventDateInputValue(event?.endDate);
+export function getCompetitionEndDateTimeInputValue(competition?: Competition | null) {
+  const date = getCompetitionDateInputValue(competition?.endDate);
   return date ? `${date}T23:59` : '';
 }
 
@@ -94,11 +94,11 @@ function minDateTimeInput(...values: Array<string | undefined>) {
   return values.filter(Boolean).sort()[0] || undefined;
 }
 
-function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boolean; event?: Event | null }) {
+function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boolean; competition?: Competition | null }) {
   const now = toComparableDate(getCurrentDateTimeLocalInputValue());
   const allowPast = options?.allowPast === true;
-  const eventStartDate = getEventDateInputValue(options?.event?.startDate);
-  const eventEndDate = getEventDateInputValue(options?.event?.endDate);
+  const eventStartDate = getCompetitionDateInputValue(options?.competition?.startDate);
+  const eventEndDate = getCompetitionDateInputValue(options?.competition?.endDate);
   const timeFields = [
     { key: 'startTime', label: 'Start time', value: form.startTime },
     { key: 'endTime', label: 'End time', value: form.endTime },
@@ -132,8 +132,8 @@ function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boo
       throw new ApiError({
         success: false,
         code: 'VALIDATION_ERROR',
-        message: `${field.label} must be within the event date range`,
-        errors: [`${field.label} must be within the event date range`],
+        message: `${field.label} must be within the competition date range`,
+        errors: [`${field.label} must be within the competition date range`],
       }, 400);
     }
 
@@ -141,8 +141,8 @@ function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boo
       throw new ApiError({
         success: false,
         code: 'VALIDATION_ERROR',
-        message: `${field.label} must be within the event date range`,
-        errors: [`${field.label} must be within the event date range`],
+        message: `${field.label} must be within the competition date range`,
+        errors: [`${field.label} must be within the competition date range`],
       }, 400);
     }
   }
@@ -199,11 +199,11 @@ export function mapRoundToForm(round: Round): RoundFormState {
   };
 }
 
-export function buildCreateRoundPayload(form: RoundFormState, event: Event): CreateRoundRequest {
-  validateRoundSchedule(form, { event });
+export function buildCreateRoundPayload(form: RoundFormState, competition: Competition): CreateRoundRequest {
+  validateRoundSchedule(form, { competition });
 
   return {
-    eventId: event.id,
+    competitionId: competition.id,
     name: form.name.trim(),
     roundType: form.roundType,
     problemStatement: normalizeText(form.problemStatement),
@@ -224,8 +224,8 @@ export function buildCreateRoundPayload(form: RoundFormState, event: Event): Cre
   };
 }
 
-export function buildUpdateRoundPayload(form: RoundFormState, event?: Event | null): UpdateRoundRequest {
-  validateRoundSchedule(form, { allowPast: true, event });
+export function buildUpdateRoundPayload(form: RoundFormState, competition?: Competition | null): UpdateRoundRequest {
+  validateRoundSchedule(form, { allowPast: true, competition });
 
   return {
     name: form.name.trim(),
@@ -252,16 +252,16 @@ export function toggleId(ids: string[], id: string) {
   return ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id];
 }
 
-export function getRoundStartMin(event?: Event | null) {
-  return maxDateTimeInput(getCurrentDateTimeLocalInputValue(), getEventStartDateTimeInputValue(event));
+export function getRoundStartMin(competition?: Competition | null) {
+  return maxDateTimeInput(getCurrentDateTimeLocalInputValue(), getCompetitionStartDateTimeInputValue(competition));
 }
 
-export function getRoundEndMin(form: RoundFormState, event?: Event | null) {
-  return maxDateTimeInput(form.startTime || getCurrentDateTimeLocalInputValue(), getEventStartDateTimeInputValue(event));
+export function getRoundEndMin(form: RoundFormState, competition?: Competition | null) {
+  return maxDateTimeInput(form.startTime || getCurrentDateTimeLocalInputValue(), getCompetitionStartDateTimeInputValue(competition));
 }
 
-export function getRoundDateTimeMax(event?: Event | null) {
-  return minDateTimeInput(getEventEndDateTimeInputValue(event));
+export function getRoundDateTimeMax(competition?: Competition | null) {
+  return minDateTimeInput(getCompetitionEndDateTimeInputValue(competition));
 }
 
 export function isJudgeUser(user: User) {

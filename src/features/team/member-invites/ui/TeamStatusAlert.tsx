@@ -8,7 +8,7 @@ export function TeamStatusAlert({ team }: { team: Team }) {
       <Alert className="bg-green-50 border-green-200">
         <CheckCircle2 className="h-4 w-4 text-green-600" />
         <AlertTitle>Team confirmed</AlertTitle>
-        <AlertDescription>Your team has enough confirmed members and has reserved an event slot.</AlertDescription>
+        <AlertDescription>Your team has enough confirmed members and has reserved an competition slot.</AlertDescription>
       </Alert>
     );
   }
@@ -31,7 +31,7 @@ export function TeamStatusAlert({ team }: { team: Team }) {
         <XCircle className="h-4 w-4" />
         <AlertTitle>Team cancelled</AlertTitle>
         <AlertDescription>
-          {team.cancellationReason || 'This team was cancelled. It no longer occupies an event slot.'}
+          {team.cancellationReason || 'This team was cancelled. It no longer occupies an competition slot.'}
         </AlertDescription>
       </Alert>
     );

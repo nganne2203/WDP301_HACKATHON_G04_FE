@@ -25,7 +25,7 @@ export function TrackForm({
           <Input
             id="track-code"
             value={form.code}
-            onChange={(event) => onChange((current) => ({ ...current, code: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, code: competition.target.value }))}
             placeholder="AI-01"
           />
         </div>
@@ -34,7 +34,7 @@ export function TrackForm({
           <Input
             id="track-name"
             value={form.name}
-            onChange={(event) => onChange((current) => ({ ...current, name: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, name: competition.target.value }))}
             placeholder="AI for Education"
           />
         </div>
@@ -78,7 +78,7 @@ export function TrackForm({
             type="number"
             min="1"
             value={form.maxTeams}
-            onChange={(event) => onChange((current) => ({ ...current, maxTeams: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, maxTeams: competition.target.value }))}
             placeholder="12"
           />
         </div>
@@ -90,7 +90,7 @@ export function TrackForm({
           id="track-description"
           rows={3}
           value={form.description}
-          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, description: competition.target.value }))}
           placeholder="Short summary for coordinators and participants."
         />
       </div>
@@ -100,7 +100,7 @@ export function TrackForm({
         <Input
           id="track-topic"
           value={form.topic}
-          onChange={(event) => onChange((current) => ({ ...current, topic: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, topic: competition.target.value }))}
           placeholder="Smart Campus, AI Tutor, Sustainability..."
         />
       </div>
@@ -111,7 +111,7 @@ export function TrackForm({
           id="track-problem-statement"
           rows={5}
           value={form.problemStatement}
-          onChange={(event) => onChange((current) => ({ ...current, problemStatement: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, problemStatement: competition.target.value }))}
           placeholder="Describe the challenge and expected solution scope."
         />
       </div>

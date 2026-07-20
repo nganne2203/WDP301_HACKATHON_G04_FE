@@ -1,94 +1,94 @@
-import type { Event } from '@/shared/api/types';
+import type { Competition } from '@/shared/api/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
 import { Label } from '@/shared/ui/label';
 import { StatusBadge } from '@/shared/ui/status-badge';
-import { describeAdvancementRule, formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
+import { describeAdvancementRule, formatCompetitionDate, mapCompetitionStatus } from '@/features/competition-management/model/competition-form';
 
-export function EventDetailsDialog({
+export function CompetitionDetailsDialog({
   open,
   onOpenChange,
-  event,
+  competition,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  event: Event | null;
+  competition: Competition | null;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!w-[min(50rem,calc(100vw-2rem))] !max-w-none">
         <DialogHeader>
-          <DialogTitle>Event Details</DialogTitle>
-          <DialogDescription>Detailed information about the event.</DialogDescription>
+          <DialogTitle>Competition Details</DialogTitle>
+          <DialogDescription>Detailed information about the competition.</DialogDescription>
         </DialogHeader>
-        {event && (
+        {competition && (
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-muted-foreground">Event Title</Label>
-                <p className="font-medium mt-1">{event.title}</p>
+                <Label className="text-muted-foreground">Competition Title</Label>
+                <p className="font-medium mt-1">{competition.title}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Semester</Label>
-                <p className="font-medium mt-1">{event.semester || '-'}</p>
+                <p className="font-medium mt-1">{competition.semester || '-'}</p>
               </div>
             </div>
-            {event.description && (
+            {competition.description && (
               <div>
                 <Label className="text-muted-foreground">Description</Label>
-                <p className="mt-1 text-sm">{event.description}</p>
+                <p className="mt-1 text-sm">{competition.description}</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-muted-foreground">Start Date</Label>
-                <p className="font-medium mt-1">{formatEventDate(event.startDate)}</p>
+                <p className="font-medium mt-1">{formatCompetitionDate(competition.startDate)}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">End Date</Label>
-                <p className="font-medium mt-1">{formatEventDate(event.endDate)}</p>
+                <p className="font-medium mt-1">{formatCompetitionDate(competition.endDate)}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div>
                 <Label className="text-muted-foreground">Status</Label>
                 <div className="mt-1">
-                  <StatusBadge status={mapEventStatus(event.status) as never} />
+                  <StatusBadge status={mapCompetitionStatus(competition.status) as never} />
                 </div>
               </div>
               <div>
                 <Label className="text-muted-foreground">Created By</Label>
-                <p className="font-medium mt-1">{event.createdBy?.fullName || '-'}</p>
+                <p className="font-medium mt-1">{competition.createdBy?.fullName || '-'}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Team Size</Label>
                 <p className="font-medium mt-1">
-                  {event.minTeamMembers || '?'} - {event.maxTeamMembers || '?'} members
+                  {competition.minTeamMembers || '?'} - {competition.maxTeamMembers || '?'} members
                 </p>
               </div>
               <div>
                 <Label className="text-muted-foreground">Rounds</Label>
-                <p className="font-medium mt-1">{event.roundCount ?? 0}</p>
+                <p className="font-medium mt-1">{competition.roundCount ?? 0}</p>
               </div>
             </div>
             <div className="rounded-lg border bg-muted/20 p-4">
               <Label className="text-muted-foreground">Advancement Rules</Label>
-              <p className="mt-1 font-medium">{describeAdvancementRule(event)}</p>
+              <p className="mt-1 font-medium">{describeAdvancementRule(competition)}</p>
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div>
                   <span className="text-muted-foreground">Boards</span>
-                  <p className="font-medium">{event.competitionConfig?.boardCount || '-'}</p>
+                  <p className="font-medium">{competition.competitionConfig?.boardCount || '-'}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Teams / board</span>
-                  <p className="font-medium">{event.competitionConfig?.maxTeamsPerBoard || '-'}</p>
+                  <p className="font-medium">{competition.competitionConfig?.maxTeamsPerBoard || '-'}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Advance / board</span>
-                  <p className="font-medium">{event.competitionConfig?.finalistsPerBoard ?? event.finalistSlotsPerTrack ?? '-'}</p>
+                  <p className="font-medium">{competition.competitionConfig?.finalistsPerBoard ?? competition.finalistSlotsPerTrack ?? '-'}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Total advance</span>
-                  <p className="font-medium">{event.competitionConfig?.finalistCount ?? event.totalFinalistSlots ?? '-'}</p>
+                  <p className="font-medium">{competition.competitionConfig?.finalistCount ?? competition.totalFinalistSlots ?? '-'}</p>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { AlertCircle, Calendar, Loader2, MoreVertical, Play, Plus } from 'lucide-react';
 
-import { describeAdvancementRule, formatEventDate, mapEventStatus } from '@/features/event-management/model/event-form';
+import { describeAdvancementRule, formatCompetitionDate, mapCompetitionStatus } from '@/features/competition-management/model/competition-form';
 import { ApiError } from '@/shared/api/client';
 import {
   AlertDialog,
@@ -31,38 +31,38 @@ import {
   TableRow,
 } from '@/shared/ui/table';
 
-import { useEventsView } from '../model/useEventsView';
-import { EventDetailsDialog } from './EventDetailsDialog';
-import { EventForm } from './EventForm';
-import { EventInvitationsDialog } from './EventInvitationsDialog';
+import { useCompetitionsView } from '../model/useCompetitionsView';
+import { CompetitionDetailsDialog } from './CompetitionDetailsDialog';
+import { CompetitionForm } from './CompetitionForm';
+import { CompetitionInvitationsDialog } from './CompetitionInvitationsDialog';
 
-export function Events() {
-  const view = useEventsView();
+export function Competitions() {
+  const view = useCompetitionsView();
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold mb-1">Event Management</h1>
-          <p className="text-sm text-muted-foreground">Create and manage hackathon events</p>
+          <h1 className="text-2xl font-semibold mb-1">Competition Management</h1>
+          <p className="text-sm text-muted-foreground">Create and manage hackathon competitions</p>
         </div>
         <Dialog open={view.createOpen} onOpenChange={view.openCreateDialog}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              Create Event
+              Create Competition
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create New Event</DialogTitle>
-              <DialogDescription>Fill in the details below to create a new hackathon event.</DialogDescription>
+              <DialogTitle>Create New Competition</DialogTitle>
+              <DialogDescription>Fill in the details below to create a new hackathon competition.</DialogDescription>
             </DialogHeader>
-            <EventForm
+            <CompetitionForm
               form={view.createForm}
               onSubmit={view.handleCreate}
               pending={view.createMutation.isPending}
-              submitLabel="Create Event"
+              submitLabel="Create Competition"
               pendingLabel="Creating..."
               onCancel={() => view.openCreateDialog(false)}
               prefix="create"
@@ -75,7 +75,7 @@ export function Events() {
       {view.eventsQuery.isLoading && (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-blue-600 mr-2" />
-          <span className="text-muted-foreground">Loading events...</span>
+          <span className="text-muted-foreground">Loading competitions...</span>
         </div>
       )}
 
@@ -83,7 +83,7 @@ export function Events() {
         <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg">
           <AlertCircle className="w-5 h-5 text-red-500" />
           <p className="text-sm text-red-700">
-            {view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load events'}
+            {view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load competitions'}
           </p>
         </div>
       )}
@@ -101,7 +101,7 @@ export function Events() {
             </colgroup>
             <TableHeader>
               <TableRow>
-                <TableHead>Event</TableHead>
+                <TableHead>Competition</TableHead>
                 <TableHead>Semester</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Advancement Rule</TableHead>
@@ -110,29 +110,29 @@ export function Events() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {view.events.length === 0 ? (
+              {view.competitions.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No events found. Create your first event to get started.
+                    No competitions found. Create your first competition to get started.
                   </TableCell>
                 </TableRow>
               ) : (
-                view.events.map((event) => {
-                  const advancementRule = describeAdvancementRule(event);
+                view.competitions.map((competition) => {
+                  const advancementRule = describeAdvancementRule(competition);
 
                   return (
-                  <TableRow key={event.id}>
+                  <TableRow key={competition.id}>
                     <TableCell className="overflow-hidden">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
                           <Calendar className="w-4 h-4 text-blue-600" />
                         </div>
-                        <span className="truncate font-medium">{event.title}</span>
+                        <span className="truncate font-medium">{competition.title}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{event.semester || '-'}</TableCell>
+                    <TableCell>{competition.semester || '-'}</TableCell>
                     <TableCell>
-                      <StatusBadge status={mapEventStatus(event.status) as never} />
+                      <StatusBadge status={mapCompetitionStatus(competition.status) as never} />
                     </TableCell>
                     <TableCell className="overflow-hidden text-sm text-muted-foreground">
                       <div className="truncate" title={advancementRule}>
@@ -140,7 +140,7 @@ export function Events() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatEventDate(event.startDate)} - {formatEventDate(event.endDate)}
+                      {formatCompetitionDate(competition.startDate)} - {formatCompetitionDate(competition.endDate)}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -150,26 +150,26 @@ export function Events() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => view.openDetailsDialog(event)}>
+                          <DropdownMenuItem onClick={() => view.openDetailsDialog(competition)}>
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => view.openEditDialog(event)}>
-                            Edit Event
+                          <DropdownMenuItem onClick={() => view.openEditDialog(competition)}>
+                            Edit Competition
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => view.openInviteDialog(event)}>
+                          <DropdownMenuItem onClick={() => view.openInviteDialog(competition)}>
                             Send Invitations
                           </DropdownMenuItem>
-                          {view.getNextStatus(event) && (
+                          {view.getNextStatus(competition) && (
                             <DropdownMenuItem
                               disabled={view.statusMutation.isPending}
-                              onClick={() => view.advanceStatus(event)}
+                              onClick={() => view.advanceStatus(competition)}
                             >
                               <Play className="mr-2 h-4 w-4" />
-                              {view.getStatusActionLabel(event)}
+                              {view.getStatusActionLabel(competition)}
                             </DropdownMenuItem>
                           )}
-                          {view.canDeleteEvent(event) && (
-                            <DropdownMenuItem className="text-destructive" onClick={() => view.openDeleteDialog(event)}>
+                          {view.canDeleteCompetition(competition) && (
+                            <DropdownMenuItem className="text-destructive" onClick={() => view.openDeleteDialog(competition)}>
                               Delete Draft
                             </DropdownMenuItem>
                           )}
@@ -185,20 +185,20 @@ export function Events() {
         </Card>
       )}
 
-      <EventDetailsDialog
+      <CompetitionDetailsDialog
         open={view.detailsOpen}
         onOpenChange={view.setDetailsOpen}
-        event={view.selectedEvent}
+        competition={view.selectedCompetition}
       />
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Event</DialogTitle>
-            <DialogDescription>Update the event information below.</DialogDescription>
+            <DialogTitle>Edit Competition</DialogTitle>
+            <DialogDescription>Update the competition information below.</DialogDescription>
           </DialogHeader>
-          {view.selectedEvent && (
-            <EventForm
+          {view.selectedCompetition && (
+            <CompetitionForm
               form={view.editForm}
               onSubmit={view.handleEdit}
               pending={view.updateMutation.isPending}
@@ -212,10 +212,10 @@ export function Events() {
         </DialogContent>
       </Dialog>
 
-      <EventInvitationsDialog
+      <CompetitionInvitationsDialog
         open={view.inviteOpen}
         onOpenChange={view.setInviteOpen}
-        eventTitle={view.selectedEvent?.title}
+        eventTitle={view.selectedCompetition?.title}
         inviteEmails={view.inviteEmails}
         setInviteEmails={view.setInviteEmails}
         inviteMessage={view.inviteMessage}
@@ -227,9 +227,9 @@ export function Events() {
       <AlertDialog open={view.deleteOpen} onOpenChange={view.setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+            <AlertDialogTitle>Delete Competition</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete draft event "{view.selectedEvent?.title}"? Events that already entered operations should be archived through the lifecycle action instead.
+              Are you sure you want to delete draft competition "{view.selectedCompetition?.title}"? Competitions that already entered operations should be archived through the lifecycle action instead.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

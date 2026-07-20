@@ -56,7 +56,7 @@ export function ParticipantWorkshops() {
           <Presentation className="h-12 w-12 text-muted-foreground/50 mb-3" />
           <CardTitle className="text-lg">No workshops scheduled yet</CardTitle>
           <CardDescription className="max-w-xs mt-1">
-            Keep an eye on this space. Seminars and workshops for {view.activeEvent?.title || 'this event'} will appear here.
+            Keep an eye on this space. Seminars and workshops for {view.activeCompetition?.title || 'this competition'} will appear here.
           </CardDescription>
         </Card>
       ) : (

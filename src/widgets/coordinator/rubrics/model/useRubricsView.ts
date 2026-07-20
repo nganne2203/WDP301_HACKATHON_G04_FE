@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { rubricsApi } from '@/entities/rubric/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type {
   CreateCriterionRequest,
@@ -30,7 +30,7 @@ import {
 
 export function useRubricsView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [selectedRoundFilter, setSelectedRoundFilter] = useState('all');
   const [selectedRubric, setSelectedRubric] = useState<Rubric | null>(null);
   const [editingCriterion, setEditingCriterion] = useState<Criterion | null>(null);
@@ -42,26 +42,26 @@ export function useRubricsView() {
   const [editForm, setEditForm] = useState<RubricFormState>(createRubricForm());
   const [criterionForm, setCriterionForm] = useState<CriterionFormState>(createCriterionForm());
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
-  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
+  const roundsQuery = useRoundsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
 
   const rubricsQuery = useQuery({
     queryKey: queryKeys.rubrics.list({
-      eventId: activeEvent?.id,
+      competitionId: activeCompetition?.id,
       roundId: selectedRoundFilter === 'all' ? undefined : selectedRoundFilter,
       limit: 10,
     }),
-    enabled: Boolean(activeEvent?.id),
+    enabled: Boolean(activeCompetition?.id),
     queryFn: async () =>
       (await rubricsApi.list({
-        eventId: activeEvent?.id,
+        competitionId: activeCompetition?.id,
         roundId: selectedRoundFilter === 'all' ? undefined : selectedRoundFilter,
         limit: 10,
       })).data,
@@ -169,8 +169,8 @@ export function useRubricsView() {
   };
 
   const submitCreate = () => {
-    if (!activeEvent) return;
-    createMutation.mutate(buildRubricPayload(createForm, activeEvent.id));
+    if (!activeCompetition) return;
+    createMutation.mutate(buildRubricPayload(createForm, activeCompetition.id));
   };
 
   const submitEdit = () => {
@@ -227,10 +227,10 @@ export function useRubricsView() {
     eventsQuery,
     roundsQuery,
     rubricsQuery,
-    events,
+    competitions,
     rounds,
     rubrics,
-    activeEvent,
+    activeCompetition,
     createMutation,
     updateMutation,
     deleteMutation,

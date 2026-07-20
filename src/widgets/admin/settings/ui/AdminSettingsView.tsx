@@ -34,12 +34,12 @@ export function Settings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Event defaults</CardTitle>
-          <CardDescription>Defaults applied to new hackathon events.</CardDescription>
+          <CardTitle>Competition defaults</CardTitle>
+          <CardDescription>Defaults applied to new hackathon competitions.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="max-teams">Maximum teams per event</Label>
+            <Label htmlFor="max-teams">Maximum teams per competition</Label>
             <Input id="max-teams" type="number" defaultValue={30} />
           </div>
           <Separator />

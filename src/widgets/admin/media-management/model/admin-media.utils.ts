@@ -5,21 +5,21 @@ export const ADMIN_MEDIA_TYPES: MediaType[] = ['IMAGE', 'VIDEO', 'DOCUMENT'];
 export const ADMIN_MEDIA_STATUSES: MediaStatus[] = ['PENDING', 'APPROVED', 'REJECTED'];
 
 export const buildAdminMediaFilters = ({
-  eventId,
+  competitionId,
   mediaType,
   status,
   fromDate,
   toDate,
   page,
 }: {
-  eventId: string;
+  competitionId: string;
   mediaType: string;
   status: string;
   fromDate: string;
   toDate: string;
   page: number;
 }): AdminMediaFilter => ({
-  eventId: eventId === 'ALL' ? undefined : eventId,
+  competitionId: competitionId === 'ALL' ? undefined : competitionId,
   mediaType: mediaType === 'ALL' ? undefined : mediaType as MediaType,
   status: status === 'ALL' ? undefined : status as MediaStatus,
   fromDate: fromDate || undefined,

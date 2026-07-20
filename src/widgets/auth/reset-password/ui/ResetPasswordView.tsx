@@ -24,8 +24,8 @@ export function ResetPasswordView() {
   const confirmPasswordMatched = confirmPassword.length > 0 && newPassword.length >= 8 && newPassword === confirmPassword;
   const canSubmit = Boolean(token && newPassword.length >= 8 && confirmPasswordMatched && !submitting);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(competition: FormEvent<HTMLFormElement>) {
+    competition.preventDefault();
 
     if (!token) {
       toast.error('Reset link is missing a token.');
@@ -88,7 +88,7 @@ export function ResetPasswordView() {
                     type={showNewPassword ? 'text' : 'password'}
                     className="pr-10"
                     value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
+                    onChange={(competition) => setNewPassword(competition.target.value)}
                     required
                     minLength={8}
                     aria-invalid={newPasswordTooShort}
@@ -117,7 +117,7 @@ export function ResetPasswordView() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     className="pr-10"
                     value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    onChange={(competition) => setConfirmPassword(competition.target.value)}
                     required
                     minLength={8}
                     aria-invalid={confirmPasswordMismatch}

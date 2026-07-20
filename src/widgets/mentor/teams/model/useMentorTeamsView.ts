@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { teamsApi } from '@/entities/team/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, selectDefaultCompetition } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { chatApi } from '@/shared/api/chat';
 import { applyIncomingChatMessageInCache, CHAT_ROOMS_QUERY_KEY, markChatRoomSeenInCache } from '@/shared/lib/chatRoomCache';
@@ -17,34 +17,34 @@ export function useMentorTeamsView() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
   const isSpeaker = appRole === 'speaker';
-  const selectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
   const [page, setPage] = useState(1);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
 
-  // Auto-select first event if store is empty and events are loaded
+  // Auto-select first competition if store is empty and competitions are loaded
   useEffect(() => {
-    if (events.length > 0 && !selectedEvent) {
-      const defaultEvent = selectDefaultEvent(events) || events[0];
-      setSelectedEvent({
-        id: defaultEvent.id,
-        title: defaultEvent.title,
-        semester: defaultEvent.semester,
-        status: defaultEvent.status,
+    if (competitions.length > 0 && !selectedCompetition) {
+      const defaultCompetition = selectDefaultCompetition(competitions) || competitions[0];
+      setSelectedCompetition({
+        id: defaultCompetition.id,
+        title: defaultCompetition.title,
+        semester: defaultCompetition.semester,
+        status: defaultCompetition.status,
       });
     }
-  }, [events, selectedEvent, setSelectedEvent]);
+  }, [competitions, selectedCompetition, setSelectedCompetition]);
 
   useEffect(() => {
     setPage(1);
-  }, [selectedEvent?.id]);
+  }, [selectedCompetition?.id]);
 
   const teamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: selectedEvent?.id, page, limit: 12 }),
-    enabled: Boolean(selectedEvent?.id),
-    queryFn: async () => await teamsApi.list({ eventId: selectedEvent?.id, page, limit: 12 }),
+    queryKey: queryKeys.teams.list({ competitionId: selectedCompetition?.id, page, limit: 12 }),
+    enabled: Boolean(selectedCompetition?.id),
+    queryFn: async () => await teamsApi.list({ competitionId: selectedCompetition?.id, page, limit: 12 }),
   });
   const teams = teamsQuery.data?.data || [];
   const pagination = teamsQuery.data?.pagination || null;
@@ -108,8 +108,8 @@ export function useMentorTeamsView() {
     appRole,
     isSpeaker,
     eventsQuery,
-    events,
-    selectedEvent,
+    competitions,
+    selectedCompetition,
     teamsQuery,
     teams,
     roomsQuery,

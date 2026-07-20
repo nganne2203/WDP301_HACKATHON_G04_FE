@@ -4,7 +4,7 @@ import { Bot, GitBranch, Loader2, Server, Users, Webhook } from 'lucide-react';
 
 import { operationsApi } from '@/entities/operations/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, selectDefaultCompetition } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -62,45 +62,45 @@ function StatusBreakdownTable({ title, rows }: { title: string; rows: StatusCoun
 }
 
 export function OperationsView() {
-  const storeSelectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
 
-  // Sync ongoing/default event with store if not already set
+  // Sync ongoing/default competition with store if not already set
   useEffect(() => {
-    if (events.length > 0 && !storeSelectedEvent) {
-      const defaultEvent = selectDefaultEvent(events) || events[0];
-      setSelectedEvent({
-        id: defaultEvent.id || (defaultEvent as any)._id,
-        title: defaultEvent.title || (defaultEvent as any).name || '',
-        semester: defaultEvent.semester || '',
-        status: defaultEvent.status || '',
+    if (competitions.length > 0 && !storeSelectedCompetition) {
+      const defaultCompetition = selectDefaultCompetition(competitions) || competitions[0];
+      setSelectedCompetition({
+        id: defaultCompetition.id || (defaultCompetition as any)._id,
+        title: defaultCompetition.title || (defaultCompetition as any).name || '',
+        semester: defaultCompetition.semester || '',
+        status: defaultCompetition.status || '',
       });
     }
-  }, [events, storeSelectedEvent, setSelectedEvent]);
+  }, [competitions, storeSelectedCompetition, setSelectedCompetition]);
 
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    if (storeSelectedEvent) {
-      return events.find((e) => (e.id || (e as any)._id) === storeSelectedEvent.id) || events[0];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    if (storeSelectedCompetition) {
+      return competitions.find((e) => (e.id || (e as any)._id) === storeSelectedCompetition.id) || competitions[0];
     }
-    return selectDefaultEvent(events) || events[0];
-  }, [events, storeSelectedEvent]);
+    return selectDefaultCompetition(competitions) || competitions[0];
+  }, [competitions, storeSelectedCompetition]);
 
-  const activeEventId = activeEvent ? (activeEvent.id || (activeEvent as any)._id) : '';
+  const activeCompetitionId = activeCompetition ? (activeCompetition.id || (activeCompetition as any)._id) : '';
 
   const dashboardQuery = useQuery({
-    queryKey: queryKeys.operations.dashboard(activeEventId),
-    enabled: Boolean(activeEventId),
-    queryFn: async () => operationsApi.getDashboardMetrics({ eventId: activeEventId }),
+    queryKey: queryKeys.operations.dashboard(activeCompetitionId),
+    enabled: Boolean(activeCompetitionId),
+    queryFn: async () => operationsApi.getDashboardMetrics({ competitionId: activeCompetitionId }),
   });
 
   const pipelineQuery = useQuery({
-    queryKey: queryKeys.operations.pipeline(activeEventId),
-    enabled: Boolean(activeEventId),
-    queryFn: async () => operationsApi.getPipelineSummary({ eventId: activeEventId }),
+    queryKey: queryKeys.operations.pipeline(activeCompetitionId),
+    enabled: Boolean(activeCompetitionId),
+    queryFn: async () => operationsApi.getPipelineSummary({ competitionId: activeCompetitionId }),
   });
 
   // BE: { scope, metrics: { participants, teams, submissions, repositories, pendingAiReviews, failedAiReviews, retryPendingAiReviews, manualRedispatchRequiredAiReviews, failedJobs }, queue }
@@ -189,11 +189,11 @@ export function OperationsView() {
             </Card>
           )}
         </>
-      ) : !activeEventId ? (
+      ) : !activeCompetitionId ? (
         <Alert>
           <Server className="h-4 w-4" />
-          <AlertTitle>Select an event to view metrics</AlertTitle>
-          <AlertDescription>Choose an event in the header to see operational dashboard metrics.</AlertDescription>
+          <AlertTitle>Select an competition to view metrics</AlertTitle>
+          <AlertDescription>Choose an competition in the header to see operational dashboard metrics.</AlertDescription>
         </Alert>
       ) : null}
 
@@ -205,7 +205,7 @@ export function OperationsView() {
         </Alert>
       ) : pipelinePayload ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatusBreakdownTable title="Webhook Events" rows={webhookBreakdown} />
+          <StatusBreakdownTable title="Webhook Competitions" rows={webhookBreakdown} />
           <StatusBreakdownTable title="Commit Diffs" rows={commitBreakdown} />
           <StatusBreakdownTable title="AI Reviews" rows={aiBreakdown} />
         </div>

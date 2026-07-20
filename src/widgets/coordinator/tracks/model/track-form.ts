@@ -32,9 +32,9 @@ function normalizeOptionalText(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-export function buildTrackPayload(form: TrackFormState, eventId: string): CreateTrackRequest {
+export function buildTrackPayload(form: TrackFormState, competitionId: string): CreateTrackRequest {
   return {
-    eventId,
+    competitionId,
     code: normalizeOptionalText(form.code)?.toUpperCase() || undefined,
     name: form.name.trim(),
     description: normalizeOptionalText(form.description),

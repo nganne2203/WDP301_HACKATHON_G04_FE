@@ -1,4 +1,4 @@
-import type { TimelineEvent, User, Workshop, WorkshopStatus } from '@/shared/api/types';
+import type { TimelineActivity, User, Workshop, WorkshopStatus } from '@/shared/api/types';
 import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/workshops';
 
 export const workshopStatusOptions: WorkshopStatus[] = ['SCHEDULED', 'LIVE', 'COMPLETED', 'CANCELLED'];
@@ -7,7 +7,7 @@ const workshopPresenterPermissions = new Set(['WORKSHOP_MEET_CREATE']);
 const eligiblePresenterStatuses = new Set(['ACTIVE']);
 
 export interface WorkshopFormState {
-  timelineEventId: string;
+  timelineActivityId: string;
   title: string;
   description: string;
   presenterId: string;
@@ -24,7 +24,7 @@ export interface WorkshopFormState {
 
 export function createEmptyWorkshopForm(): WorkshopFormState {
   return {
-    timelineEventId: 'none',
+    timelineActivityId: 'none',
     title: '',
     description: '',
     presenterId: '',
@@ -73,7 +73,7 @@ function parseQuestionnaire(value: string) {
 
 export function mapWorkshopToForm(workshop: Workshop): WorkshopFormState {
   return {
-    timelineEventId: workshop.timelineEventId || 'none',
+    timelineActivityId: workshop.timelineActivityId || 'none',
     title: workshop.title,
     description: workshop.description || '',
     presenterId: workshop.presenterId || '',
@@ -89,10 +89,10 @@ export function mapWorkshopToForm(workshop: Workshop): WorkshopFormState {
   };
 }
 
-export function buildWorkshopPayload(form: WorkshopFormState, eventId: string): CreateWorkshopRequest {
+export function buildWorkshopPayload(form: WorkshopFormState, competitionId: string): CreateWorkshopRequest {
   return {
-    eventId,
-    timelineEventId: form.timelineEventId === 'none' ? undefined : form.timelineEventId,
+    competitionId,
+    timelineActivityId: form.timelineActivityId === 'none' ? undefined : form.timelineActivityId,
     title: form.title.trim(),
     description: normalizeOptionalText(form.description) || undefined,
     presenterId: normalizeOptionalText(form.presenterId) || undefined,
@@ -112,7 +112,7 @@ export function buildWorkshopPayload(form: WorkshopFormState, eventId: string): 
 
 export function buildWorkshopUpdatePayload(form: WorkshopFormState): UpdateWorkshopRequest {
   return {
-    timelineEventId: form.timelineEventId === 'none' ? undefined : form.timelineEventId,
+    timelineActivityId: form.timelineActivityId === 'none' ? undefined : form.timelineActivityId,
     title: form.title.trim(),
     description: normalizeOptionalText(form.description) || undefined,
     presenterId: normalizeOptionalText(form.presenterId) || undefined,
@@ -150,4 +150,4 @@ export function workshopPresenterUserLabel(user: User) {
   return user.fullName || user.email;
 }
 
-export type { TimelineEvent };
+export type { TimelineActivity };

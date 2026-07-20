@@ -17,7 +17,7 @@ export const scoringApi = {
         scores: payload.scores,
       })
       : await api.post<ScoreSheet>('/score-sheets', {
-        eventId: payload.eventId,
+        competitionId: payload.competitionId,
         roundId: payload.roundId,
         boardId: payload.boardId,
         teamId: payload.teamId,

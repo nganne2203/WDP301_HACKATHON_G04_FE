@@ -10,7 +10,7 @@ export { rubricsApi } from './rubrics';
 export { scoringApi } from './scoring';
 export { submissionsApi } from './submissions';
 export { authApi } from './auth';
-export { eventsApi } from './events';
+export { eventsApi } from './competitions';
 export { githubApi } from './github';
 export { mediaApi } from './media';
 export { participantsApi } from './participants';

@@ -89,8 +89,8 @@ export function ScoringCriteriaCard({
               placeholder={`0-${formatScore(criterion.maxScore)}`}
               value={scores[criterion.id] ?? ''}
               disabled={isSubmitted}
-              onChange={(event) => {
-                if (event.target.value === '') {
+              onChange={(competition) => {
+                if (competition.target.value === '') {
                   setScores((current) => {
                     const next = { ...current };
                     delete next[criterion.id];
@@ -98,7 +98,7 @@ export function ScoringCriteriaCard({
                   });
                   return;
                 }
-                const rawValue = Number(event.target.value);
+                const rawValue = Number(competition.target.value);
                 if (!Number.isFinite(rawValue)) return;
                 const value = Math.min(Math.max(0, rawValue), criterion.maxScore);
                 setScores((current) => ({
@@ -120,7 +120,7 @@ export function ScoringCriteriaCard({
               placeholder="Comment (optional)"
               value={comments[criterion.id] || ''}
               disabled={isSubmitted}
-              onChange={(event) => setComments((current) => ({ ...current, [criterion.id]: event.target.value }))}
+              onChange={(competition) => setComments((current) => ({ ...current, [criterion.id]: competition.target.value }))}
             />
           </div>
         ))}
@@ -132,7 +132,7 @@ export function ScoringCriteriaCard({
             rows={3}
             value={generalComment}
             disabled={isSubmitted}
-            onChange={(event) => setGeneralComment(event.target.value)}
+            onChange={(competition) => setGeneralComment(competition.target.value)}
           />
         </div>
 

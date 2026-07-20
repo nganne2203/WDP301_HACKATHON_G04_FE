@@ -4,30 +4,30 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
-import { eventsApi } from '@/entities/event/api';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { eventsApi } from '@/entities/competition/api';
+import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
-import type { CreateEventRequest, Event } from '@/shared/api/types';
+import type { CreateCompetitionRequest, Competition } from '@/shared/api/types';
 import {
   eventFormSchema,
-  getEventLifecycleActionLabel,
-  getNextEventStatus,
+  getCompetitionLifecycleActionLabel,
+  getNextCompetitionStatus,
   getTodayDateInputValue,
   parseInviteEmails,
-  toCreateEventRequest,
-  toEditEventFormValues,
-  toUpdateEventRequest,
-  type EventFormValues,
-} from '@/features/event-management/model/event-form';
+  toCreateCompetitionRequest,
+  toEditCompetitionFormValues,
+  toUpdateCompetitionRequest,
+  type CompetitionFormValues,
+} from '@/features/competition-management/model/competition-form';
 
-function getEventErrorMessage(error: unknown, fallback: string) {
+function getCompetitionErrorMessage(error: unknown, fallback: string) {
   if (error instanceof ApiError) return error.firstError;
   if (error instanceof Error) return error.message;
   return fallback;
 }
 
-export function useEventsView() {
+export function useCompetitionsView() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -36,13 +36,13 @@ export function useEventsView() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmails, setInviteEmails] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null);
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
+  const competitions = eventsQuery.data || [];
 
-  const createForm = useForm<EventFormValues>({
+  const createForm = useForm<CompetitionFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       finalistSelectionMode: 'FIXED_PER_BOARD',
@@ -50,55 +50,55 @@ export function useEventsView() {
     },
   });
 
-  const editForm = useForm<EventFormValues>({
+  const editForm = useForm<CompetitionFormValues>({
     resolver: zodResolver(eventFormSchema),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateEventRequest) => eventsApi.create(data),
+    mutationFn: (data: CreateCompetitionRequest) => eventsApi.create(data),
     onSuccess: async (response) => {
-      toast.success('Event Created', { description: `${response.data.title} has been created.` });
+      toast.success('Competition Created', { description: `${response.data.title} has been created.` });
       setCreateOpen(false);
       createForm.reset({
         finalistSelectionMode: 'FIXED_PER_BOARD',
         fillRemainingFinalistsByOverallScore: false,
       });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.competitions.lists() });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to create event', {
-        description: getEventErrorMessage(error, 'Please try again.'),
+      toast.error('Failed to create competition', {
+        description: getCompetitionErrorMessage(error, 'Please try again.'),
       });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateEventRequest> }) => eventsApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<CreateCompetitionRequest> }) => eventsApi.update(id, data),
     onSuccess: async (response) => {
-      toast.success('Event Updated', { description: `${response.data.title} has been updated.` });
+      toast.success('Competition Updated', { description: `${response.data.title} has been updated.` });
       setEditOpen(false);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.competitions.lists() });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to update event', {
-        description: getEventErrorMessage(error, 'Please try again.'),
+      toast.error('Failed to update competition', {
+        description: getCompetitionErrorMessage(error, 'Please try again.'),
       });
     },
   });
 
   const statusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: Event['status'] }) => eventsApi.updateStatus(id, { status }),
+    mutationFn: ({ id, status }: { id: string; status: Competition['status'] }) => eventsApi.updateStatus(id, { status }),
     onSuccess: async (response) => {
-      toast.success('Event status updated', {
+      toast.success('Competition status updated', {
         description: `${response.data.title} is now ${response.data.status.replaceAll('_', ' ').toLowerCase()}.`,
       });
-      setSelectedEvent((current) => (current?.id === response.data.id ? response.data : current));
-      await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(response.data.id) });
+      setSelectedCompetition((current) => (current?.id === response.data.id ? response.data : current));
+      await queryClient.invalidateQueries({ queryKey: queryKeys.competitions.lists() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.competitions.detail(response.data.id) });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to update event status', {
-        description: getEventErrorMessage(error, 'Please resolve the checklist items and try again.'),
+      toast.error('Failed to update competition status', {
+        description: getCompetitionErrorMessage(error, 'Please resolve the checklist items and try again.'),
       });
     },
   });
@@ -106,14 +106,14 @@ export function useEventsView() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => eventsApi.delete(id),
     onSuccess: async () => {
-      toast.success('Event Deleted', { description: 'The event has been deleted.' });
+      toast.success('Competition Deleted', { description: 'The competition has been deleted.' });
       setDeleteOpen(false);
-      setSelectedEvent(null);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.events.lists() });
+      setSelectedCompetition(null);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.competitions.lists() });
     },
     onError: (error: unknown) => {
-      toast.error('Failed to delete event', {
-        description: getEventErrorMessage(error, 'Please try again.'),
+      toast.error('Failed to delete competition', {
+        description: getCompetitionErrorMessage(error, 'Please try again.'),
       });
     },
   });
@@ -138,12 +138,12 @@ export function useEventsView() {
     },
     onError: (error: unknown) => {
       toast.error('Failed to send invitations', {
-        description: getEventErrorMessage(error, 'Please try again.'),
+        description: getCompetitionErrorMessage(error, 'Please try again.'),
       });
     },
   });
 
-  const handleCreate = (data: EventFormValues) => {
+  const handleCreate = (data: CompetitionFormValues) => {
     const today = getTodayDateInputValue();
 
     if (data.startDate && data.startDate < today) {
@@ -162,14 +162,14 @@ export function useEventsView() {
       return;
     }
 
-    createMutation.mutate(toCreateEventRequest(data));
+    createMutation.mutate(toCreateCompetitionRequest(data));
   };
 
-  const handleEdit = (data: EventFormValues) => {
-    if (!selectedEvent) return;
+  const handleEdit = (data: CompetitionFormValues) => {
+    if (!selectedCompetition) return;
     updateMutation.mutate({
-      id: selectedEvent.id,
-      data: toUpdateEventRequest(data),
+      id: selectedCompetition.id,
+      data: toUpdateCompetitionRequest(data),
     });
   };
 
@@ -183,54 +183,54 @@ export function useEventsView() {
     }
   };
 
-  const openDetailsDialog = (event: Event) => {
-    setSelectedEvent(event);
+  const openDetailsDialog = (competition: Competition) => {
+    setSelectedCompetition(competition);
     setDetailsOpen(true);
   };
 
-  const openEditDialog = (event: Event) => {
-    setSelectedEvent(event);
-    editForm.reset(toEditEventFormValues(event));
+  const openEditDialog = (competition: Competition) => {
+    setSelectedCompetition(competition);
+    editForm.reset(toEditCompetitionFormValues(competition));
     setEditOpen(true);
   };
 
-  const openDeleteDialog = (event: Event) => {
-    if (event.status !== 'DRAFT') {
-      toast.error('Only draft events can be deleted', {
-        description: 'Use the lifecycle action to archive events that already entered operations.',
+  const openDeleteDialog = (competition: Competition) => {
+    if (competition.status !== 'DRAFT') {
+      toast.error('Only draft competitions can be deleted', {
+        description: 'Use the lifecycle action to archive competitions that already entered operations.',
       });
       return;
     }
-    setSelectedEvent(event);
+    setSelectedCompetition(competition);
     setDeleteOpen(true);
   };
 
-  const openInviteDialog = (event: Event) => {
-    setSelectedEvent(event);
+  const openInviteDialog = (competition: Competition) => {
+    setSelectedCompetition(competition);
     setInviteEmails('');
     setInviteMessage('');
     setInviteOpen(true);
   };
 
   const confirmDelete = () => {
-    if (!selectedEvent) return;
-    deleteMutation.mutate(selectedEvent.id);
+    if (!selectedCompetition) return;
+    deleteMutation.mutate(selectedCompetition.id);
   };
 
-  const getNextStatus = (event: Event) => getNextEventStatus(event.status);
+  const getNextStatus = (competition: Competition) => getNextCompetitionStatus(competition.status);
 
-  const getStatusActionLabel = (event: Event) => getEventLifecycleActionLabel(event.status);
+  const getStatusActionLabel = (competition: Competition) => getCompetitionLifecycleActionLabel(competition.status);
 
-  const advanceStatus = (event: Event) => {
-    const nextStatus = getNextStatus(event);
+  const advanceStatus = (competition: Competition) => {
+    const nextStatus = getNextStatus(competition);
     if (!nextStatus) return;
-    statusMutation.mutate({ id: event.id, status: nextStatus });
+    statusMutation.mutate({ id: competition.id, status: nextStatus });
   };
 
-  const canDeleteEvent = (event: Event) => event.status === 'DRAFT';
+  const canDeleteCompetition = (competition: Competition) => competition.status === 'DRAFT';
 
   const sendInvitations = () => {
-    if (!selectedEvent) return;
+    if (!selectedCompetition) return;
     const emails = parseInviteEmails(inviteEmails);
     if (emails.length === 0) {
       toast.error('No email addresses entered');
@@ -238,7 +238,7 @@ export function useEventsView() {
     }
 
     inviteMutation.mutate({
-      id: selectedEvent.id,
+      id: selectedCompetition.id,
       emails,
       message: inviteMessage || undefined,
     });
@@ -258,9 +258,9 @@ export function useEventsView() {
     setInviteEmails,
     inviteMessage,
     setInviteMessage,
-    selectedEvent,
+    selectedCompetition,
     eventsQuery,
-    events,
+    competitions,
     createForm,
     editForm,
     createMutation,
@@ -279,8 +279,8 @@ export function useEventsView() {
     getNextStatus,
     getStatusActionLabel,
     advanceStatus,
-    canDeleteEvent,
+    canDeleteCompetition,
     sendInvitations,
-    getEventErrorMessage,
+    getCompetitionErrorMessage,
   };
 }

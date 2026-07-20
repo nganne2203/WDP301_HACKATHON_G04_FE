@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { CreateEventRequest, Event, EventStatus, FinalistSelectionMode } from '@/shared/api/types';
+import type { CreateCompetitionRequest, Competition, CompetitionStatus, FinalistSelectionMode } from '@/shared/api/types';
 
-export const eventStatusOptions: { value: EventStatus; label: string }[] = [
+export const competitionStatusOptions: { value: CompetitionStatus; label: string }[] = [
   { value: 'DRAFT', label: 'Draft' },
   { value: 'OPEN_REGISTRATION', label: 'Open Registration' },
   { value: 'REGISTRATION_CLOSED', label: 'Registration Closed' },
@@ -11,7 +11,7 @@ export const eventStatusOptions: { value: EventStatus; label: string }[] = [
   { value: 'ARCHIVED', label: 'Archived' },
 ];
 
-export const eventLifecycleTransitions: Partial<Record<EventStatus, EventStatus>> = {
+export const eventLifecycleTransitions: Partial<Record<CompetitionStatus, CompetitionStatus>> = {
   DRAFT: 'OPEN_REGISTRATION',
   OPEN_REGISTRATION: 'REGISTRATION_CLOSED',
   REGISTRATION_CLOSED: 'ONGOING',
@@ -20,13 +20,13 @@ export const eventLifecycleTransitions: Partial<Record<EventStatus, EventStatus>
   COMPLETED: 'ARCHIVED',
 };
 
-export const eventLifecycleActionLabels: Record<EventStatus, string> = {
+export const eventLifecycleActionLabels: Record<CompetitionStatus, string> = {
   DRAFT: 'Open registration',
   OPEN_REGISTRATION: 'Close registration',
-  REGISTRATION_CLOSED: 'Start event',
+  REGISTRATION_CLOSED: 'Start competition',
   ONGOING: 'Start scoring',
-  SCORING: 'Complete event',
-  COMPLETED: 'Archive event',
+  SCORING: 'Complete competition',
+  COMPLETED: 'Archive competition',
   ARCHIVED: 'Archived',
 };
 
@@ -106,9 +106,9 @@ export const eventFormSchema = z.object({
   }
 });
 
-export type EventFormValues = z.infer<typeof eventFormSchema>;
+export type CompetitionFormValues = z.infer<typeof eventFormSchema>;
 
-export function toCreateEventRequest(data: EventFormValues): CreateEventRequest {
+export function toCreateCompetitionRequest(data: CompetitionFormValues): CreateCompetitionRequest {
   const competitionConfig = buildCompetitionConfig(data);
 
   return {
@@ -123,7 +123,7 @@ export function toCreateEventRequest(data: EventFormValues): CreateEventRequest 
   };
 }
 
-export function toUpdateEventRequest(data: EventFormValues): Partial<CreateEventRequest> {
+export function toUpdateCompetitionRequest(data: CompetitionFormValues): Partial<CreateCompetitionRequest> {
   const competitionConfig = buildCompetitionConfig(data);
 
   return {
@@ -138,23 +138,23 @@ export function toUpdateEventRequest(data: EventFormValues): Partial<CreateEvent
   };
 }
 
-export function toEditEventFormValues(event: Event): EventFormValues {
+export function toEditCompetitionFormValues(competition: Competition): CompetitionFormValues {
   return {
-    title: event.title,
-    description: event.description || '',
-    semester: event.semester || '',
-    startDate: event.startDate ? event.startDate.split('T')[0] : '',
-    endDate: event.endDate ? event.endDate.split('T')[0] : '',
-    boardCount: event.competitionConfig?.boardCount,
-    maxTeamsPerBoard: event.competitionConfig?.maxTeamsPerBoard,
-    finalistsPerBoard: event.competitionConfig?.finalistsPerBoard ?? event.finalistSlotsPerTrack,
-    finalistCount: event.competitionConfig?.finalistCount ?? event.totalFinalistSlots,
-    finalistSelectionMode: event.competitionConfig?.finalistSelectionMode ?? 'FIXED_PER_BOARD',
-    fillRemainingFinalistsByOverallScore: event.competitionConfig?.fillRemainingFinalistsByOverallScore ?? false,
+    title: competition.title,
+    description: competition.description || '',
+    semester: competition.semester || '',
+    startDate: competition.startDate ? competition.startDate.split('T')[0] : '',
+    endDate: competition.endDate ? competition.endDate.split('T')[0] : '',
+    boardCount: competition.competitionConfig?.boardCount,
+    maxTeamsPerBoard: competition.competitionConfig?.maxTeamsPerBoard,
+    finalistsPerBoard: competition.competitionConfig?.finalistsPerBoard ?? competition.finalistSlotsPerTrack,
+    finalistCount: competition.competitionConfig?.finalistCount ?? competition.totalFinalistSlots,
+    finalistSelectionMode: competition.competitionConfig?.finalistSelectionMode ?? 'FIXED_PER_BOARD',
+    fillRemainingFinalistsByOverallScore: competition.competitionConfig?.fillRemainingFinalistsByOverallScore ?? false,
   };
 }
 
-function buildCompetitionConfig(data: EventFormValues): CreateEventRequest['competitionConfig'] | undefined {
+function buildCompetitionConfig(data: CompetitionFormValues): CreateCompetitionRequest['competitionConfig'] | undefined {
   const hasConfig = Boolean(
     data.boardCount
     || data.maxTeamsPerBoard
@@ -176,14 +176,14 @@ function buildCompetitionConfig(data: EventFormValues): CreateEventRequest['comp
   };
 }
 
-export function describeAdvancementRule(event?: Event | null) {
-  if (!event) return 'No event selected.';
+export function describeAdvancementRule(competition?: Competition | null) {
+  if (!competition) return 'No competition selected.';
 
-  const config = event.competitionConfig;
+  const config = competition.competitionConfig;
   const mode = config?.finalistSelectionMode || 'FIXED_PER_BOARD';
   const boardCount = config?.boardCount;
-  const finalistsPerBoard = config?.finalistsPerBoard ?? event.finalistSlotsPerTrack;
-  const finalistCount = config?.finalistCount ?? event.totalFinalistSlots;
+  const finalistsPerBoard = config?.finalistsPerBoard ?? competition.finalistSlotsPerTrack;
+  const finalistCount = config?.finalistCount ?? competition.totalFinalistSlots;
 
   if (mode === 'FIXED_PER_BOARD' && boardCount && finalistsPerBoard) {
     return `${boardCount} board(s), top ${finalistsPerBoard} team(s) per board advance (${finalistCount || boardCount * finalistsPerBoard} total).`;
@@ -211,20 +211,20 @@ export function parseInviteEmails(value: string) {
     .filter(Boolean);
 }
 
-export function formatEventDate(dateStr?: string | null) {
+export function formatCompetitionDate(dateStr?: string | null) {
   if (!dateStr) return '-';
   return new Date(dateStr).toLocaleDateString();
 }
 
-export function mapEventStatus(status: EventStatus) {
+export function mapCompetitionStatus(status: CompetitionStatus) {
   return status.toLowerCase();
 }
 
-export function getNextEventStatus(status: EventStatus) {
+export function getNextCompetitionStatus(status: CompetitionStatus) {
   return eventLifecycleTransitions[status] || null;
 }
 
-export function getEventLifecycleActionLabel(status: EventStatus) {
+export function getCompetitionLifecycleActionLabel(status: CompetitionStatus) {
   return eventLifecycleActionLabels[status];
 }
 
