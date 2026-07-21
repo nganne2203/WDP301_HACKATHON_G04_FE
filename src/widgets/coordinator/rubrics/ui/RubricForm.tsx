@@ -55,18 +55,19 @@ export function RubricForm({
           </Select>
         </div>
         <div className="min-w-0 space-y-2">
-          <Label>Total Weight</Label>
-          <Select value={form.totalScore} onValueChange={(value) => onChange((current) => ({ ...current, totalScore: value }))}>
+          <Label>Status</Label>
+          <Select value={form.status} onValueChange={(value: RubricStatus) => onChange((current) => ({ ...current, status: value }))}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="4">4 points</SelectItem>
-              <SelectItem value="10">10 points</SelectItem>
-              <SelectItem value="100">100 points</SelectItem>
+              {rubricStatusOptions.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">The sum of all criterion weights must equal this value before the rubric can leave Draft.</p>
         </div>
         <div className="min-w-0 space-y-2">
           <Label>Scoring coefficient</Label>
@@ -83,29 +84,17 @@ export function RubricForm({
           <p className="text-xs text-muted-foreground">The common scoring coefficient used for every criterion in this rubric.</p>
         </div>
         <div className="min-w-0 space-y-2">
-          <Label htmlFor="rubric-version">Version</Label>
-          <Input
-            id="rubric-version"
-            type="number"
-            min="1"
-            value={form.version}
-            onChange={(competition) => onChange((current) => ({ ...current, version: competition.target.value }))}
-          />
-        </div>
-        <div className="min-w-0 space-y-2">
-          <Label>Status</Label>
-          <Select value={form.status} onValueChange={(value: RubricStatus) => onChange((current) => ({ ...current, status: value }))}>
+          <Label>Total Weight</Label>
+          <Select value={form.totalScore} onValueChange={(value) => onChange((current) => ({ ...current, totalScore: value }))}>
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {rubricStatusOptions.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="100">100</SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">The sum of all criterion weights must equal this value before the rubric can leave Draft.</p>
         </div>
       </div>
     </div>

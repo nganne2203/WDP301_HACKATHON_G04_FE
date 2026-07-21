@@ -17,7 +17,6 @@ export interface RubricFormState {
   roundId: string;
   totalScore: string;
   criterionMaxScore: string;
-  version: string;
   status: RubricStatus;
 }
 
@@ -38,7 +37,6 @@ export function createRubricForm(): RubricFormState {
     roundId: 'none',
     totalScore: '100',
     criterionMaxScore: '10',
-    version: '1',
     status: 'DRAFT',
   };
 }
@@ -73,7 +71,6 @@ export function mapRubricToForm(rubric: Rubric): RubricFormState {
     roundId: rubric.roundId || 'none',
     totalScore: String(rubric.totalScore || 100),
     criterionMaxScore: String(rubric.criterionMaxScore || 10),
-    version: String(rubric.version || 1),
     status: rubric.status || 'DRAFT',
   };
 }
@@ -98,7 +95,6 @@ export function buildRubricPayload(form: RubricFormState, competitionId: string)
     roundId: form.roundId === 'none' ? null : form.roundId,
     totalScore: Number(form.totalScore || 100),
     criterionMaxScore: Number(form.criterionMaxScore || 10),
-    version: Number(form.version || 1),
     status: form.status,
   };
 }
@@ -109,7 +105,6 @@ export function buildRubricUpdatePayload(form: RubricFormState): UpdateRubricReq
     description: normalizeText(form.description),
     totalScore: Number(form.totalScore || 100),
     criterionMaxScore: Number(form.criterionMaxScore || 10),
-    version: Number(form.version || 1),
     status: form.status,
   };
 }

@@ -142,7 +142,6 @@ export function Rubrics() {
                     </div>
                     <div>
                       <p className="font-medium">{rubric.title}</p>
-                      <p className="text-xs text-muted-foreground">v{rubric.version || 1}</p>
                     </div>
                   </div>
                 </TableCell>
