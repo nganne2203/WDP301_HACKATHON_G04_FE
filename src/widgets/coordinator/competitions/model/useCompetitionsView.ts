@@ -45,8 +45,9 @@ export function useCompetitionsView() {
   const createForm = useForm<CompetitionFormValues>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
+      minTeamMembers: 3,
+      maxTeamMembers: 5,
       finalistSelectionMode: 'FIXED_PER_BOARD',
-      fillRemainingFinalistsByOverallScore: false,
     },
   });
 
@@ -60,8 +61,9 @@ export function useCompetitionsView() {
       toast.success('Competition Created', { description: `${response.data.title} has been created.` });
       setCreateOpen(false);
       createForm.reset({
+        minTeamMembers: 3,
+        maxTeamMembers: 5,
         finalistSelectionMode: 'FIXED_PER_BOARD',
-        fillRemainingFinalistsByOverallScore: false,
       });
       await queryClient.invalidateQueries({ queryKey: queryKeys.competitions.lists() });
     },
@@ -177,8 +179,9 @@ export function useCompetitionsView() {
     setCreateOpen(open);
     if (!open) {
       createForm.reset({
+        minTeamMembers: 3,
+        maxTeamMembers: 5,
         finalistSelectionMode: 'FIXED_PER_BOARD',
-        fillRemainingFinalistsByOverallScore: false,
       });
     }
   };

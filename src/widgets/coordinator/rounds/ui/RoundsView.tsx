@@ -62,7 +62,7 @@ export function Rounds() {
                 Create Round
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-h-[85vh] !w-[min(48rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Round</DialogTitle>
                 <DialogDescription>Set up a new round for {view.activeCompetition?.title || 'the selected competition'}.</DialogDescription>
@@ -72,7 +72,6 @@ export function Rounds() {
                 onChange={view.setCreateForm}
                 tracks={view.tracks}
                 rubrics={view.rubrics}
-                teams={view.filterTeamsByTrack(view.teams, view.createForm.trackId)}
                 judges={view.judges}
                 competition={view.activeCompetition}
               />
@@ -92,7 +91,7 @@ export function Rounds() {
         </div>
       </div>
 
-      {(view.eventsQuery.error || view.roundsQuery.error || view.tracksQuery.error || view.rubricsQuery.error || view.teamsQuery.error || view.judgesQuery.error) && (
+      {(view.eventsQuery.error || view.roundsQuery.error || view.tracksQuery.error || view.rubricsQuery.error || view.judgesQuery.error) && (
         <Alert>
           <AlertTitle>Unable to load rounds</AlertTitle>
           <AlertDescription>
@@ -101,7 +100,6 @@ export function Rounds() {
               view.roundsQuery.error ||
               view.tracksQuery.error ||
               view.rubricsQuery.error ||
-              view.teamsQuery.error ||
               view.judgesQuery.error
             )}
           </AlertDescription>
@@ -203,7 +201,7 @@ export function Rounds() {
       </Card>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-h-[85vh] !w-[min(48rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Round</DialogTitle>
             <DialogDescription>Update the round, assigned teams, and judges.</DialogDescription>
@@ -213,9 +211,9 @@ export function Rounds() {
             onChange={view.setEditForm}
             tracks={view.tracks}
             rubrics={view.rubrics}
-            teams={view.filterTeamsByTrack(view.teams, view.editForm.trackId)}
             judges={view.judges}
             competition={view.activeCompetition}
+            assignedTeams={view.selectedRound?.assignedTeams}
           />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>

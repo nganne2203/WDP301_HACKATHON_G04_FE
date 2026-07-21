@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Users } from 'lucide-react';
 
-import type { Competition, RoundStatus, RoundType, Rubric, Team, Track, User } from '@/shared/api/types';
+import type { Competition, Round, RoundStatus, RoundType, Rubric, Track, User } from '@/shared/api/types';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -24,17 +24,17 @@ export function RoundForm({
   onChange,
   tracks,
   rubrics,
-  teams,
   judges,
   competition,
+  assignedTeams = [],
 }: {
   form: RoundFormState;
   onChange: Dispatch<SetStateAction<RoundFormState>>;
   tracks: Track[];
   rubrics: Rubric[];
-  teams: Team[];
   judges: User[];
   competition?: Competition | null;
+  assignedTeams?: NonNullable<Round['assignedTeams']>;
 }) {
   const now = getCurrentDateTimeLocalInputValue();
   const roundStartMin = getRoundStartMin(competition);
@@ -70,7 +70,6 @@ export function RoundForm({
               onChange((current) => ({
                 ...current,
                 trackId: value,
-                assignedTeamIds: current.trackId === value ? current.assignedTeamIds : [],
               }))
             }
           >
@@ -185,12 +184,9 @@ export function RoundForm({
         </div>
       </div>
 
-      <SelectionList
-        label={`Assigned Teams (${form.assignedTeamIds.length})`}
-        items={teams.map((team) => ({ id: team.id, primary: team.name }))}
-        selectedIds={form.assignedTeamIds}
-        onToggle={(id) => onChange((current) => ({ ...current, assignedTeamIds: toggleId(current.assignedTeamIds, id) }))}
-        emptyMessage="No teams available for the current track."
+      <ReadOnlyTeamList
+        assignedTeams={assignedTeams}
+        assignedTeamCount={form.assignedTeamIds.length}
       />
 
       <SelectionList
@@ -200,6 +196,36 @@ export function RoundForm({
         onToggle={(id) => onChange((current) => ({ ...current, assignedJudgeIds: toggleId(current.assignedJudgeIds, id) }))}
         emptyMessage="No judge accounts found."
       />
+    </div>
+  );
+}
+
+function ReadOnlyTeamList({
+  assignedTeams,
+  assignedTeamCount,
+}: {
+  assignedTeams: NonNullable<Round['assignedTeams']>;
+  assignedTeamCount: number;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Users className="h-4 w-4 text-muted-foreground" />
+        <Label>{`Assigned Teams (${assignedTeamCount})`}</Label>
+      </div>
+      <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border p-3">
+        {assignedTeams.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Teams are assigned automatically after you confirm the randomized board lineup.
+          </p>
+        ) : (
+          assignedTeams.map((team) => (
+            <div key={team.id} className="rounded-md border p-3 text-sm font-medium">
+              {team.name || 'Unnamed team'}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -253,7 +279,7 @@ function SelectionList({
             <Checkbox checked={selectedIds.includes(item.id)} onCheckedChange={() => onToggle(item.id)} />
             <div className="min-w-0">
               <p className="text-sm font-medium">{item.primary || item.id}</p>
-              <p className="text-xs text-muted-foreground">{item.secondary || item.id}</p>
+              {item.secondary && <p className="text-xs text-muted-foreground">{item.secondary}</p>}
             </div>
           </label>
         ))}

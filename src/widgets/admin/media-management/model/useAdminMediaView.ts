@@ -64,7 +64,6 @@ export function useAdminMediaView() {
     enabled: canManage,
   });
 
-  const competitions = eventsQuery.data || [];
   const mediaItems = mediaQuery.data?.data || [];
   const pagination = mediaQuery.data?.pagination;
   const statistics = statisticsQuery.data?.data;

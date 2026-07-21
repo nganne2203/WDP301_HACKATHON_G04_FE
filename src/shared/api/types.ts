@@ -295,7 +295,6 @@ export interface CompetitionConfig {
   finalistCount?: number;
   finalistsPerBoard?: number;
   finalistSelectionMode?: FinalistSelectionMode;
-  fillRemainingFinalistsByOverallScore?: boolean;
   rankingScopes?: string[];
   tieBreakRule?: string;
   tieBreakDurationMinutes?: number;
@@ -1512,7 +1511,6 @@ export interface CreateRoundRequest {
   problemStatement?: string | null;
   examDriveUrl?: string | null;
   trackId?: string | null;
-  assignedTeamIds?: string[];
   promotedTeamIds?: string[];
   assignedJudgeIds?: string[];
   rubricId?: string | null;
@@ -1533,7 +1531,6 @@ export interface UpdateRoundRequest {
   roundType?: RoundType;
   status?: RoundStatus;
   trackId?: string | null;
-  assignedTeamIds?: string[];
   promotedTeamIds?: string[];
   assignedJudgeIds?: string[];
   rubricId?: string | null;

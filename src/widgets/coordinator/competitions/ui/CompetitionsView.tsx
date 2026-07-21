@@ -53,7 +53,7 @@ export function Competitions() {
               Create Competition
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <DialogContent className="max-h-[90vh] !w-[min(64rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Competition</DialogTitle>
               <DialogDescription>Fill in the details below to create a new hackathon competition.</DialogDescription>
@@ -192,7 +192,7 @@ export function Competitions() {
       />
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogContent className="max-h-[90vh] !w-[min(64rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Competition</DialogTitle>
             <DialogDescription>Update the competition information below.</DialogDescription>

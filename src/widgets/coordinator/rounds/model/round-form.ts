@@ -4,7 +4,6 @@ import type {
   Round,
   RoundStatus,
   RoundType,
-  Team,
   UpdateRoundRequest,
   User,
 } from '@/shared/api/types';
@@ -209,7 +208,6 @@ export function buildCreateRoundPayload(form: RoundFormState, competition: Compe
     problemStatement: normalizeText(form.problemStatement),
     examDriveUrl: normalizeText(form.examDriveUrl),
     trackId: form.trackId === 'none' ? null : form.trackId,
-    assignedTeamIds: form.assignedTeamIds,
     assignedJudgeIds: form.assignedJudgeIds,
     rubricId: form.rubricId === 'none' ? null : form.rubricId,
     startTime: toApiDateTimeValue(form.startTime),
@@ -233,7 +231,6 @@ export function buildUpdateRoundPayload(form: RoundFormState, competition?: Comp
     problemStatement: normalizeText(form.problemStatement),
     examDriveUrl: normalizeText(form.examDriveUrl),
     trackId: form.trackId === 'none' ? null : form.trackId,
-    assignedTeamIds: form.assignedTeamIds,
     assignedJudgeIds: form.assignedJudgeIds,
     rubricId: form.rubricId === 'none' ? null : form.rubricId,
     startTime: toApiDateTimeValue(form.startTime),
@@ -269,16 +266,6 @@ export function isJudgeUser(user: User) {
     .map((role) => (typeof role === 'string' ? role : role.code || role.name))
     .map((role) => role?.toUpperCase());
   return roleNames.includes('JUDGE') || roleNames.includes('ADMIN');
-}
-
-const ROUND_ASSIGNABLE_TEAM_STATUSES: Team['status'][] = ['CONFIRMED'];
-
-export function filterTeamsByTrack(teams: Team[], trackId: string) {
-  return teams.filter((team) => {
-    const hasAssignableStatus = ROUND_ASSIGNABLE_TEAM_STATUSES.includes(team.status);
-    const matchesTrack = trackId === 'none' || team.trackId === trackId;
-    return hasAssignableStatus && matchesTrack;
-  });
 }
 
 export function getRoundErrorMessage(error: unknown) {

@@ -8,7 +8,6 @@ import {
   useCompetitionsQuery,
   useRoundsQuery,
   useRubricsQuery,
-  useTeamsQuery,
   useTracksQuery,
   useUsersQuery,
 } from '@/hooks/queries/useCommonQueries';
@@ -19,7 +18,6 @@ import {
   buildCreateRoundPayload,
   buildUpdateRoundPayload,
   createEmptyRoundForm,
-  filterTeamsByTrack,
   getRoundErrorMessage,
   isJudgeUser,
   mapRoundToForm,
@@ -50,14 +48,11 @@ export function useRoundsView() {
 
   const rubricsQuery = useRubricsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
 
-  const teamsQuery = useTeamsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
-
   const judgesQuery = useUsersQuery({ page: 1, limit: 100, roles: ['JUDGE', 'ADMIN'] });
 
   const rounds = roundsQuery.data || [];
   const tracks = tracksQuery.data || [];
   const rubrics = rubricsQuery.data || [];
-  const teams = teamsQuery.data || [];
   const judges = (judgesQuery.data?.data || []).filter(isJudgeUser);
 
   const createMutation = useMutation({
@@ -130,7 +125,6 @@ export function useRoundsView() {
     editOpen,
     competitions,
     eventsQuery,
-    filterTeamsByTrack,
     judges,
     judgesQuery,
     rounds,
@@ -146,8 +140,6 @@ export function useRoundsView() {
     setEditForm,
     setEditOpen,
     setSelectedRound,
-    teams,
-    teamsQuery,
     tracks,
     tracksQuery,
     updateMutation,
