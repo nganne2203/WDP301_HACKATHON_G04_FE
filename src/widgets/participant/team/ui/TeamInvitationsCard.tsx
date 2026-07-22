@@ -78,7 +78,7 @@ export function TeamInvitationsCard({
                     type="email"
                     placeholder="replacement@example.com"
                     value={replacementEmails[invitation.id] || ''}
-                    onChange={(event) => setReplacementEmail(invitation.id, event.target.value)}
+                    onChange={(competition) => setReplacementEmail(invitation.id, competition.target.value)}
                   />
                   <Button onClick={() => onReplaceInvitation(invitation)} disabled={replacePending}>
                     <RefreshCw className="mr-2 h-4 w-4" />
@@ -99,7 +99,7 @@ export function TeamInvitationsCard({
           </CardHeader>
           <CardContent className="space-y-3">
             <MemberInviteFields
-              activeEventId={team.eventId}
+              activeCompetitionId={team.competitionId}
               rows={newInvitedMembers}
               setRows={setNewInvitedMembers}
             />

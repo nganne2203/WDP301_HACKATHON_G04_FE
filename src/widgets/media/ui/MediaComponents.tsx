@@ -403,7 +403,7 @@ export function RejectMediaModal({
           <Textarea
             id="reject-reason"
             value={reason}
-            onChange={(event) => onReasonChange(event.target.value)}
+            onChange={(competition) => onReasonChange(competition.target.value)}
             placeholder="Reason for rejection"
           />
         </div>

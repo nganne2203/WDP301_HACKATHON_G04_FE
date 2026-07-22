@@ -50,7 +50,7 @@ export function Rubrics() {
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
           <div className="w-full sm:w-72">
-            <Select value={view.selectedRoundFilter} onValueChange={view.setSelectedRoundFilter} disabled={!view.activeEvent}>
+            <Select value={view.selectedRoundFilter} onValueChange={view.setSelectedRoundFilter} disabled={!view.activeCompetition}>
               <SelectTrigger>
                 <SelectValue placeholder="Filter by round" />
               </SelectTrigger>
@@ -67,7 +67,7 @@ export function Rubrics() {
 
           <Dialog open={view.createOpen} onOpenChange={view.openCreateDialog}>
             <DialogTrigger asChild>
-              <Button disabled={!view.activeEvent}>
+              <Button disabled={!view.activeCompetition}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Rubric
               </Button>
@@ -75,7 +75,7 @@ export function Rubrics() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create Rubric</DialogTitle>
-                <DialogDescription>Create a reusable rubric for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
+                <DialogDescription>Create a reusable rubric for {view.activeCompetition?.title || 'the selected competition'}.</DialogDescription>
               </DialogHeader>
               <RubricForm form={view.createForm} onChange={view.setCreateForm} rounds={view.rounds} />
               <div className="flex justify-end gap-2">
@@ -107,9 +107,9 @@ export function Rubrics() {
               <TableHead>Rubric</TableHead>
               <TableHead>Round</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Criteria</TableHead>
-              <TableHead>Weight Total</TableHead>
-              <TableHead>Scale</TableHead>
+              <TableHead>Scoring coefficient</TableHead>
+              <TableHead>Assigned Weight</TableHead>
+              <TableHead>Total Weight</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
@@ -142,7 +142,6 @@ export function Rubrics() {
                     </div>
                     <div>
                       <p className="font-medium">{rubric.title}</p>
-                      <p className="text-xs text-muted-foreground">v{rubric.version || 1}</p>
                     </div>
                   </div>
                 </TableCell>
@@ -152,7 +151,7 @@ export function Rubrics() {
                     {rubric.status || 'DRAFT'}
                   </Badge>
                 </TableCell>
-                <TableCell>{rubric.criteria.length}</TableCell>
+                <TableCell>{formatScore(rubric.criterionMaxScore)}</TableCell>
                 <TableCell>
                   <span className={(rubric.criteriaWeightTotal ?? 0) === (rubric.totalScore ?? 100) ? '' : 'text-amber-600'}>
                     {formatScore(rubric.criteriaWeightTotal)}

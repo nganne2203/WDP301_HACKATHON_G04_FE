@@ -56,7 +56,7 @@ export function LinkedRepositoriesCard({ view }: { view: RepositoriesViewModel }
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={view.repositorySearch}
-              onChange={(event) => view.setRepositorySearch(event.target.value)}
+              onChange={(competition) => view.setRepositorySearch(competition.target.value)}
               className="pl-9"
               placeholder="Search repository or owner..."
               aria-label="Search linked repositories"

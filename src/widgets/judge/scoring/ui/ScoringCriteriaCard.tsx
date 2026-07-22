@@ -13,6 +13,10 @@ function formatScore(value: number) {
   return (Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100).toFixed(2);
 }
 
+function formatWeight(value: number) {
+  return String(Math.round(Number(value || 0)));
+}
+
 export function ScoringCriteriaCard({
   criteria,
   maxScore,
@@ -62,7 +66,7 @@ export function ScoringCriteriaCard({
           <CardTitle className="text-base">Scoring Criteria</CardTitle>
           <div className="text-right">
             <p className="text-lg font-bold text-blue-700">{formatScore(totalScore)}</p>
-            <p className="text-xs text-muted-foreground">of {formatScore(maxScore)} pts</p>
+            <p className="text-xs text-muted-foreground">of {formatScore(maxScore)} total weight</p>
           </div>
         </div>
         <Progress value={maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0} />
@@ -78,7 +82,7 @@ export function ScoringCriteriaCard({
                 )}
               </div>
               <span className="text-xs text-muted-foreground shrink-0">
-                Max {formatScore(criterion.maxScore)} | Weight {formatScore(criterion.weight)}
+                Scoring coefficient {formatWeight(criterion.maxScore)} | Weight {formatWeight(criterion.weight)}
               </span>
             </div>
             <Input
@@ -89,8 +93,8 @@ export function ScoringCriteriaCard({
               placeholder={`0-${formatScore(criterion.maxScore)}`}
               value={scores[criterion.id] ?? ''}
               disabled={isSubmitted}
-              onChange={(event) => {
-                if (event.target.value === '') {
+              onChange={(competition) => {
+                if (competition.target.value === '') {
                   setScores((current) => {
                     const next = { ...current };
                     delete next[criterion.id];
@@ -98,7 +102,7 @@ export function ScoringCriteriaCard({
                   });
                   return;
                 }
-                const rawValue = Number(event.target.value);
+                const rawValue = Number(competition.target.value);
                 if (!Number.isFinite(rawValue)) return;
                 const value = Math.min(Math.max(0, rawValue), criterion.maxScore);
                 setScores((current) => ({
@@ -120,7 +124,7 @@ export function ScoringCriteriaCard({
               placeholder="Comment (optional)"
               value={comments[criterion.id] || ''}
               disabled={isSubmitted}
-              onChange={(event) => setComments((current) => ({ ...current, [criterion.id]: event.target.value }))}
+              onChange={(competition) => setComments((current) => ({ ...current, [criterion.id]: competition.target.value }))}
             />
           </div>
         ))}
@@ -132,7 +136,7 @@ export function ScoringCriteriaCard({
             rows={3}
             value={generalComment}
             disabled={isSubmitted}
-            onChange={(event) => setGeneralComment(event.target.value)}
+            onChange={(competition) => setGeneralComment(competition.target.value)}
           />
         </div>
 

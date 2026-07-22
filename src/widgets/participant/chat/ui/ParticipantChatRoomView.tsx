@@ -307,7 +307,7 @@ export function ParticipantChatRoomView() {
                   className="max-h-32 min-h-[44px] resize-y rounded-2xl border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0"
               placeholder="Write an update, ask for help, or coordinate with your mentors here..."
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(competition) => setDraft(competition.target.value)}
             />
               </div>
               <Button

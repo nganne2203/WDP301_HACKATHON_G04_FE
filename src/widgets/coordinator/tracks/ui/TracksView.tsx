@@ -45,7 +45,7 @@ export function Tracks() {
         <div>
           <h1 className="text-2xl font-semibold mb-1">Track Management</h1>
           <p className="text-sm text-muted-foreground">
-            Create tracks and manage team capacity for this event.
+            Create tracks and manage team capacity for this competition.
           </p>
         </div>
         <div className="flex shrink-0">
@@ -57,7 +57,7 @@ export function Tracks() {
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!view.activeEvent}>
+              <Button disabled={!view.activeCompetition}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Track
               </Button>
@@ -67,7 +67,7 @@ export function Tracks() {
               <DialogHeader>
                 <DialogTitle>Create Track</DialogTitle>
                 <DialogDescription>
-                  Add a new track for {view.activeEvent?.title || 'the selected event'}.
+                  Add a new track for {view.activeCompetition?.title || 'the selected competition'}.
                 </DialogDescription>
               </DialogHeader>
               </div>
@@ -88,7 +88,7 @@ export function Tracks() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <TrackMetricCard label="Total Tracks" value={String(view.tracks.length)} helper="Tracks in selected event" />
+        <TrackMetricCard label="Total Tracks" value={String(view.tracks.length)} helper="Tracks in selected competition" />
         <TrackMetricCard label="Open or Completed" value={String(view.confirmedTracks)} helper="Operational tracks" />
         <TrackMetricCard
           label="Total Capacity"
@@ -98,11 +98,11 @@ export function Tracks() {
       </div>
 
       {view.eventsQuery.error && (
-        <TrackInlineError message={view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load events'} />
+        <TrackInlineError message={view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load competitions'} />
       )}
 
-      {!view.activeEvent && !view.eventsQuery.isLoading && (
-        <TrackInlineError message="No event available. Create an event first before managing tracks." />
+      {!view.activeCompetition && !view.eventsQuery.isLoading && (
+        <TrackInlineError message="No competition available. Create an competition first before managing tracks." />
       )}
 
       {view.tracksQuery.error && (
@@ -136,7 +136,7 @@ export function Tracks() {
             {!view.eventsQuery.isLoading && !view.tracksQuery.isLoading && view.tracks.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                  No tracks found for this event.
+                  No tracks found for this competition.
                 </TableCell>
               </TableRow>
             )}
@@ -210,7 +210,7 @@ export function Tracks() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete track</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete "{view.selectedTrack?.name}" from this event? This cannot be undone.
+              Delete "{view.selectedTrack?.name}" from this competition? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

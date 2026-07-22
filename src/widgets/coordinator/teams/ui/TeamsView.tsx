@@ -17,7 +17,7 @@ import {
 } from '@/shared/ui/sheet';
 import { TeamDetail, teamsApi } from '@/entities/team';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Team } from '@/shared/api/types';
 
@@ -69,33 +69,33 @@ function getTotalMemberCount(team: Team) {
 }
 
 export function Teams() {
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [page, setPage] = useState(1);
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
   const teamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, page, limit: 12 }),
-    enabled: Boolean(activeEvent?.id),
-    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, page, limit: 12 }),
+    queryKey: queryKeys.teams.list({ competitionId: activeCompetition?.id, page, limit: 12 }),
+    enabled: Boolean(activeCompetition?.id),
+    queryFn: () => teamsApi.list({ competitionId: activeCompetition?.id, page, limit: 12 }),
   });
 
   const confirmedTeamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, status: 'CONFIRMED', page: 1, limit: 1 }),
-    enabled: Boolean(activeEvent?.id),
-    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, status: 'CONFIRMED', page: 1, limit: 1 }),
+    queryKey: queryKeys.teams.list({ competitionId: activeCompetition?.id, status: 'CONFIRMED', page: 1, limit: 1 }),
+    enabled: Boolean(activeCompetition?.id),
+    queryFn: () => teamsApi.list({ competitionId: activeCompetition?.id, status: 'CONFIRMED', page: 1, limit: 1 }),
   });
 
   const teams = teamsQuery.data?.data || [];
   const pagination = teamsQuery.data?.pagination;
   const confirmedTeams = confirmedTeamsQuery.data?.pagination?.totalItems || 0;
-  const maxTeams = activeEvent?.maxTeams || 30;
+  const maxTeams = activeCompetition?.maxTeams || 30;
   const capacityPercent = maxTeams > 0 ? Math.min(Math.round((confirmedTeams / maxTeams) * 100), 100) : 0;
 
   return (
@@ -121,7 +121,7 @@ export function Teams() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading teams</AlertTitle>
-          <AlertDescription>Loading team registrations for this event.</AlertDescription>
+          <AlertDescription>Loading team registrations for this competition.</AlertDescription>
         </Alert>
       )}
 
@@ -129,7 +129,7 @@ export function Teams() {
         <Alert>
           <Users className="h-4 w-4" />
           <AlertTitle>No teams yet</AlertTitle>
-          <AlertDescription>No team registration has been created for this event.</AlertDescription>
+          <AlertDescription>No team registration has been created for this competition.</AlertDescription>
         </Alert>
       )}
 
@@ -143,7 +143,7 @@ export function Teams() {
                     <div className="min-w-0 flex-1">
                       <CardTitle className="text-lg break-words">{team.name}</CardTitle>
                       <p className="mt-1 text-sm text-muted-foreground break-words">
-                        {team.event?.title}
+                        {team.competition?.title}
                       </p>
                     </div>
                     <Badge className="w-fit shrink-0 self-start" variant={statusBadgeVariant(team.status)}>
@@ -165,7 +165,7 @@ export function Teams() {
                     <span>{team.assignedMentors?.length || 0} mentor(s) assigned</span>
                   </div>
                   <div className="pt-2">
-                    <Progress value={Math.min((getConfirmedMemberCount(team) / (team.event?.minTeamMembers || 3)) * 100, 100)} />
+                    <Progress value={Math.min((getConfirmedMemberCount(team) / (team.competition?.minTeamMembers || 3)) * 100, 100)} />
                   </div>
                 </CardContent>
               </Card>

@@ -72,8 +72,8 @@ export function ForgotPasswordDialog({
                 placeholder="you@university.edu"
                 className="pl-9"
                 value={email}
-                onChange={(event) => onEmailChange(event.target.value)}
-                onKeyDown={(event) => event.key === 'Enter' && handleForgotSubmit()}
+                onChange={(competition) => onEmailChange(competition.target.value)}
+                onKeyDown={(competition) => competition.key === 'Enter' && handleForgotSubmit()}
               />
             </div>
           </div>

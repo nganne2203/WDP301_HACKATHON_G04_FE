@@ -25,7 +25,7 @@ export function AdminMedia() {
         <Card className="rounded-lg">
           <CardHeader>
             <CardTitle>Media Management</CardTitle>
-            <CardDescription>You need event update permission to manage media.</CardDescription>
+            <CardDescription>You need competition update permission to manage media.</CardDescription>
           </CardHeader>
         </Card>
       </div>

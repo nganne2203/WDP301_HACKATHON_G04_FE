@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Users } from 'lucide-react';
 
-import type { Event, RoundStatus, RoundType, Rubric, Team, Track, User } from '@/shared/api/types';
+import type { Competition, Round, RoundStatus, RoundType, Rubric, Track, User } from '@/shared/api/types';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -24,29 +24,29 @@ export function RoundForm({
   onChange,
   tracks,
   rubrics,
-  teams,
   judges,
-  event,
+  competition,
+  assignedTeams = [],
 }: {
   form: RoundFormState;
   onChange: Dispatch<SetStateAction<RoundFormState>>;
   tracks: Track[];
   rubrics: Rubric[];
-  teams: Team[];
   judges: User[];
-  event?: Event | null;
+  competition?: Competition | null;
+  assignedTeams?: NonNullable<Round['assignedTeams']>;
 }) {
   const now = getCurrentDateTimeLocalInputValue();
-  const roundStartMin = getRoundStartMin(event);
-  const roundEndMin = getRoundEndMin(form, event);
-  const roundDateTimeMax = getRoundDateTimeMax(event);
+  const roundStartMin = getRoundStartMin(competition);
+  const roundEndMin = getRoundEndMin(form, competition);
+  const roundDateTimeMax = getRoundDateTimeMax(competition);
 
   return (
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="round-name">Round Name</Label>
-          <Input id="round-name" value={form.name} onChange={(event) => onChange((current) => ({ ...current, name: event.target.value }))} placeholder="Preliminary Round" />
+          <Input id="round-name" value={form.name} onChange={(competition) => onChange((current) => ({ ...current, name: competition.target.value }))} placeholder="Preliminary Round" />
         </div>
         <div className="space-y-2">
           <Label>Round Type</Label>
@@ -70,7 +70,6 @@ export function RoundForm({
               onChange((current) => ({
                 ...current,
                 trackId: value,
-                assignedTeamIds: current.trackId === value ? current.assignedTeamIds : [],
               }))
             }
           >
@@ -144,22 +143,22 @@ export function RoundForm({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="round-max-promoted">Max Promoted Teams</Label>
-          <Input id="round-max-promoted" type="number" min="1" value={form.maxPromotedTeams} onChange={(event) => onChange((current) => ({ ...current, maxPromotedTeams: event.target.value }))} />
+          <Input id="round-max-promoted" type="number" min="1" value={form.maxPromotedTeams} onChange={(competition) => onChange((current) => ({ ...current, maxPromotedTeams: competition.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="round-tie-duration">Tie-break Duration (minutes)</Label>
-          <Input id="round-tie-duration" type="number" min="1" value={form.tieBreakDurationMinutes} onChange={(event) => onChange((current) => ({ ...current, tieBreakDurationMinutes: event.target.value }))} />
+          <Input id="round-tie-duration" type="number" min="1" value={form.tieBreakDurationMinutes} onChange={(competition) => onChange((current) => ({ ...current, tieBreakDurationMinutes: competition.target.value }))} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="round-promotion-rule">Promotion Rule</Label>
-          <Textarea id="round-promotion-rule" rows={3} value={form.promotionRule} onChange={(event) => onChange((current) => ({ ...current, promotionRule: event.target.value }))} />
+          <Textarea id="round-promotion-rule" rows={3} value={form.promotionRule} onChange={(competition) => onChange((current) => ({ ...current, promotionRule: competition.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="round-tie-break-rule">Tie-break Rule</Label>
-          <Textarea id="round-tie-break-rule" rows={3} value={form.tieBreakRule} onChange={(event) => onChange((current) => ({ ...current, tieBreakRule: event.target.value }))} />
+          <Textarea id="round-tie-break-rule" rows={3} value={form.tieBreakRule} onChange={(competition) => onChange((current) => ({ ...current, tieBreakRule: competition.target.value }))} />
         </div>
       </div>
 
@@ -170,7 +169,7 @@ export function RoundForm({
             id="round-problem-statement"
             rows={5}
             value={form.problemStatement}
-            onChange={(event) => onChange((current) => ({ ...current, problemStatement: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, problemStatement: competition.target.value }))}
             placeholder="Describe the exam problem, constraints, and expected deliverables."
           />
         </div>
@@ -179,18 +178,15 @@ export function RoundForm({
           <Input
             id="round-drive-url"
             value={form.examDriveUrl}
-            onChange={(event) => onChange((current) => ({ ...current, examDriveUrl: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, examDriveUrl: competition.target.value }))}
             placeholder="https://drive.google.com/..."
           />
         </div>
       </div>
 
-      <SelectionList
-        label={`Assigned Teams (${form.assignedTeamIds.length})`}
-        items={teams.map((team) => ({ id: team.id, primary: team.name }))}
-        selectedIds={form.assignedTeamIds}
-        onToggle={(id) => onChange((current) => ({ ...current, assignedTeamIds: toggleId(current.assignedTeamIds, id) }))}
-        emptyMessage="No teams available for the current track."
+      <ReadOnlyTeamList
+        assignedTeams={assignedTeams}
+        assignedTeamCount={form.assignedTeamIds.length}
       />
 
       <SelectionList
@@ -200,6 +196,36 @@ export function RoundForm({
         onToggle={(id) => onChange((current) => ({ ...current, assignedJudgeIds: toggleId(current.assignedJudgeIds, id) }))}
         emptyMessage="No judge accounts found."
       />
+    </div>
+  );
+}
+
+function ReadOnlyTeamList({
+  assignedTeams,
+  assignedTeamCount,
+}: {
+  assignedTeams: NonNullable<Round['assignedTeams']>;
+  assignedTeamCount: number;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Users className="h-4 w-4 text-muted-foreground" />
+        <Label>{`Assigned Teams (${assignedTeamCount})`}</Label>
+      </div>
+      <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border p-3">
+        {assignedTeams.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Teams are assigned automatically after you confirm the randomized board lineup.
+          </p>
+        ) : (
+          assignedTeams.map((team) => (
+            <div key={team.id} className="rounded-md border p-3 text-sm font-medium">
+              {team.name || 'Unnamed team'}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -222,7 +248,7 @@ function DateTimeField({
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} type="datetime-local" value={value} min={min} max={max} onChange={(event) => onChange(event.target.value)} />
+      <Input id={id} type="datetime-local" value={value} min={min} max={max} onChange={(competition) => onChange(competition.target.value)} />
     </div>
   );
 }
@@ -253,7 +279,7 @@ function SelectionList({
             <Checkbox checked={selectedIds.includes(item.id)} onCheckedChange={() => onToggle(item.id)} />
             <div className="min-w-0">
               <p className="text-sm font-medium">{item.primary || item.id}</p>
-              <p className="text-xs text-muted-foreground">{item.secondary || item.id}</p>
+              {item.secondary && <p className="text-xs text-muted-foreground">{item.secondary}</p>}
             </div>
           </label>
         ))}

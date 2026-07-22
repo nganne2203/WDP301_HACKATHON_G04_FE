@@ -11,26 +11,26 @@ export const Sidebar = memo(function Sidebar() {
   const appRole = useStore((state) => state.appRole);
   const sidebarCollapsed = useStore((state) => state.sidebarCollapsed);
   const setSidebarCollapsed = useStore((state) => state.setSidebarCollapsed);
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
 
   const navItems = useMemo(() => {
     const baseItems = getNavigationItems(appRole);
-    const eventGalleryMatch = location.pathname.match(/^\/events\/([^/]+)\/gallery$/);
-    const eventGalleryEventId = eventGalleryMatch?.[1] || selectedEvent?.id;
+    const eventGalleryMatch = location.pathname.match(/^\/competitions\/([^/]+)\/gallery$/);
+    const eventGalleryCompetitionId = eventGalleryMatch?.[1] || selectedCompetition?.id;
 
     if (appRole === 'mentor' || appRole === 'speaker') {
       return [
         ...baseItems,
         {
           icon: Images,
-          label: 'Event Gallery',
-          href: eventGalleryEventId ? `/events/${eventGalleryEventId}/gallery` : '',
-          disabled: !eventGalleryEventId,
+          label: 'Competition Gallery',
+          href: eventGalleryCompetitionId ? `/competitions/${eventGalleryCompetitionId}/gallery` : '',
+          disabled: !eventGalleryCompetitionId,
         },
       ];
     }
     return baseItems;
-  }, [appRole, location.pathname, selectedEvent?.id]);
+  }, [appRole, location.pathname, selectedCompetition?.id]);
 
   const displayName = user?.fullName || 'User';
   const primaryRole = appRole || 'participant';
@@ -89,7 +89,7 @@ export const Sidebar = memo(function Sidebar() {
               key={`disabled-${item.label}`}
               aria-disabled="true"
               className={itemClassName}
-              title="Select an event to open the gallery"
+              title="Select an competition to open the gallery"
             >
               {content}
             </div>

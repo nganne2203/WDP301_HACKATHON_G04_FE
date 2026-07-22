@@ -14,8 +14,8 @@ export const participantsApi = {
   getById: (id: string) =>
     api.get<Participant>(`/participants/${id}`),
 
-  getMine: (eventId: string) =>
-    api.get<Participant>('/participants/me', { params: { eventId } }),
+  getMine: (competitionId: string) =>
+    api.get<Participant>('/participants/me', { params: { competitionId } }),
 
   register: (data: CreateParticipantRequest) =>
     api.post<Participant>('/participants', data),
@@ -26,8 +26,8 @@ export const participantsApi = {
   checkIn: (id: string) =>
     api.patch<Participant>(`/participants/${id}/check-in`, { checkInStatus: 'CHECKED_IN' }),
 
-  generateCheckInQr: (eventId: string) =>
-    api.post<CheckInQr>('/participants/check-in/qr', { eventId }),
+  generateCheckInQr: (competitionId: string) =>
+    api.post<CheckInQr>('/participants/check-in/qr', { competitionId }),
 
   scanCheckInQr: (token: string) =>
     api.post<Participant>('/participants/check-in/scan', { token }),

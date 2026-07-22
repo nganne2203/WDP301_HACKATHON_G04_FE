@@ -46,9 +46,9 @@ export const usersApi = {
         request.setRequestHeader('Authorization', `Bearer ${token}`);
       }
 
-      request.upload.onprogress = (event) => {
-        if (!event.lengthComputable || !onProgress) return;
-        onProgress(Math.round((event.loaded / event.total) * 100));
+      request.upload.onprogress = (competition) => {
+        if (!competition.lengthComputable || !onProgress) return;
+        onProgress(Math.round((competition.loaded / competition.total) * 100));
       };
 
       request.onload = () => {

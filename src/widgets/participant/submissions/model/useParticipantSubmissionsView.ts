@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { submissionsApi } from '@/entities/submission/api';
 import { useStore } from '@/entities/session/model/store';
 import type { Round, Submission } from '@/shared/api/types';
-import { useEventsQuery, useMyTeamQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useMyTeamQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 
 import {
@@ -35,35 +35,35 @@ export function getRoundSubmissionGateMessage(round?: Round | null) {
 export function useParticipantSubmissionsView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
-  const storeSelectedEvent = useStore((state) => state.selectedEvent);
+  const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [form, setForm] = useState<SubmissionFormState>(createSubmissionForm());
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
-  const selectedEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === storeSelectedEvent?.id) || events[0];
-  }, [events, storeSelectedEvent?.id]);
+  const competitions = eventsQuery.data || [];
+  const selectedCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === storeSelectedCompetition?.id) || competitions[0];
+  }, [competitions, storeSelectedCompetition?.id]);
 
-  const teamQuery = useMyTeamQuery(selectedEvent?.id);
+  const teamQuery = useMyTeamQuery(selectedCompetition?.id);
 
   const team = teamQuery.data;
 
   const roundsQuery = useRoundsQuery(
-    { eventId: selectedEvent?.id, limit: 10 },
-    { enabled: Boolean(selectedEvent?.id) }
+    { competitionId: selectedCompetition?.id, limit: 10 },
+    { enabled: Boolean(selectedCompetition?.id) }
   );
 
   const submissionsQuery = useQuery({
-    queryKey: queryKeys.submissions.list({ eventId: selectedEvent?.id, teamId: team?.id, limit: 10 }),
-    enabled: Boolean(selectedEvent?.id && team?.id),
+    queryKey: queryKeys.submissions.list({ competitionId: selectedCompetition?.id, teamId: team?.id, limit: 10 }),
+    enabled: Boolean(selectedCompetition?.id && team?.id),
     queryFn: async () =>
       (await submissionsApi.list({
-        eventId: selectedEvent?.id,
+        competitionId: selectedCompetition?.id,
         teamId: team?.id,
         limit: 10,
       })).data,
@@ -92,7 +92,7 @@ export function useParticipantSubmissionsView() {
 
       return (
         await submissionsApi.create({
-          eventId: selectedEvent!.id,
+          competitionId: selectedCompetition!.id,
           roundId: round.id,
           teamId: team!.id,
           ...payload,
@@ -127,7 +127,7 @@ export function useParticipantSubmissionsView() {
 
       const created = (
         await submissionsApi.create({
-          eventId: selectedEvent!.id,
+          competitionId: selectedCompetition!.id,
           roundId: round.id,
           teamId: team!.id,
           ...payload,
@@ -166,8 +166,8 @@ export function useParticipantSubmissionsView() {
     form,
     setForm,
     eventsQuery,
-    events,
-    selectedEvent,
+    competitions,
+    selectedCompetition,
     teamQuery,
     team,
     roundsQuery,

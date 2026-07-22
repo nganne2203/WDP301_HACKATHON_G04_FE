@@ -11,7 +11,7 @@ import { Textarea } from '@/shared/ui/textarea';
 import { MediaPreview } from '@/widgets/media/ui/MediaComponents';
 
 export function MediaUploadCard({
-  selectedEventId,
+  selectedCompetitionId,
   title,
   setTitle,
   description,
@@ -26,20 +26,20 @@ export function MediaUploadCard({
   uploadProgress,
   onSubmit,
 }: {
-  selectedEventId: string;
+  selectedCompetitionId: string;
   title: string;
   setTitle: (value: string) => void;
   description: string;
   setDescription: (value: string) => void;
   tags: string;
   setTags: (value: string) => void;
-  handleFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  handleFileChange: (competition: ChangeEvent<HTMLInputElement>) => void;
   file: File | null;
   previewUrl: string | null;
   fileError: string | null;
   uploadPending: boolean;
   uploadProgress: number;
-  onSubmit: (event: FormEvent) => void;
+  onSubmit: (competition: FormEvent) => void;
 }) {
   return (
     <Card className="rounded-lg">
@@ -49,9 +49,9 @@ export function MediaUploadCard({
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
-          {selectedEventId ? (
+          {selectedCompetitionId ? (
             <Button asChild variant="outline">
-              <Link to={`/events/${selectedEventId}/gallery`}>Open Gallery</Link>
+              <Link to={`/competitions/${selectedCompetitionId}/gallery`}>Open Gallery</Link>
             </Button>
           ) : (
             <Button variant="outline" disabled>
@@ -61,17 +61,17 @@ export function MediaUploadCard({
 
           <div className="space-y-2">
             <Label htmlFor="media-title">Title</Label>
-            <Input id="media-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} />
+            <Input id="media-title" value={title} onChange={(competition) => setTitle(competition.target.value)} maxLength={200} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="media-description">Description</Label>
-            <Textarea id="media-description" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} />
+            <Textarea id="media-description" value={description} onChange={(competition) => setDescription(competition.target.value)} maxLength={2000} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="media-tags">Tags</Label>
-            <Input id="media-tags" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="team, demo, awards" />
+            <Input id="media-tags" value={tags} onChange={(competition) => setTags(competition.target.value)} placeholder="team, demo, awards" />
           </div>
 
           <div className="space-y-2">

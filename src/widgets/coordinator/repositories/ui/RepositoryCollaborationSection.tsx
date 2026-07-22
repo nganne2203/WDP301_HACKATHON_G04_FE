@@ -37,7 +37,7 @@ export function RepositoryCollaborationSection({ view }: { view: RepositoriesVie
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="collab-user">GitHub username</Label>
-              <Input id="collab-user" value={view.collabUsername} onChange={(event) => view.setCollabUsername(event.target.value)} placeholder="octocat" />
+              <Input id="collab-user" value={view.collabUsername} onChange={(competition) => view.setCollabUsername(competition.target.value)} placeholder="octocat" />
             </div>
             <div className="space-y-2">
               <Label>Permission</Label>
@@ -52,15 +52,15 @@ export function RepositoryCollaborationSection({ view }: { view: RepositoriesVie
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => view.assignCollaboratorMutation.mutate()} disabled={view.assignCollaboratorMutation.isPending || !view.activeEventId || !view.collabRepoName || !view.collabUsername}>
+            <Button onClick={() => view.assignCollaboratorMutation.mutate()} disabled={view.assignCollaboratorMutation.isPending || !view.activeCompetitionId || !view.collabRepoName || !view.collabUsername}>
               {view.assignCollaboratorMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Assign member
             </Button>
-            <Button variant="outline" onClick={() => view.revokeCollaboratorMutation.mutate()} disabled={view.revokeCollaboratorMutation.isPending || !view.activeEventId || !view.collabRepoName || !view.collabUsername}>
+            <Button variant="outline" onClick={() => view.revokeCollaboratorMutation.mutate()} disabled={view.revokeCollaboratorMutation.isPending || !view.activeCompetitionId || !view.collabRepoName || !view.collabUsername}>
               {view.revokeCollaboratorMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Revoke collaborator
             </Button>
-            <Button variant="outline" onClick={() => view.registerWebhookMutation.mutate()} disabled={view.registerWebhookMutation.isPending || !view.activeEventId || !view.collabRepoName}>
+            <Button variant="outline" onClick={() => view.registerWebhookMutation.mutate()} disabled={view.registerWebhookMutation.isPending || !view.activeCompetitionId || !view.collabRepoName}>
               {view.registerWebhookMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Webhook className="mr-2 h-4 w-4" />}
               Register webhook
             </Button>
@@ -87,9 +87,9 @@ export function RepositoryCollaborationSection({ view }: { view: RepositoriesVie
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="invite-email">Email</Label>
-            <Input id="invite-email" type="email" value={view.inviteEmail} onChange={(event) => view.setInviteEmail(event.target.value)} placeholder="member@gmail.com" />
+            <Input id="invite-email" type="email" value={view.inviteEmail} onChange={(competition) => view.setInviteEmail(competition.target.value)} placeholder="member@gmail.com" />
           </div>
-          <Button onClick={() => view.inviteMemberMutation.mutate()} disabled={view.inviteMemberMutation.isPending || !view.activeEventId}>
+          <Button onClick={() => view.inviteMemberMutation.mutate()} disabled={view.inviteMemberMutation.isPending || !view.activeCompetitionId}>
             {view.inviteMemberMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Invite member
           </Button>

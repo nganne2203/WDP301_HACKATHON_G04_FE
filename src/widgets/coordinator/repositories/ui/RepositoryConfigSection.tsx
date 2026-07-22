@@ -36,7 +36,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading GitHub configuration</AlertTitle>
-          <AlertDescription>Loading GitHub settings for this event.</AlertDescription>
+          <AlertDescription>Loading GitHub settings for this competition.</AlertDescription>
         </Alert>
       ) : (
         <Alert className={view.config?.enabled ? 'border-green-200 bg-green-50' : undefined}>
@@ -48,7 +48,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
               <span className="text-muted-foreground/60">•</span>
               <span>Token: <strong>{view.config?.hasToken ? 'Configured' : 'Missing'}</strong></span>
               <span className="text-muted-foreground/60">•</span>
-              <span>Event: <strong>{view.activeEvent?.title || 'No event selected'}</strong></span>
+              <span>Competition: <strong>{view.activeCompetition?.title || 'No competition selected'}</strong></span>
             </div>
           </AlertDescription>
         </Alert>
@@ -61,17 +61,17 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
               <Github className="h-5 w-5" />
               GitHub Config
             </CardTitle>
-            <CardDescription>Connect this event to your GitHub Organization. Saved tokens stay hidden.</CardDescription>
+            <CardDescription>Connect this competition to your GitHub Organization. Saved tokens stay hidden.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="github-org">Organization name</Label>
-                <Input id="github-org" value={view.organizationName} onChange={(event) => view.setOrganizationName(event.target.value)} placeholder="your-org-name" />
+                <Input id="github-org" value={view.organizationName} onChange={(competition) => view.setOrganizationName(competition.target.value)} placeholder="your-org-name" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="github-owner">Owner username</Label>
-                <Input id="github-owner" value={view.ownerUsername} onChange={(event) => view.setOwnerUsername(event.target.value)} placeholder="owner-github-username" />
+                <Input id="github-owner" value={view.ownerUsername} onChange={(competition) => view.setOwnerUsername(competition.target.value)} placeholder="owner-github-username" />
               </div>
             </div>
 
@@ -81,7 +81,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                 id="github-token"
                 type="password"
                 value={view.githubToken}
-                onChange={(event) => view.setGithubToken(event.target.value)}
+                onChange={(competition) => view.setGithubToken(competition.target.value)}
                 placeholder={view.config?.hasToken ? 'Leave blank to keep existing token' : 'github_pat_xxx'}
               />
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -101,11 +101,11 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button onClick={() => view.saveConfigMutation.mutate()} disabled={view.saveConfigMutation.isPending || !view.activeEventId}>
+              <Button onClick={() => view.saveConfigMutation.mutate()} disabled={view.saveConfigMutation.isPending || !view.activeCompetitionId}>
                 {view.saveConfigMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>
-              <Button variant="outline" onClick={() => view.testConnectionMutation.mutate()} disabled={view.testConnectionMutation.isPending || !view.config?.hasToken || !view.activeEventId}>
+              <Button variant="outline" onClick={() => view.testConnectionMutation.mutate()} disabled={view.testConnectionMutation.isPending || !view.config?.hasToken || !view.activeCompetitionId}>
                 {view.testConnectionMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Test connection
               </Button>
@@ -119,7 +119,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
               <Plus className="h-5 w-5" />
               Create Repository
             </CardTitle>
-            <CardDescription>Create a GitHub repository and immediately link it to a team in the selected event.</CardDescription>
+            <CardDescription>Create a GitHub repository and immediately link it to a team in the selected competition.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -149,17 +149,17 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
             </div>
             <div className="space-y-2">
               <Label htmlFor="repo-name">Repo name</Label>
-              <Input id="repo-name" value={view.repoName} onChange={(event) => view.setRepoName(event.target.value)} placeholder="team-alpha-project" />
+              <Input id="repo-name" value={view.repoName} onChange={(competition) => view.setRepoName(competition.target.value)} placeholder="team-alpha-project" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="repo-description">Description</Label>
-              <Input id="repo-description" value={view.repoDescription} onChange={(event) => view.setRepoDescription(event.target.value)} placeholder="Repository for Team Alpha" />
+              <Input id="repo-description" value={view.repoDescription} onChange={(competition) => view.setRepoDescription(competition.target.value)} placeholder="Repository for Team Alpha" />
             </div>
             <div className="flex items-center gap-2">
               <Checkbox checked={view.repoPrivate} onCheckedChange={(checked) => view.setRepoPrivate(checked === true)} id="repo-private" />
               <Label htmlFor="repo-private">Private repository</Label>
             </div>
-            <Button onClick={() => view.createRepositoryMutation.mutate()} disabled={view.createRepositoryMutation.isPending || !view.activeEventId || !view.selectedTeamId || !view.repoName}>
+            <Button onClick={() => view.createRepositoryMutation.mutate()} disabled={view.createRepositoryMutation.isPending || !view.activeCompetitionId || !view.selectedTeamId || !view.repoName}>
               {view.createRepositoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create repository
             </Button>
@@ -207,7 +207,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
               <Button variant="outline" onClick={() => setIsLinkRepositoryOpen(false)}>Cancel</Button>
               <Button
                 onClick={() => view.linkRepositoryMutation.mutate()}
-                disabled={view.linkRepositoryMutation.isPending || !view.activeEventId || !view.selectedTeamId || !view.linkOwner || !view.linkRepo}
+                disabled={view.linkRepositoryMutation.isPending || !view.activeCompetitionId || !view.selectedTeamId || !view.linkOwner || !view.linkRepo}
               >
                 {view.linkRepositoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Link className="mr-2 h-4 w-4" />
@@ -233,7 +233,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
             Bulk Repository Operations
           </CardTitle>
           <CardDescription>
-            Create repositories in bulk (without assigning members), grant access in bulk, or revoke access in bulk for all teams in the event.
+            Create repositories in bulk (without assigning members), grant access in bulk, or revoke access in bulk for all teams in the competition.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -253,7 +253,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
             <div className="flex flex-wrap gap-3 pt-2">
               <Button
                 onClick={() => view.bulkCreateRepositoriesMutation.mutate()}
-                disabled={view.bulkCreateRepositoriesMutation.isPending || !view.activeEventId}
+                disabled={view.bulkCreateRepositoriesMutation.isPending || !view.activeCompetitionId}
                 className="w-full sm:w-auto"
               >
                 {view.bulkCreateRepositoriesMutation.isPending ? (
@@ -267,7 +267,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
               <Button
                 variant="outline"
                 onClick={() => view.bulkGrantAccessMutation.mutate()}
-                disabled={view.bulkGrantAccessMutation.isPending || !view.activeEventId}
+                disabled={view.bulkGrantAccessMutation.isPending || !view.activeCompetitionId}
                 className="w-full sm:w-auto border-green-200 hover:bg-green-50 text-green-700"
               >
                 {view.bulkGrantAccessMutation.isPending ? (
@@ -282,7 +282,7 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="outline"
-                    disabled={view.bulkRevokeAccessMutation.isPending || !view.activeEventId}
+                    disabled={view.bulkRevokeAccessMutation.isPending || !view.activeCompetitionId}
                     className="w-full border-red-200 text-red-700 hover:bg-red-50 sm:w-auto"
                   >
                     {view.bulkRevokeAccessMutation.isPending ? (
@@ -290,14 +290,14 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
                     ) : (
                       <ShieldX className="mr-2 h-4 w-4 text-red-600" />
                     )}
-                    Revoke Event Repo Access
+                    Revoke Competition Repo Access
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Revoke access to all event repositories?</AlertDialogTitle>
+                    <AlertDialogTitle>Revoke access to all competition repositories?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This removes team members as collaborators from repositories linked to this event. It does not remove anyone from the GitHub Organization.
+                      This removes team members as collaborators from repositories linked to this competition. It does not remove anyone from the GitHub Organization.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

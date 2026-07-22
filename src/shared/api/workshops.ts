@@ -13,15 +13,15 @@ import type {
 export interface ListWorkshopsQuery {
   page?: number;
   limit?: number;
-  eventId?: string;
+  competitionId?: string;
   presenterId?: string;
   status?: string;
   search?: string;
 }
 
 export interface CreateWorkshopRequest {
-  eventId: string;
-  timelineEventId?: string;
+  competitionId: string;
+  timelineActivityId?: string;
   title: string;
   description?: string;
   presenterId?: string;
@@ -56,7 +56,7 @@ export const workshopsApi = {
     api.delete<null>(`/workshops/${id}`),
 
   createGoogleMeet: (id: string, data: { organizerUserId: string; attendees?: string[] }) =>
-    api.post<{ meetLink: string; calendarEventId: string }>(`/workshops/${id}/google-meet`, data),
+    api.post<{ meetLink: string; calendarCompetitionId: string }>(`/workshops/${id}/google-meet`, data),
 
   createQuestion: (id: string, data: { content: string }) =>
     api.post<WorkshopQuestion>(`/workshops/${id}/questions`, data),

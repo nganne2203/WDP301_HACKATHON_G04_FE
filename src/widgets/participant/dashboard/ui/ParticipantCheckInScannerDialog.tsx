@@ -44,8 +44,8 @@ async function waitForReaderElement() {
 function getScannerError(error: unknown) {
   if (error instanceof ApiError) {
     if (error.code === 'CHECK_IN_QR_EXPIRED') return 'This check-in QR has expired. Ask the coordinator for a new one.';
-    if (error.code === 'PARTICIPANT_ALREADY_CHECKED_IN') return 'You have already checked in for this event.';
-    if (error.code === 'INVALID_CHECK_IN_QR') return 'This is not a valid event check-in QR.';
+    if (error.code === 'PARTICIPANT_ALREADY_CHECKED_IN') return 'You have already checked in for this competition.';
+    if (error.code === 'INVALID_CHECK_IN_QR') return 'This is not a valid competition check-in QR.';
     return error.firstError;
   }
   if (error instanceof Error) return error.message;
@@ -67,7 +67,7 @@ export function ParticipantCheckInScannerDialog() {
     mutationFn: (token: string) => participantsApi.scanCheckInQr(token),
     onSuccess: (response) => {
       toast.success('Check-in successful', {
-        description: response.data.eventId ? 'Your attendance has been recorded.' : undefined,
+        description: response.data.competitionId ? 'Your attendance has been recorded.' : undefined,
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.participants.all });
     },
@@ -188,7 +188,7 @@ export function ParticipantCheckInScannerDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />
-            Scan event check-in QR
+            Scan competition check-in QR
           </DialogTitle>
           <DialogDescription>
             Point your camera at the QR code displayed by the coordinator.
@@ -241,7 +241,7 @@ export function ParticipantCheckInScannerDialog() {
           type="file"
           accept="image/*"
           className="hidden"
-          onChange={(event) => void handleImageUpload(event.target.files?.[0])}
+          onChange={(competition) => void handleImageUpload(competition.target.files?.[0])}
         />
       </DialogContent>
     </Dialog>

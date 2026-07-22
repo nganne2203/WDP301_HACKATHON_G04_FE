@@ -6,7 +6,7 @@ export const participantUserRoleOptions: UserRoleName[] = [
   'SPEAKER',
   'JUDGE',
   'COORDINATOR',
-  'EVENT_COORDINATOR',
+  'COMPETITION_COORDINATOR',
   'ADMIN',
 ];
 

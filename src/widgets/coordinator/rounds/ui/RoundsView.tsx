@@ -57,24 +57,23 @@ export function Rounds() {
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!view.activeEvent}>
+              <Button disabled={!view.activeCompetition}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Round
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-h-[85vh] !w-[min(48rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create Round</DialogTitle>
-                <DialogDescription>Set up a new round for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
+                <DialogDescription>Set up a new round for {view.activeCompetition?.title || 'the selected competition'}.</DialogDescription>
               </DialogHeader>
               <RoundForm
                 form={view.createForm}
                 onChange={view.setCreateForm}
                 tracks={view.tracks}
                 rubrics={view.rubrics}
-                teams={view.filterTeamsByTrack(view.teams, view.createForm.trackId)}
                 judges={view.judges}
-                event={view.activeEvent}
+                competition={view.activeCompetition}
               />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
@@ -92,7 +91,7 @@ export function Rounds() {
         </div>
       </div>
 
-      {(view.eventsQuery.error || view.roundsQuery.error || view.tracksQuery.error || view.rubricsQuery.error || view.teamsQuery.error || view.judgesQuery.error) && (
+      {(view.eventsQuery.error || view.roundsQuery.error || view.tracksQuery.error || view.rubricsQuery.error || view.judgesQuery.error) && (
         <Alert>
           <AlertTitle>Unable to load rounds</AlertTitle>
           <AlertDescription>
@@ -101,7 +100,6 @@ export function Rounds() {
               view.roundsQuery.error ||
               view.tracksQuery.error ||
               view.rubricsQuery.error ||
-              view.teamsQuery.error ||
               view.judgesQuery.error
             )}
           </AlertDescription>
@@ -136,7 +134,7 @@ export function Rounds() {
             {!view.eventsQuery.isLoading && !view.roundsQuery.isLoading && view.rounds.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
-                  No rounds found for this event.
+                  No rounds found for this competition.
                 </TableCell>
               </TableRow>
             )}
@@ -203,7 +201,7 @@ export function Rounds() {
       </Card>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
-        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-h-[85vh] !w-[min(48rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Round</DialogTitle>
             <DialogDescription>Update the round, assigned teams, and judges.</DialogDescription>
@@ -213,9 +211,9 @@ export function Rounds() {
             onChange={view.setEditForm}
             tracks={view.tracks}
             rubrics={view.rubrics}
-            teams={view.filterTeamsByTrack(view.teams, view.editForm.trackId)}
             judges={view.judges}
-            event={view.activeEvent}
+            competition={view.activeCompetition}
+            assignedTeams={view.selectedRound?.assignedTeams}
           />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
@@ -236,7 +234,7 @@ export function Rounds() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete round</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete "{view.selectedRound?.name}"? It will no longer be available in this event.
+              Delete "{view.selectedRound?.name}"? It will no longer be available in this competition.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

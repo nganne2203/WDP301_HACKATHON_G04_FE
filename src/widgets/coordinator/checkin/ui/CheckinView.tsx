@@ -19,9 +19,9 @@ import { participantsApi, workshopsApi } from '@/shared/api';
 import { ApiError } from '@/shared/api/client';
 import type { Participant, Workshop } from '@/shared/api/types';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
-import { EventCheckInQrPanel } from './EventCheckInQrPanel';
+import { CompetitionCheckInQrPanel } from './CompetitionCheckInQrPanel';
 
 const EXPORT_PAGE_SIZE = 100;
 
@@ -47,7 +47,7 @@ function normalizeExportFilename(value: string) {
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || 'event';
+    .replace(/^-|-$/g, '') || 'competition';
 }
 
 function downloadFile(filename: string, content: string, type: string) {
@@ -106,40 +106,40 @@ function buildAttendanceExcel(eventTitle: string, participants: Participant[]) {
 
 export function Checkin() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((s) => s.selectedEvent);
+  const selectedCompetition = useStore((s) => s.selectedCompetition);
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
 
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
-  // Fetch real participants filtered by selected event
+  // Fetch real participants filtered by selected competition
   const { data: participantsResponse, isLoading: participantsLoading, error: participantsError } = useQuery({
-    queryKey: queryKeys.participants.list({ eventId: activeEvent?.id, page, limit: 10 }),
+    queryKey: queryKeys.participants.list({ competitionId: activeCompetition?.id, page, limit: 10 }),
     queryFn: () => participantsApi.list({
-      eventId: activeEvent?.id,
+      competitionId: activeCompetition?.id,
       confirmedTeamsOnly: true,
       page,
       limit: 10,
     }),
-    enabled: Boolean(activeEvent?.id),
+    enabled: Boolean(activeCompetition?.id),
   });
 
   const { data: checkedInResponse } = useQuery({
-    queryKey: queryKeys.participants.list({ eventId: activeEvent?.id, checkInStatus: 'CHECKED_IN', page: 1, limit: 10 }),
+    queryKey: queryKeys.participants.list({ competitionId: activeCompetition?.id, checkInStatus: 'CHECKED_IN', page: 1, limit: 10 }),
     queryFn: () => participantsApi.list({
-      eventId: activeEvent?.id,
+      competitionId: activeCompetition?.id,
       confirmedTeamsOnly: true,
       checkInStatus: 'CHECKED_IN',
       page: 1,
       limit: 10,
     }),
-    enabled: Boolean(activeEvent?.id),
+    enabled: Boolean(activeCompetition?.id),
   });
 
   const participants = participantsResponse?.data || [];
@@ -163,23 +163,23 @@ export function Checkin() {
 
   // Fetch real workshops from backend
   const { data: workshopsResponse, isLoading: workshopsLoading, error: workshopsError } = useQuery({
-    queryKey: queryKeys.workshops.list({ eventId: activeEvent?.id, page: 1, limit: 10 }),
-    queryFn: () => workshopsApi.list({ eventId: activeEvent?.id, page: 1, limit: 10 }),
-    enabled: Boolean(activeEvent?.id),
+    queryKey: queryKeys.workshops.list({ competitionId: activeCompetition?.id, page: 1, limit: 10 }),
+    queryFn: () => workshopsApi.list({ competitionId: activeCompetition?.id, page: 1, limit: 10 }),
+    enabled: Boolean(activeCompetition?.id),
   });
 
   const workshops = workshopsResponse?.data || [];
 
   async function handleExportAttendance() {
-    if (!activeEvent?.id) {
-      toast.error('Select an event before exporting attendance.');
+    if (!activeCompetition?.id) {
+      toast.error('Select an competition before exporting attendance.');
       return;
     }
 
     setIsExporting(true);
     try {
       const firstPage = await participantsApi.list({
-        eventId: activeEvent.id,
+        competitionId: activeCompetition.id,
         confirmedTeamsOnly: true,
         page: 1,
         limit: EXPORT_PAGE_SIZE,
@@ -188,7 +188,7 @@ export function Checkin() {
       const remainingPages = totalPages > 1
         ? await Promise.all(
           Array.from({ length: totalPages - 1 }, (_, index) => participantsApi.list({
-            eventId: activeEvent.id,
+            competitionId: activeCompetition.id,
             confirmedTeamsOnly: true,
             page: index + 2,
             limit: EXPORT_PAGE_SIZE,
@@ -205,8 +205,8 @@ export function Checkin() {
         return;
       }
 
-      const content = buildAttendanceExcel(activeEvent.title, allParticipants);
-      const eventSlug = normalizeExportFilename(activeEvent.title);
+      const content = buildAttendanceExcel(activeCompetition.title, allParticipants);
+      const eventSlug = normalizeExportFilename(activeCompetition.title);
       const dateSlug = new Date().toISOString().slice(0, 10);
       downloadFile(
         `attendance-${eventSlug}-${dateSlug}.xls`,
@@ -236,10 +236,10 @@ export function Checkin() {
         </div>
       </div>
 
-      {!activeEvent && (
+      {!activeCompetition && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
-          <span>Select an event to load check-in data.</span>
+          <span>Select an competition to load check-in data.</span>
         </div>
       )}
 
@@ -274,10 +274,10 @@ export function Checkin() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Event check-in QR</CardTitle>
+            <CardTitle className="text-base">Competition check-in QR</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <EventCheckInQrPanel eventId={activeEvent?.id} eventTitle={activeEvent?.title} />
+            <CompetitionCheckInQrPanel competitionId={activeCompetition?.id} eventTitle={activeCompetition?.title} />
           </CardContent>
         </Card>
 
@@ -357,7 +357,7 @@ export function Checkin() {
                 variant="outline"
                 size="sm"
                 onClick={handleExportAttendance}
-                disabled={!activeEvent?.id || participantsLoading || isExporting}
+                disabled={!activeCompetition?.id || participantsLoading || isExporting}
               >
                 {isExporting ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -403,9 +403,9 @@ export function Checkin() {
                 {participants.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      {activeEvent
-                        ? 'No participants registered for this event.'
-                        : 'Select an event to view participants.'}
+                      {activeCompetition
+                        ? 'No participants registered for this competition.'
+                        : 'Select an competition to view participants.'}
                     </TableCell>
                   </TableRow>
                 ) : (

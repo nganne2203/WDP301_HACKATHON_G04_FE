@@ -36,8 +36,8 @@ export function ParticipantDashboard() {
       {view.eventsQuery.isLoading && (
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
-          <AlertTitle>Loading events</AlertTitle>
-          <AlertDescription>Please wait while available events are loaded.</AlertDescription>
+          <AlertTitle>Loading competitions</AlertTitle>
+          <AlertDescription>Please wait while available competitions are loaded.</AlertDescription>
         </Alert>
       )}
 
@@ -49,12 +49,12 @@ export function ParticipantDashboard() {
         </Alert>
       )}
 
-      {view.selectedEvent?.registrationEnd && (
+      {view.selectedCompetition?.registrationEnd && (
         <Alert className="bg-blue-50 border-blue-200">
           <Clock className="h-4 w-4 text-blue-600" />
           <AlertTitle>Registration window</AlertTitle>
           <AlertDescription>
-            Registration closes at {formatDateTime(view.selectedEvent.registrationEnd)}.
+            Registration closes at {formatDateTime(view.selectedCompetition.registrationEnd)}.
           </AlertDescription>
         </Alert>
       )}
@@ -75,8 +75,8 @@ export function ParticipantDashboard() {
             <div className="flex items-center gap-3">
               {view.participant ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-gray-300" />}
               <div className="flex-1">
-                <p className="font-medium">Event Registration</p>
-                <p className="text-xs text-muted-foreground">{view.participant?.status || 'Not registered in this event yet'}</p>
+                <p className="font-medium">Competition Registration</p>
+                <p className="text-xs text-muted-foreground">{view.participant?.status || 'Not registered in this competition yet'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -107,7 +107,7 @@ export function ParticipantDashboard() {
           <CardHeader>
             <CardTitle className="text-base">My Team</CardTitle>
             <CardDescription>
-              {view.team ? 'Your current team for the selected event.' : 'Create or join a team to continue.'}
+              {view.team ? 'Your current team for the selected competition.' : 'Create or join a team to continue.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -125,7 +125,7 @@ export function ParticipantDashboard() {
                       {view.team.leaderId === view.user?.id ? 'Leader' : 'Member'}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{view.selectedEvent?.title}</p>
+                  <p className="text-sm text-muted-foreground">{view.selectedCompetition?.title}</p>
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
@@ -215,8 +215,8 @@ export function ParticipantDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Event Timeline</CardTitle>
-          <CardDescription>Important milestones for the selected event.</CardDescription>
+          <CardTitle>Competition Timeline</CardTitle>
+          <CardDescription>Important milestones for the selected competition.</CardDescription>
         </CardHeader>
         <CardContent>
           {view.timelinesQuery.isLoading ? (
@@ -227,7 +227,7 @@ export function ParticipantDashboard() {
           ) : view.timelineItems.length === 0 ? (
             <Alert>
               <AlertTitle>No timeline items</AlertTitle>
-              <AlertDescription>The event schedule is not available yet.</AlertDescription>
+              <AlertDescription>The competition schedule is not available yet.</AlertDescription>
             </Alert>
           ) : (
             <div className="space-y-4">
@@ -243,7 +243,7 @@ export function ParticipantDashboard() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-sm">{item.title}</p>
-                      <Badge variant="outline">{item.eventType}</Badge>
+                      <Badge variant="outline">{item.activityType}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <Calendar className="w-3 h-3" />

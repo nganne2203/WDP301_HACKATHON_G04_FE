@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { eventsApi } from '@/entities/event/api';
+import { eventsApi } from '@/entities/competition/api';
 import { roundsApi } from '@/entities/round/api';
 import { rubricsApi } from '@/entities/rubric/api';
 import { teamsApi } from '@/entities/team/api';
@@ -10,7 +10,7 @@ import { usersApi } from '@/entities/user/api';
 import { workshopsApi } from '@/entities/workshop/api';
 import { ApiError } from '@/shared/api/client';
 import type {
-  ListEventsQuery,
+  ListCompetitionsQuery,
   ListRoundsQuery,
   ListRubricsQuery,
   ListTeamsQuery,
@@ -27,9 +27,9 @@ type QueryOptions = {
   staleTime?: number;
 };
 
-export function useEventsQuery(query: ListEventsQuery = { page: 1, limit: 10 }, options?: QueryOptions) {
+export function useCompetitionsQuery(query: ListCompetitionsQuery = { page: 1, limit: 10 }, options?: QueryOptions) {
   return useQuery({
-    queryKey: queryKeys.events.list(query),
+    queryKey: queryKeys.competitions.list(query),
     queryFn: async () => (await eventsApi.list(query)).data,
     ...options,
   });
@@ -67,14 +67,14 @@ export function useTeamsQuery(query: ListTeamsQuery, options?: QueryOptions) {
   });
 }
 
-export function useMyTeamQuery(eventId: string | undefined, options?: QueryOptions) {
+export function useMyTeamQuery(competitionId: string | undefined, options?: QueryOptions) {
   return useQuery({
-    queryKey: queryKeys.teams.my(eventId),
-    enabled: Boolean(eventId) && (options?.enabled ?? true),
+    queryKey: queryKeys.teams.my(competitionId),
+    enabled: Boolean(competitionId) && (options?.enabled ?? true),
     retry: false,
     queryFn: async () => {
       try {
-        return (await teamsApi.getMyTeam(eventId!)).data;
+        return (await teamsApi.getMyTeam(competitionId!)).data;
       } catch (error) {
         if (error instanceof ApiError && error.statusCode === 404) return null;
         throw error;
@@ -108,11 +108,11 @@ export function useWorkshopsQuery(query: ListWorkshopsQuery, options?: QueryOpti
   });
 }
 
-export function selectDefaultEvent<T extends { status?: string | null }>(events: T[] | undefined): T | null {
-  if (!events || !events.length) return null;
-  const ongoing = events.find((e) => e.status?.toUpperCase() === 'ONGOING');
+export function selectDefaultCompetition<T extends { status?: string | null }>(competitions: T[] | undefined): T | null {
+  if (!competitions || !competitions.length) return null;
+  const ongoing = competitions.find((e) => e.status?.toUpperCase() === 'ONGOING');
   if (ongoing) return ongoing;
-  const upcoming = events.find((e) => e.status?.toUpperCase() === 'UPCOMING');
+  const upcoming = competitions.find((e) => e.status?.toUpperCase() === 'UPCOMING');
   if (upcoming) return upcoming;
-  return events[0];
+  return competitions[0];
 }

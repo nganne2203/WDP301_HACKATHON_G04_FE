@@ -29,7 +29,7 @@ function getEmailEligibilityMessage(row: MemberInviteRow, duplicated: boolean) {
 }
 
 function MemberInviteRowFields({
-  activeEventId,
+  activeCompetitionId,
   disabled,
   duplicatedEmail,
   duplicatedGithubUsername,
@@ -38,7 +38,7 @@ function MemberInviteRowFields({
   rows,
   setRows,
 }: {
-  activeEventId?: string;
+  activeCompetitionId?: string;
   disabled?: boolean;
   duplicatedEmail: boolean;
   duplicatedGithubUsername: boolean;
@@ -53,10 +53,10 @@ function MemberInviteRowFields({
   const emailFormatValid = !normalizedEmail || emailPattern.test(normalizedEmail);
 
   const eligibilityQuery = useQuery({
-    queryKey: queryKeys.teams.inviteEligibility(activeEventId, debouncedEmail, githubUsername),
-    enabled: Boolean(activeEventId && debouncedEmail && emailFormatValid && !duplicatedEmail && !disabled),
+    queryKey: queryKeys.teams.inviteEligibility(activeCompetitionId, debouncedEmail, githubUsername),
+    enabled: Boolean(activeCompetitionId && debouncedEmail && emailFormatValid && !duplicatedEmail && !disabled),
     queryFn: async () => (await teamsApi.checkInviteEligibility({
-      eventId: activeEventId || '',
+      competitionId: activeCompetitionId || '',
       email: debouncedEmail,
       githubUsername: githubUsername || undefined,
     })).data,
@@ -92,8 +92,8 @@ function MemberInviteRowFields({
       return;
     }
 
-    if (!activeEventId || debouncedEmail !== normalizedEmail) {
-      updateMemberRow(setRows, row.id, 'emailInviteChecking', Boolean(activeEventId && normalizedEmail));
+    if (!activeCompetitionId || debouncedEmail !== normalizedEmail) {
+      updateMemberRow(setRows, row.id, 'emailInviteChecking', Boolean(activeCompetitionId && normalizedEmail));
       updateMemberRow(setRows, row.id, 'emailInviteValid', true);
       updateMemberRow(setRows, row.id, 'emailInviteMessage', '');
       return;
@@ -119,7 +119,7 @@ function MemberInviteRowFields({
       updateMemberRow(setRows, row.id, 'emailInviteMessage', eligibilityQuery.data.errors[0] || '');
     }
   }, [
-    activeEventId,
+    activeCompetitionId,
     debouncedEmail,
     duplicatedEmail,
     eligibilityQuery.data,
@@ -143,7 +143,7 @@ function MemberInviteRowFields({
         <Input
           id={`member-name-${row.id}`}
           value={row.fullName}
-          onChange={(event) => updateMemberRow(setRows, row.id, 'fullName', event.target.value)}
+          onChange={(competition) => updateMemberRow(setRows, row.id, 'fullName', competition.target.value)}
           placeholder="Nguyen Van A"
           disabled={disabled}
         />
@@ -155,9 +155,9 @@ function MemberInviteRowFields({
             id={`member-email-${row.id}`}
             type="email"
             value={row.email}
-            onChange={(event) => {
-              updateMemberRow(setRows, row.id, 'email', event.target.value);
-              updateMemberRow(setRows, row.id, 'emailInviteChecking', Boolean(event.target.value.trim()));
+            onChange={(competition) => {
+              updateMemberRow(setRows, row.id, 'email', competition.target.value);
+              updateMemberRow(setRows, row.id, 'emailInviteChecking', Boolean(competition.target.value.trim()));
               updateMemberRow(setRows, row.id, 'emailInviteValid', true);
               updateMemberRow(setRows, row.id, 'emailInviteMessage', '');
             }}
@@ -206,12 +206,12 @@ function MemberInviteRowFields({
 }
 
 export function MemberInviteFields({
-  activeEventId,
+  activeCompetitionId,
   rows,
   setRows,
   disabled,
 }: {
-  activeEventId?: string;
+  activeCompetitionId?: string;
   rows: MemberInviteRow[];
   setRows: Dispatch<SetStateAction<MemberInviteRow[]>>;
   disabled?: boolean;
@@ -241,7 +241,7 @@ export function MemberInviteFields({
       {rows.map((row, index) => (
         <MemberInviteRowFields
           key={row.id}
-          activeEventId={activeEventId}
+          activeCompetitionId={activeCompetitionId}
           disabled={disabled}
           duplicatedEmail={duplicatedEmails.has(row.email.trim().toLowerCase())}
           duplicatedGithubUsername={duplicatedGithubUsernames.has(row.githubUsername.trim().toLowerCase())}

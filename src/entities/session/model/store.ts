@@ -14,7 +14,7 @@ function deriveAppRole(user: ApiUser): AppRole {
   const roleNames = user.roles.map((r) => r.name?.toUpperCase()).filter(Boolean);
 
   if (roleNames.includes('ADMIN')) return 'admin';
-  if (roleNames.includes('EVENT_COORDINATOR') || roleNames.includes('COORDINATOR')) return 'coordinator';
+  if (roleNames.includes('COMPETITION_COORDINATOR') || roleNames.includes('COORDINATOR')) return 'coordinator';
   if (roleNames.includes('JUDGE')) return 'judge';
   if (roleNames.includes('MENTOR')) return 'mentor';
   if (roleNames.includes('SPEAKER')) return 'speaker';
@@ -25,7 +25,7 @@ function deriveAppRole(user: ApiUser): AppRole {
 // Store State
 // ============================================================
 
-interface SelectedEvent {
+interface SelectedCompetition {
   id: string;
   title: string;
   semester: string;
@@ -40,8 +40,8 @@ interface AuthState {
   /** Whether initial auth check is still in progress */
   isAuthLoading: boolean;
 
-  /** Currently selected event for the topbar */
-  selectedEvent: SelectedEvent | null;
+  /** Currently selected competition for the topbar */
+  selectedCompetition: SelectedCompetition | null;
   sidebarCollapsed: boolean;
 
   // Actions
@@ -54,7 +54,7 @@ interface AuthState {
   hasPermission: (permission: string) => boolean;
   /** Fetch the current user from GET /auth/me and refresh the store */
   fetchCurrentUser: () => Promise<void>;
-  setSelectedEvent: (event: SelectedEvent | null) => void;
+  setSelectedCompetition: (competition: SelectedCompetition | null) => void;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setAuthLoading: (loading: boolean) => void;
@@ -64,7 +64,7 @@ export const useStore = create<AuthState>((set, get) => ({
   user: null,
   appRole: null,
   isAuthLoading: true,
-  selectedEvent: null,
+  selectedCompetition: null,
   sidebarCollapsed: false,
 
   setAuth: (user, accessToken, refreshToken) => {
@@ -77,7 +77,7 @@ export const useStore = create<AuthState>((set, get) => ({
       set({ user, appRole: deriveAppRole(user) });
     } else {
       clearTokens();
-      set({ user: null, appRole: null, selectedEvent: null });
+      set({ user: null, appRole: null, selectedCompetition: null });
     }
   },
 
@@ -91,7 +91,7 @@ export const useStore = create<AuthState>((set, get) => ({
       // Ignore errors on logout
     } finally {
       clearTokens();
-      set({ user: null, appRole: null, selectedEvent: null, isAuthLoading: false });
+      set({ user: null, appRole: null, selectedCompetition: null, isAuthLoading: false });
     }
   },
 
@@ -124,7 +124,7 @@ export const useStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setSelectedEvent: (event) => set({ selectedEvent: event }),
+  setSelectedCompetition: (competition) => set({ selectedCompetition: competition }),
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
   setAuthLoading: (loading) => set({ isAuthLoading: loading }),
@@ -143,8 +143,8 @@ export interface User {
   role: UserRole;
 }
 
-// Legacy Event type for backward compatibility
-export interface Event {
+// Legacy Competition type for backward compatibility
+export interface Competition {
   id: string;
   title: string;
   semester: string;

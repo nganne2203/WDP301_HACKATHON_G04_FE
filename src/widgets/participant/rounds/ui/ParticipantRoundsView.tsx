@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarClock, ExternalLink, FileText, Loader2, Trophy } from 'lucide-react';
 
-import { useEventsQuery, useMyTeamQuery, useRoundsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useMyTeamQuery, useRoundsQuery, selectDefaultCompetition } from '@/hooks/queries/useCommonQueries';
 import { useStore } from '@/entities/session/model/store';
 import type { Round } from '@/shared/api/types';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
@@ -45,7 +45,7 @@ function getRoundState(round: Round, now: number) {
 }
 
 export function ParticipantRoundsView() {
-  const storeSelectedEvent = useStore((state) => state.selectedEvent);
+  const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -53,14 +53,14 @@ export function ParticipantRoundsView() {
     return () => window.clearInterval(intervalId);
   }, []);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
 
-  const selectedEvent = (storeSelectedEvent ? events.find((event) => event.id === storeSelectedEvent.id) : null) || selectDefaultEvent(events) || events[0] || null;
-  const activeEventId = selectedEvent?.id || '';
-  const teamQuery = useMyTeamQuery(activeEventId);
+  const selectedCompetition = (storeSelectedCompetition ? competitions.find((competition) => competition.id === storeSelectedCompetition.id) : null) || selectDefaultCompetition(competitions) || competitions[0] || null;
+  const activeCompetitionId = selectedCompetition?.id || '';
+  const teamQuery = useMyTeamQuery(activeCompetitionId);
   const team = teamQuery.data;
-  const roundsQuery = useRoundsQuery({ eventId: activeEventId, limit: 50 }, { enabled: Boolean(activeEventId) });
+  const roundsQuery = useRoundsQuery({ competitionId: activeCompetitionId, limit: 50 }, { enabled: Boolean(activeCompetitionId) });
   const rounds = useMemo(
     () => (roundsQuery.data || []).filter((round) => isRoundVisibleForTeam(round, team?.id)),
     [roundsQuery.data, team?.id]
@@ -83,7 +83,7 @@ export function ParticipantRoundsView() {
         </Alert>
       )}
 
-      {!teamQuery.isLoading && !team && selectedEvent && (
+      {!teamQuery.isLoading && !team && selectedCompetition && (
         <Alert>
           <AlertTitle>No team found</AlertTitle>
           <AlertDescription>You need to create or join a team before round assignments can be matched to you.</AlertDescription>
