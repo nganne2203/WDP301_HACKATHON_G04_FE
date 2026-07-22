@@ -12,50 +12,50 @@ import {
   type MemberInviteRow,
 } from '@/features/team/member-invites/model/helpers';
 import type { TeamAvailability, TeamInvitation } from '@/shared/api/types';
-import { useEventsQuery, useMyTeamQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useMyTeamQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { CHAT_ROOMS_QUERY_KEY } from '@/shared/lib/chatRoomCache';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
 
 function getTeamAvailabilityMessage(availability?: TeamAvailability | null) {
   if (!availability || availability.available) return '';
-  if (!availability.nameAvailable) return 'Team name already exists in this event.';
-  if (!availability.leaderAvailable) return 'You already created a team for this event.';
-  return availability.errors[0] || 'Team name or leader already exists in this event.';
+  if (!availability.nameAvailable) return 'Team name already exists in this competition.';
+  if (!availability.leaderAvailable) return 'You already created a team for this competition.';
+  return availability.errors[0] || 'Team name or leader already exists in this competition.';
 }
 
 export function useParticipantTeamView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
-  const storeSelectedEvent = useStore((state) => state.selectedEvent);
+  const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
   const [teamName, setTeamName] = useState('');
   const [invitedMembers, setInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [newInvitedMembers, setNewInvitedMembers] = useState<MemberInviteRow[]>([createMemberRow()]);
   const [replacementEmails, setReplacementEmails] = useState<Record<string, string>>({});
   const [createValidationPending, setCreateValidationPending] = useState(false);
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
-  const selectedEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === storeSelectedEvent?.id) || events.find(isRegistrationOpen) || events[0];
-  }, [events, storeSelectedEvent?.id]);
+  const competitions = eventsQuery.data || [];
+  const selectedCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === storeSelectedCompetition?.id) || competitions.find(isRegistrationOpen) || competitions[0];
+  }, [competitions, storeSelectedCompetition?.id]);
 
-  const activeEventId = selectedEvent?.id || '';
+  const activeCompetitionId = selectedCompetition?.id || '';
 
-  const teamQuery = useMyTeamQuery(activeEventId);
+  const teamQuery = useMyTeamQuery(activeCompetitionId);
   const team = teamQuery.data;
-  const registrationOpen = isRegistrationOpen(selectedEvent);
+  const registrationOpen = isRegistrationOpen(selectedCompetition);
   const trimmedTeamName = teamName.trim();
   const debouncedTeamName = useDebouncedValue(trimmedTeamName, 350);
 
   const teamAvailabilityQuery = useQuery({
-    queryKey: queryKeys.teams.availability(activeEventId, debouncedTeamName),
-    enabled: Boolean(activeEventId && registrationOpen && !team && debouncedTeamName.length >= 2),
+    queryKey: queryKeys.teams.availability(activeCompetitionId, debouncedTeamName),
+    enabled: Boolean(activeCompetitionId && registrationOpen && !team && debouncedTeamName.length >= 2),
     queryFn: async () => {
       const response = await teamsApi.checkAvailability({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         name: debouncedTeamName,
       });
       return response.data;
@@ -67,13 +67,13 @@ export function useParticipantTeamView() {
   const teamNameValidationMessage = useMemo(() => {
     if (!trimmedTeamName) return '';
     if (trimmedTeamName.length < 2) return 'Team name must be at least 2 characters.';
-    if (team) return 'You already created a team for this event.';
+    if (team) return 'You already created a team for this competition.';
     if (!isTeamNameCheckCurrent) return '';
     return getTeamAvailabilityMessage(teamAvailabilityQuery.data);
   }, [isTeamNameCheckCurrent, team, teamAvailabilityQuery.data, trimmedTeamName]);
 
   const teamNameChecking = Boolean(
-    activeEventId &&
+    activeCompetitionId &&
     registrationOpen &&
     !team &&
     trimmedTeamName.length >= 2 &&
@@ -82,17 +82,17 @@ export function useParticipantTeamView() {
 
   const invalidateTeam = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.teams.my(activeEventId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.teams.my(activeCompetitionId) }),
       queryClient.invalidateQueries({ queryKey: CHAT_ROOMS_QUERY_KEY }),
     ]);
   };
 
   const createTeamMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       const members = normalizeMemberRows(invitedMembers, user?.email);
       const response = await teamsApi.create({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         name: teamName.trim(),
         invitedMembers: members,
       });
@@ -179,19 +179,19 @@ export function useParticipantTeamView() {
     }
 
     if (team) {
-      toast.error('You already created a team for this event.');
+      toast.error('You already created a team for this competition.');
       return;
     }
 
-    if (!activeEventId) {
-      toast.error('Please select an event first.');
+    if (!activeCompetitionId) {
+      toast.error('Please select an competition first.');
       return;
     }
 
     setCreateValidationPending(true);
     try {
       const response = await teamsApi.checkAvailability({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         name: trimmedTeamName,
       });
       const availabilityMessage = getTeamAvailabilityMessage(response.data);
@@ -214,13 +214,13 @@ export function useParticipantTeamView() {
   }
 
   return {
-    activeEventId,
+    activeCompetitionId,
     canChangeInvitations,
     canLeaveTeam,
     cancelMutation,
     createValidationPending,
     createTeamMutation,
-    events,
+    competitions,
     eventsQuery,
     handleCreateTeam,
     handleInvite,
@@ -232,7 +232,7 @@ export function useParticipantTeamView() {
     registrationOpen,
     replacementEmails,
     replaceMutation,
-    selectedEvent,
+    selectedCompetition,
     setInvitedMembers,
     setNewInvitedMembers,
     setReplacementEmails,

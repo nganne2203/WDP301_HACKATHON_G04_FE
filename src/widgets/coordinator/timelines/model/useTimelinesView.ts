@@ -4,10 +4,10 @@ import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
 import { timelinesApi } from '@/shared/api';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
-import type { CreateTimelineRequest, TimelineEvent, UpdateTimelineRequest } from '@/shared/api/types';
+import type { CreateTimelineRequest, TimelineActivity, UpdateTimelineRequest } from '@/shared/api/types';
 
 import {
   buildTimelinePayload,
@@ -19,27 +19,27 @@ import {
 
 export function useTimelinesView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [selectedTimeline, setSelectedTimeline] = useState<TimelineEvent | null>(null);
+  const [selectedTimeline, setSelectedTimeline] = useState<TimelineActivity | null>(null);
   const [createForm, setCreateForm] = useState<TimelineFormState>(createEmptyTimelineForm());
   const [editForm, setEditForm] = useState<TimelineFormState>(createEmptyTimelineForm());
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
   const timelinesQuery = useQuery({
-    queryKey: queryKeys.timelines.list({ eventId: activeEvent?.id, page, limit: 10 }),
-    enabled: Boolean(activeEvent?.id),
-    queryFn: () => timelinesApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
+    queryKey: queryKeys.timelines.list({ competitionId: activeCompetition?.id, page, limit: 10 }),
+    enabled: Boolean(activeCompetition?.id),
+    queryFn: () => timelinesApi.list({ competitionId: activeCompetition?.id, page, limit: 10 }),
   });
 
   const timelines = timelinesQuery.data?.data || [];
@@ -91,12 +91,12 @@ export function useTimelinesView() {
   });
 
   const handleCreate = () => {
-    if (!activeEvent?.id) return;
+    if (!activeCompetition?.id) return;
     if (!createForm.title.trim()) {
       toast.error('Timeline title is required');
       return;
     }
-    createMutation.mutate(buildTimelinePayload(createForm, activeEvent.id));
+    createMutation.mutate(buildTimelinePayload(createForm, activeCompetition.id));
   };
 
   const handleUpdate = () => {
@@ -111,7 +111,7 @@ export function useTimelinesView() {
     });
   };
 
-  const openEditDialog = (timeline: TimelineEvent) => {
+  const openEditDialog = (timeline: TimelineActivity) => {
     setSelectedTimeline(timeline);
     setEditForm(mapTimelineToForm(timeline));
     setEditOpen(true);
@@ -122,7 +122,7 @@ export function useTimelinesView() {
 
   return {
     activeCount,
-    activeEvent,
+    activeCompetition,
     completedCount,
     createForm,
     createMutation,
@@ -131,7 +131,7 @@ export function useTimelinesView() {
     deleteOpen,
     editForm,
     editOpen,
-    events,
+    competitions,
     eventsQuery,
     handleCreate,
     handleUpdate,

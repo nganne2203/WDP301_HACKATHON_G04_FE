@@ -9,14 +9,14 @@ import { useStore } from '@/entities/session/model/store';
 import { submissionsApi } from '@/entities/submission/api';
 import { participantsApi } from '@/shared/api/participants';
 import { ApiError } from '@/shared/api/client';
-import { useEventsQuery, useMyTeamQuery, useRoundsQuery, useTimelinesQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useMyTeamQuery, useRoundsQuery, useTimelinesQuery, selectDefaultCompetition } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 
 function getCheckInErrorMessage(error: unknown) {
   if (error instanceof ApiError) {
     if (error.code === 'CHECK_IN_QR_EXPIRED') return 'This check-in QR has expired. Ask the coordinator for a new one.';
-    if (error.code === 'PARTICIPANT_ALREADY_CHECKED_IN') return 'You have already checked in for this event.';
-    if (error.code === 'INVALID_CHECK_IN_QR') return 'This is not a valid event check-in QR.';
+    if (error.code === 'PARTICIPANT_ALREADY_CHECKED_IN') return 'You have already checked in for this competition.';
+    if (error.code === 'INVALID_CHECK_IN_QR') return 'This is not a valid competition check-in QR.';
     return error.firstError;
   }
   if (error instanceof Error) return error.message;
@@ -29,33 +29,33 @@ export function useParticipantDashboardView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
-  const storeSelectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
   const processedCheckInTokenRef = useRef<string | null>(null);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
 
-  // Sync ongoing/default event with store if not already set
+  // Sync ongoing/default competition with store if not already set
   useEffect(() => {
-    if (events.length > 0 && !storeSelectedEvent) {
-      const defaultEvent = selectDefaultEvent(events) || events[0];
-      setSelectedEvent({
-        id: defaultEvent.id,
-        title: defaultEvent.title,
-        semester: defaultEvent.semester || '',
-        status: defaultEvent.status,
+    if (competitions.length > 0 && !storeSelectedCompetition) {
+      const defaultCompetition = selectDefaultCompetition(competitions) || competitions[0];
+      setSelectedCompetition({
+        id: defaultCompetition.id,
+        title: defaultCompetition.title,
+        semester: defaultCompetition.semester || '',
+        status: defaultCompetition.status,
       });
     }
-  }, [events, storeSelectedEvent, setSelectedEvent]);
+  }, [competitions, storeSelectedCompetition, setSelectedCompetition]);
 
-  const selectedEvent = useMemo(() => {
-    if (!events.length) return null;
-    if (storeSelectedEvent) {
-      return events.find((event) => event.id === storeSelectedEvent.id) || events[0];
+  const selectedCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    if (storeSelectedCompetition) {
+      return competitions.find((competition) => competition.id === storeSelectedCompetition.id) || competitions[0];
     }
-    return selectDefaultEvent(events) || events[0];
-  }, [events, storeSelectedEvent]);
+    return selectDefaultCompetition(competitions) || competitions[0];
+  }, [competitions, storeSelectedCompetition]);
 
   const clearCheckInTokenFromUrl = useCallback(() => {
     const params = new URLSearchParams(location.search);
@@ -75,13 +75,13 @@ export function useParticipantDashboardView() {
   const urlCheckInMutation = useMutation({
     mutationFn: (token: string) => participantsApi.scanCheckInQr(token),
     onSuccess: async (response) => {
-      const checkedInEvent = events.find((event) => event.id === response.data.eventId);
-      if (checkedInEvent) {
-        setSelectedEvent({
-          id: checkedInEvent.id,
-          title: checkedInEvent.title,
-          semester: checkedInEvent.semester || '',
-          status: checkedInEvent.status,
+      const checkedInCompetition = competitions.find((competition) => competition.id === response.data.competitionId);
+      if (checkedInCompetition) {
+        setSelectedCompetition({
+          id: checkedInCompetition.id,
+          title: checkedInCompetition.title,
+          semester: checkedInCompetition.semester || '',
+          status: checkedInCompetition.status,
         });
       }
 
@@ -105,27 +105,27 @@ export function useParticipantDashboardView() {
     urlCheckInMutation.mutate(checkInToken);
   }, [location.search, urlCheckInMutation]);
 
-  const teamQuery = useMyTeamQuery(selectedEvent?.id);
+  const teamQuery = useMyTeamQuery(selectedCompetition?.id);
   const team = teamQuery.data;
 
   const participantQuery = useQuery({
-    queryKey: [...queryKeys.participants.all, 'me', selectedEvent?.id],
-    enabled: Boolean(selectedEvent?.id && user?.id),
-    queryFn: async () => (await participantsApi.getMine(selectedEvent!.id)).data,
+    queryKey: [...queryKeys.participants.all, 'me', selectedCompetition?.id],
+    enabled: Boolean(selectedCompetition?.id && user?.id),
+    queryFn: async () => (await participantsApi.getMine(selectedCompetition!.id)).data,
     retry: false,
   });
 
   const participant = participantQuery.data || null;
 
-  const roundsQuery = useRoundsQuery({ eventId: selectedEvent?.id, limit: 20 }, { enabled: Boolean(selectedEvent?.id) });
+  const roundsQuery = useRoundsQuery({ competitionId: selectedCompetition?.id, limit: 20 }, { enabled: Boolean(selectedCompetition?.id) });
   const rounds = roundsQuery.data || [];
 
   const submissionsQuery = useQuery({
-    queryKey: queryKeys.submissions.list({ eventId: selectedEvent?.id, teamId: team?.id, limit: 20 }),
-    enabled: Boolean(selectedEvent?.id && team?.id),
+    queryKey: queryKeys.submissions.list({ competitionId: selectedCompetition?.id, teamId: team?.id, limit: 20 }),
+    enabled: Boolean(selectedCompetition?.id && team?.id),
     queryFn: async () =>
       (await submissionsApi.list({
-        eventId: selectedEvent?.id,
+        competitionId: selectedCompetition?.id,
         teamId: team?.id,
         limit: 20,
       })).data,
@@ -133,8 +133,8 @@ export function useParticipantDashboardView() {
   const submissions = submissionsQuery.data || [];
 
   const timelinesQuery = useTimelinesQuery(
-    { eventId: selectedEvent?.id, limit: 20 },
-    { enabled: Boolean(selectedEvent?.id) }
+    { competitionId: selectedCompetition?.id, limit: 20 },
+    { enabled: Boolean(selectedCompetition?.id) }
   );
   const timelineItems = useMemo(
     () => [...(timelinesQuery.data || [])].sort((left, right) => {
@@ -146,16 +146,16 @@ export function useParticipantDashboardView() {
   );
 
   const rankingsQuery = useQuery({
-    queryKey: queryKeys.rankings.list(selectedEvent?.id, undefined),
-    enabled: Boolean(selectedEvent?.id && appRole),
-    queryFn: async () => (await rankingsApi.list({ eventId: selectedEvent?.id, limit: 50 })).data,
+    queryKey: queryKeys.rankings.list(selectedCompetition?.id, undefined),
+    enabled: Boolean(selectedCompetition?.id && appRole),
+    queryFn: async () => (await rankingsApi.list({ competitionId: selectedCompetition?.id, limit: 50 })).data,
   });
   const rankings = rankingsQuery.data || [];
 
   const finalistsQuery = useQuery({
-    queryKey: queryKeys.finalists.list(selectedEvent?.id, undefined),
-    enabled: Boolean(selectedEvent?.id && appRole),
-    queryFn: async () => (await finalistsApi.list({ eventId: selectedEvent?.id, limit: 50 })).data,
+    queryKey: queryKeys.finalists.list(selectedCompetition?.id, undefined),
+    enabled: Boolean(selectedCompetition?.id && appRole),
+    queryFn: async () => (await finalistsApi.list({ competitionId: selectedCompetition?.id, limit: 50 })).data,
   });
   const finalists = finalistsQuery.data || [];
 
@@ -176,8 +176,8 @@ export function useParticipantDashboardView() {
   return {
     user,
     eventsQuery,
-    events,
-    selectedEvent,
+    competitions,
+    selectedCompetition,
     participantQuery,
     participant,
     teamQuery,

@@ -22,12 +22,12 @@ export function ParticipantMedia() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Media</h1>
-        <p className="text-sm text-muted-foreground">Upload event media and track moderation status.</p>
+        <p className="text-sm text-muted-foreground">Upload competition media and track moderation status.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(360px,440px)_1fr]">
         <MediaUploadCard
-          selectedEventId={view.selectedEventId}
+          selectedCompetitionId={view.selectedCompetitionId}
           title={view.title}
           setTitle={view.setTitle}
           description={view.description}

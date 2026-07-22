@@ -50,7 +50,7 @@ export function normalizeMemberRows(rows: MemberInviteRow[], leaderEmail?: strin
 
   const invalidEmailRow = rows.find((row) => row.email.trim() && row.emailInviteValid === false);
   if (invalidEmailRow) {
-    throw new Error(invalidEmailRow.emailInviteMessage || 'One invited member cannot be invited to this event.');
+    throw new Error(invalidEmailRow.emailInviteMessage || 'One invited member cannot be invited to this competition.');
   }
 
   const normalizedLeaderEmail = leaderEmail?.trim().toLowerCase();
@@ -76,11 +76,11 @@ export function normalizeMemberRows(rows: MemberInviteRow[], leaderEmail?: strin
   return members;
 }
 
-export function isRegistrationOpen(event?: { status: string; registrationStart?: string | null; registrationEnd?: string | null } | null) {
-  if (!event || event.status !== 'OPEN_REGISTRATION') return false;
+export function isRegistrationOpen(competition?: { status: string; registrationStart?: string | null; registrationEnd?: string | null } | null) {
+  if (!competition || competition.status !== 'OPEN_REGISTRATION') return false;
   const now = new Date();
-  if (event.registrationStart && now < new Date(event.registrationStart)) return false;
-  if (event.registrationEnd && now > new Date(event.registrationEnd)) return false;
+  if (competition.registrationStart && now < new Date(competition.registrationStart)) return false;
+  if (competition.registrationEnd && now > new Date(competition.registrationEnd)) return false;
   return true;
 }
 

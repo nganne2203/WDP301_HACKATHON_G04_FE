@@ -133,7 +133,7 @@ export function GitHubUserPicker({
         <Input
           id={id}
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(competition) => onChange(competition.target.value)}
           placeholder={placeholder}
           disabled={disabled}
           className="pl-9 pr-9"

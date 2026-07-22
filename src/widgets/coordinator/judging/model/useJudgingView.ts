@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { judgingBoardsApi } from '@/entities/judging-board/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { JudgingBoard, JudgingBoardRandomizationPreview, Round } from '@/shared/api/types';
 
@@ -16,7 +16,7 @@ export function statusVariant(status: string) {
 
 export function useJudgingView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [selectedRoundId, setSelectedRoundId] = useState('');
   const [selectedBoard, setSelectedBoard] = useState<JudgingBoard | null>(null);
   const [showRandomizeConfirm, setShowRandomizeConfirm] = useState(false);
@@ -25,14 +25,14 @@ export function useJudgingView() {
   const [randomizationPreview, setRandomizationPreview] = useState<JudgingBoardRandomizationPreview | null>(null);
   const [showRandomizationPreview, setShowRandomizationPreview] = useState(false);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(
-    () => events.find((event) => event.id === selectedEvent?.id) || events[0] || null,
-    [events, selectedEvent?.id]
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(
+    () => competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0] || null,
+    [competitions, selectedCompetition?.id]
   );
 
-  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
+  const roundsQuery = useRoundsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
   const rounds: Round[] = roundsQuery.data || [];
   const activeRound = useMemo(
     () => rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null,
@@ -48,9 +48,9 @@ export function useJudgingView() {
   );
 
   const boardsQuery = useQuery({
-    queryKey: [...queryKeys.judging.boards(activeEvent?.id), activeRound?.roundType],
-    enabled: Boolean(activeEvent?.id && activeRound?.roundType),
-    queryFn: () => judgingBoardsApi.list({ eventId: activeEvent!.id, limit: 100 }),
+    queryKey: [...queryKeys.judging.boards(activeCompetition?.id), activeRound?.roundType],
+    enabled: Boolean(activeCompetition?.id && activeRound?.roundType),
+    queryFn: () => judgingBoardsApi.list({ competitionId: activeCompetition!.id, limit: 100 }),
   });
   const boards: JudgingBoard[] = (boardsQuery.data?.data || []).filter((board) =>
     activeRounds.some((round) => round.id === board.roundId)
@@ -60,8 +60,8 @@ export function useJudgingView() {
 
   const randomizePreviewMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEvent || activeRounds.length === 0) throw new Error('No judging round selected');
-      const response = await judgingBoardsApi.randomizePreview({ eventId: activeEvent.id, roundId: activeRound.id });
+      if (!activeCompetition || activeRounds.length === 0) throw new Error('No judging round selected');
+      const response = await judgingBoardsApi.randomizePreview({ competitionId: activeCompetition.id, roundId: activeRound.id });
       return response.data;
     },
     onSuccess: (response) => {
@@ -77,12 +77,12 @@ export function useJudgingView() {
 
   const confirmRandomizationMutation = useMutation({
     mutationFn: () => {
-      if (!activeEvent || activeRounds.length === 0 || !randomizationPreview) {
+      if (!activeCompetition || activeRounds.length === 0 || !randomizationPreview) {
         throw new Error('Missing data required to confirm board assignment');
       }
 
       return judgingBoardsApi.confirmRandomization({
-        eventId: activeEvent.id,
+        competitionId: activeCompetition.id,
         roundId: activeRound!.id,
         boards: randomizationPreview.boards.map((board) => ({ boardNumber: board.boardNumber, name: board.name, teamIds: board.teamIds }))
       });
@@ -114,8 +114,8 @@ export function useJudgingView() {
     showRandomizationPreview,
     setShowRandomizationPreview,
     eventsQuery,
-    events,
-    activeEvent,
+    competitions,
+    activeCompetition,
     roundsQuery,
     rounds,
     activeRound,

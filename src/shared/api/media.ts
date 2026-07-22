@@ -3,8 +3,8 @@ import type {
   AdminMediaFilter,
   ApiErrorResponse,
   ApiSuccessResponse,
-  EventGalleryFilter,
-  EventGalleryResponse,
+  CompetitionGalleryFilter,
+  CompetitionGalleryResponse,
   MediaHistoryFilter,
   MediaItem,
   MediaStatistics,
@@ -32,9 +32,9 @@ export const mediaApi = {
         request.setRequestHeader('Authorization', `Bearer ${token}`);
       }
 
-      request.upload.onprogress = (event) => {
-        if (!event.lengthComputable || !onProgress) return;
-        onProgress(Math.round((event.loaded / event.total) * 100));
+      request.upload.onprogress = (competition) => {
+        if (!competition.lengthComputable || !onProgress) return;
+        onProgress(Math.round((competition.loaded / competition.total) * 100));
       };
 
       request.onload = () => {
@@ -64,8 +64,8 @@ export const mediaApi = {
   getMyHistory: (filters?: MediaHistoryFilter) =>
     api.get<MediaItem[]>('/media/my-history', { params: filters as Record<string, string | number | undefined> }),
 
-  getEventGallery: (eventId: string, filters?: EventGalleryFilter) =>
-    api.get<EventGalleryResponse>(`/events/${eventId}/gallery`, { params: filters as Record<string, string | number | undefined> }),
+  getCompetitionGallery: (competitionId: string, filters?: CompetitionGalleryFilter) =>
+    api.get<CompetitionGalleryResponse>(`/competitions/${competitionId}/gallery`, { params: filters as Record<string, string | number | undefined> }),
 
   getViewUrl: (mediaId: string) =>
     api.get<SignedUrlResponse>(`/media/${mediaId}/view-url`),

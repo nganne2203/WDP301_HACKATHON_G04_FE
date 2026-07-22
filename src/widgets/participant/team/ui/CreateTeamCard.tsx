@@ -8,7 +8,7 @@ import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 
 interface CreateTeamCardProps {
-  activeEventId: string;
+  activeCompetitionId: string;
   createPending: boolean;
   invitedMembers: MemberInviteRow[];
   onCreateTeam: () => void;
@@ -21,7 +21,7 @@ interface CreateTeamCardProps {
 }
 
 export function CreateTeamCard({
-  activeEventId,
+  activeCompetitionId,
   createPending,
   invitedMembers,
   onCreateTeam,
@@ -48,7 +48,7 @@ export function CreateTeamCard({
           <Input
             id="teamName"
             value={teamName}
-            onChange={(event) => setTeamName(event.target.value)}
+            onChange={(competition) => setTeamName(competition.target.value)}
             placeholder="Enter team name"
             disabled={!registrationOpen}
             aria-invalid={hasTeamNameError}
@@ -70,7 +70,7 @@ export function CreateTeamCard({
         <div className="space-y-2">
           <Label>Team members</Label>
           <MemberInviteFields
-            activeEventId={activeEventId}
+            activeCompetitionId={activeCompetitionId}
             rows={invitedMembers}
             setRows={setInvitedMembers}
             disabled={!registrationOpen}

@@ -27,7 +27,7 @@ export function ParticipantSubmissions() {
 
       {view.eventsQuery.error && (
         <Alert>
-          <AlertTitle>Could not load events</AlertTitle>
+          <AlertTitle>Could not load competitions</AlertTitle>
           <AlertDescription>{getSubmissionErrorMessage(view.eventsQuery.error)}</AlertDescription>
         </Alert>
       )}
@@ -36,14 +36,14 @@ export function ParticipantSubmissions() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading team</AlertTitle>
-          <AlertDescription>Checking your active team for this event.</AlertDescription>
+          <AlertDescription>Checking your active team for this competition.</AlertDescription>
         </Alert>
       )}
 
-      {!view.teamQuery.isLoading && !view.team && view.selectedEvent && (
+      {!view.teamQuery.isLoading && !view.team && view.selectedCompetition && (
         <Alert>
           <AlertTitle>No team found</AlertTitle>
-          <AlertDescription>Create or join a team in this event before submitting round artifacts.</AlertDescription>
+          <AlertDescription>Create or join a team in this competition before submitting round artifacts.</AlertDescription>
         </Alert>
       )}
 
@@ -51,7 +51,7 @@ export function ParticipantSubmissions() {
         <Card>
           <CardHeader>
             <CardTitle>{view.team.name}</CardTitle>
-            <CardDescription>{view.selectedEvent?.title}</CardDescription>
+            <CardDescription>{view.selectedCompetition?.title}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-3 text-sm">
             <div>Leader: {view.user?.fullName || view.user?.email}</div>

@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { AlertCircle } from 'lucide-react';
 
-import type { TimelineEvent, User, WorkshopStatus } from '@/shared/api/types';
+import type { TimelineActivity, User, WorkshopStatus } from '@/shared/api/types';
 import { Card } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -21,7 +21,7 @@ export function WorkshopForm({
   onChange: Dispatch<SetStateAction<WorkshopFormState>>;
   presenters: User[];
   presentersLoading?: boolean;
-  timelines: TimelineEvent[];
+  timelines: TimelineActivity[];
 }) {
 
   return (
@@ -32,15 +32,15 @@ export function WorkshopForm({
           <Input
             id="workshop-title"
             value={form.title}
-            onChange={(event) => onChange((current) => ({ ...current, title: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, title: competition.target.value }))}
             placeholder="GitHub workflow clinic"
           />
         </div>
         <div className="space-y-2">
           <Label>Timeline Item</Label>
           <Select
-            value={form.timelineEventId}
-            onValueChange={(value) => onChange((current) => ({ ...current, timelineEventId: value }))}
+            value={form.timelineActivityId}
+            onValueChange={(value) => onChange((current) => ({ ...current, timelineActivityId: value }))}
           >
             <SelectTrigger>
               <SelectValue placeholder="Optional timeline reference" />
@@ -64,7 +64,7 @@ export function WorkshopForm({
             id="workshop-start"
             type="datetime-local"
             value={form.startTime}
-            onChange={(event) => onChange((current) => ({ ...current, startTime: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, startTime: competition.target.value }))}
           />
         </div>
         <div className="space-y-2">
@@ -73,7 +73,7 @@ export function WorkshopForm({
             id="workshop-end"
             type="datetime-local"
             value={form.endTime}
-            onChange={(event) => onChange((current) => ({ ...current, endTime: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, endTime: competition.target.value }))}
           />
         </div>
       </div>
@@ -129,7 +129,7 @@ export function WorkshopForm({
           <Input
             id="speaker-name"
             value={form.speakerName}
-            onChange={(event) => onChange((current) => ({ ...current, speakerName: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, speakerName: competition.target.value }))}
             placeholder="Internal or guest speaker name"
           />
         </div>
@@ -138,7 +138,7 @@ export function WorkshopForm({
           <Input
             id="speaker-title"
             value={form.speakerTitle}
-            onChange={(event) => onChange((current) => ({ ...current, speakerTitle: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, speakerTitle: competition.target.value }))}
             placeholder="Mentor, Engineer, Lecturer..."
           />
         </div>
@@ -151,7 +151,7 @@ export function WorkshopForm({
             id="speaker-email"
             type="email"
             value={form.speakerEmail}
-            onChange={(event) => onChange((current) => ({ ...current, speakerEmail: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, speakerEmail: competition.target.value }))}
             placeholder="speaker@example.com"
           />
         </div>
@@ -160,7 +160,7 @@ export function WorkshopForm({
           <Input
             id="workshop-link"
             value={form.meetLink}
-            onChange={(event) => onChange((current) => ({ ...current, meetLink: event.target.value }))}
+            onChange={(competition) => onChange((current) => ({ ...current, meetLink: competition.target.value }))}
             placeholder="https://meet.google.com/..."
           />
         </div>
@@ -172,7 +172,7 @@ export function WorkshopForm({
           id="workshop-description"
           rows={3}
           value={form.description}
-          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, description: competition.target.value }))}
           placeholder="Describe the workshop and expected attendee outcome."
         />
       </div>
@@ -183,8 +183,8 @@ export function WorkshopForm({
           id="speaker-bio"
           rows={3}
           value={form.speakerBio}
-          onChange={(event) => onChange((current) => ({ ...current, speakerBio: event.target.value }))}
-          placeholder="Short speaker biography for event staff."
+          onChange={(competition) => onChange((current) => ({ ...current, speakerBio: competition.target.value }))}
+          placeholder="Short speaker biography for competition staff."
         />
       </div>
 
@@ -194,7 +194,7 @@ export function WorkshopForm({
           id="workshop-questionnaire"
           rows={4}
           value={form.questionnaire}
-          onChange={(event) => onChange((current) => ({ ...current, questionnaire: event.target.value }))}
+          onChange={(competition) => onChange((current) => ({ ...current, questionnaire: competition.target.value }))}
           placeholder="One question per line. These will be sent as a string array."
         />
       </div>

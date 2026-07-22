@@ -12,7 +12,7 @@ const appRoleHomePaths: Record<AppRole, string> = {
 
 const appRoleLabels: Record<AppRole, string> = {
   admin: 'Administrator',
-  coordinator: 'Event Coordinator',
+  coordinator: 'Competition Coordinator',
   judge: 'Judge',
   mentor: 'Mentor',
   speaker: 'Speaker',
@@ -30,7 +30,7 @@ export function resolveHomePathForUser(user: Pick<ApiUser, 'roles' | 'mustChange
   const roleNames = user.roles.map((role) => role.name?.toUpperCase()).filter(Boolean);
 
   if (roleNames.includes('ADMIN')) return '/admin';
-  if (roleNames.includes('EVENT_COORDINATOR') || roleNames.includes('COORDINATOR')) return '/coordinator';
+  if (roleNames.includes('COMPETITION_COORDINATOR') || roleNames.includes('COORDINATOR')) return '/coordinator';
   if (roleNames.includes('JUDGE')) return '/judge';
   if (roleNames.includes('MENTOR')) return '/mentor';
   if (roleNames.includes('SPEAKER')) return '/mentor';

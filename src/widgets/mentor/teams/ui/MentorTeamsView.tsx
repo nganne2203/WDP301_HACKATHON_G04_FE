@@ -47,7 +47,7 @@ export function MentorTeams() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading teams</AlertTitle>
-          <AlertDescription>Loading teams for this event.</AlertDescription>
+          <AlertDescription>Loading teams for this competition.</AlertDescription>
         </Alert>
       ) : view.teams.length === 0 ? (
         <Alert>
@@ -55,7 +55,7 @@ export function MentorTeams() {
           <AlertDescription>
             {view.isSpeaker
               ? 'Team assignments are not available for speakers.'
-              : 'No teams are assigned to you for this event.'}
+              : 'No teams are assigned to you for this competition.'}
           </AlertDescription>
         </Alert>
       ) : (

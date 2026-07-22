@@ -1,12 +1,12 @@
 Design a complete responsive web application UI for “SEAL – Hackathon Management Platform with AI-assisted Repository Evaluation”.
 
 Important product positioning:
-SEAL is primarily a Hackathon Lifecycle Management Platform, not an AI-first product. AI-assisted repository evaluation is only a supporting feature for judges and coordinators. Do not make the visual identity look like an “AI-powered platform”. The core experience should focus on event operations, registration, teams, judging, GitHub repositories, rankings, and results.
+SEAL is primarily a Hackathon Lifecycle Management Platform, not an AI-first product. AI-assisted repository evaluation is only a supporting feature for judges and coordinators. Do not make the visual identity look like an “AI-powered platform”. The core experience should focus on competition operations, registration, teams, judging, GitHub repositories, rankings, and results.
 
 Target users:
 1. Participant
 2. Team Leader
-3. Event Coordinator
+3. Competition Coordinator
 4. Mentor
 5. Judge
 6. Admin
@@ -29,7 +29,7 @@ Create the following desktop web app screens at 1440px width:
 - Short supporting copy: “Manage hackathon registration, teams, judging, repositories, and results in one platform.”
 - Do not overemphasize AI.
 
-2. Event Coordinator Dashboard
+2. Competition Coordinator Dashboard
 Show key metrics:
 - Total participants
 - Total teams / max 30 teams
@@ -41,10 +41,10 @@ Show key metrics:
 Include a lifecycle progress tracker:
 Registration → Team Formation → Check-in & Seminar → Coding → Preliminary Judging → Final Round → Repository Locking → Result Publishing
 
-3. Event Management Screen
-- Event list table
-- Event status badges: Draft, Open Registration, Ongoing, Scoring, Completed, Archived
-- Create/Edit event form
+3. Competition Management Screen
+- Competition list table
+- Competition status badges: Draft, Open Registration, Ongoing, Scoring, Completed, Archived
+- Create/Edit competition form
 - Fields: title, description, semester, start date, end date, status
 - Timeline section for workshops, check-ins, rounds, result publishing, ceremonies
 
@@ -106,7 +106,7 @@ Registration → Team Formation → Check-in & Seminar → Coding → Preliminar
 - Publish results action
 
 11. Participant Dashboard
-- Event registration status
+- Competition registration status
 - Team information
 - Check-in status
 - GitHub repository access status
@@ -143,7 +143,7 @@ Design requirements:
 - Use Figma Auto Layout everywhere.
 - Create reusable components: sidebar, topbar, buttons, input fields, tables, status badges, metric cards, tabs, modals, drawers, timeline stepper, rubric score row, team card, judging board card.
 - Use realistic sample data:
-  Event: SEAL Hackathon 2026
+  Competition: SEAL Hackathon 2026
   Semester: 2026A
   Max teams: 30
   Preliminary boards: 3 boards x 10 teams

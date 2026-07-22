@@ -1,4 +1,4 @@
-﻿import { notifySessionExpired } from '@/lib/authEvents';
+import { notifySessionExpired } from '@/lib/authEvents';
 
 import type { ApiErrorResponse, ApiSuccessResponse } from './types';
 

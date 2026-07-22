@@ -59,7 +59,7 @@ export function Timelines() {
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!view.activeEvent}>
+              <Button disabled={!view.activeCompetition}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Timeline Item
               </Button>
@@ -68,7 +68,7 @@ export function Timelines() {
               <div className="flex-shrink-0 px-6 pt-6">
               <DialogHeader>
                 <DialogTitle>Create Timeline Item</DialogTitle>
-                <DialogDescription>Schedule a new milestone for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
+                <DialogDescription>Schedule a new milestone for {view.activeCompetition?.title || 'the selected competition'}.</DialogDescription>
               </DialogHeader>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-6">
@@ -88,13 +88,13 @@ export function Timelines() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <TimelineMetricCard label="Total Items" value={String(view.timelines.length)} helper="Milestones in selected event" />
+        <TimelineMetricCard label="Total Items" value={String(view.timelines.length)} helper="Milestones in selected competition" />
         <TimelineMetricCard label="In Progress" value={String(view.activeCount)} helper="Items currently ongoing" />
         <TimelineMetricCard label="Completed" value={String(view.completedCount)} helper="Finished milestones" />
       </div>
 
       {view.eventsQuery.error && (
-        <TimelineInlineError message={view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load events'} />
+        <TimelineInlineError message={view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load competitions'} />
       )}
 
       {view.timelinesQuery.error && (
@@ -128,7 +128,7 @@ export function Timelines() {
             {!view.eventsQuery.isLoading && !view.timelinesQuery.isLoading && view.timelines.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                  No timeline items found for this event.
+                  No timeline items found for this competition.
                 </TableCell>
               </TableRow>
             )}
@@ -146,7 +146,7 @@ export function Timelines() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{formatTimelineType(timeline.eventType)}</TableCell>
+                <TableCell>{formatTimelineType(timeline.activityType)}</TableCell>
                 <TableCell>{timeline.status}</TableCell>
                 <TableCell>{formatDateTime(timeline.startTime)}</TableCell>
                 <TableCell>{formatDateTime(timeline.endTime)}</TableCell>
@@ -185,7 +185,7 @@ export function Timelines() {
           <div className="flex-shrink-0 px-6 pt-6">
           <DialogHeader>
             <DialogTitle>Edit Timeline Item</DialogTitle>
-            <DialogDescription>Update the event schedule and visibility.</DialogDescription>
+            <DialogDescription>Update the competition schedule and visibility.</DialogDescription>
           </DialogHeader>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6">
@@ -207,7 +207,7 @@ export function Timelines() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete timeline item</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete "{view.selectedTimeline?.title}" from this event schedule?
+              Delete "{view.selectedTimeline?.title}" from this competition schedule?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

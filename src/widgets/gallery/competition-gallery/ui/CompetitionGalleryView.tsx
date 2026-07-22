@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router';
 import { Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import { eventsApi } from '@/entities/event/api';
+import { eventsApi } from '@/entities/competition/api';
 import { useStore } from '@/entities/session/model/store';
 import { mediaApi } from '@/entities/media/api';
 import { queryKeys } from '@/lib/queryKeys';
@@ -16,10 +16,10 @@ import { MediaCard, MediaStatisticsCards, MediaViewModal } from '@/widgets/media
 
 const MEDIA_TYPES: MediaType[] = ['IMAGE', 'VIDEO', 'DOCUMENT'];
 
-export function EventGallery() {
-  const { eventId = '' } = useParams();
-  const selectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+export function CompetitionGallery() {
+  const { competitionId = '' } = useParams();
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
   const [mediaType, setMediaType] = useState('ALL');
   const [search, setSearch] = useState('');
   const [viewMedia, setViewMedia] = useState<MediaItem | null>(null);
@@ -31,39 +31,39 @@ export function EventGallery() {
   }), [mediaType, search]);
 
   const { data: eventResponse } = useQuery({
-    queryKey: queryKeys.events.detail(eventId),
-    queryFn: () => eventsApi.getById(eventId),
-    enabled: Boolean(eventId),
+    queryKey: queryKeys.competitions.detail(competitionId),
+    queryFn: () => eventsApi.getById(competitionId),
+    enabled: Boolean(competitionId),
   });
 
   const { data: galleryResponse, isLoading } = useQuery({
-    queryKey: queryKeys.media.gallery(eventId, filters),
-    queryFn: () => mediaApi.getEventGallery(eventId, filters),
-    enabled: Boolean(eventId),
+    queryKey: queryKeys.media.gallery(competitionId, filters),
+    queryFn: () => mediaApi.getCompetitionGallery(competitionId, filters),
+    enabled: Boolean(competitionId),
   });
 
   const gallery = galleryResponse?.data;
 
   useEffect(() => {
-    const event = eventResponse?.data;
-    if (!event) return;
+    const competition = eventResponse?.data;
+    if (!competition) return;
 
     if (
-      selectedEvent?.id === event.id &&
-      selectedEvent.title === event.title &&
-      selectedEvent.semester === (event.semester || '') &&
-      selectedEvent.status === event.status
+      selectedCompetition?.id === competition.id &&
+      selectedCompetition.title === competition.title &&
+      selectedCompetition.semester === (competition.semester || '') &&
+      selectedCompetition.status === competition.status
     ) {
       return;
     }
 
-    setSelectedEvent({
-      id: event.id,
-      title: event.title,
-      semester: event.semester || '',
-      status: event.status,
+    setSelectedCompetition({
+      id: competition.id,
+      title: competition.title,
+      semester: competition.semester || '',
+      status: competition.status,
     });
-  }, [eventResponse?.data, selectedEvent, setSelectedEvent]);
+  }, [eventResponse?.data, selectedCompetition, setSelectedCompetition]);
 
   const allItems = useMemo(() => {
     if (!gallery) return [];
@@ -90,9 +90,9 @@ export function EventGallery() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Event Gallery</h1>
+          <h1 className="text-2xl font-semibold">Competition Gallery</h1>
           <p className="text-sm text-muted-foreground">
-            {eventResponse?.data.title || 'Approved event media'}
+            {eventResponse?.data.title || 'Approved competition media'}
           </p>
         </div>
       </div>
@@ -110,7 +110,7 @@ export function EventGallery() {
       <Card className="rounded-lg">
         <CardHeader>
           <CardTitle>Approved Media</CardTitle>
-          <CardDescription>View approved photos, videos, and documents from this event.</CardDescription>
+          <CardDescription>View approved photos, videos, and documents from this competition.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr]">
@@ -129,7 +129,7 @@ export function EventGallery() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(competition) => setSearch(competition.target.value)}
                 placeholder="Search title, description, or tags"
                 className="pl-9"
               />

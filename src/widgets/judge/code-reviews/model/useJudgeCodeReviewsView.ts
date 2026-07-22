@@ -5,38 +5,38 @@ import { useStore } from '@/entities/session/model/store';
 import { judgingBoardsApi } from '@/entities/judging-board/api';
 import { repositoriesApi } from '@/entities/repository/api';
 import { submissionsApi } from '@/entities/submission/api';
-import { useEventsQuery, useRoundsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useRoundsQuery, selectDefaultCompetition } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { JudgingBoard, Round } from '@/shared/api/types';
 
 export function useJudgeCodeReviewsView() {
   const user = useStore((state) => state.user);
-  const storeSelectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
   const [selectedRoundId, setSelectedRoundId] = useState('');
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
 
   useEffect(() => {
-    if (events.length > 0 && !storeSelectedEvent) {
-      const defaultEvent = selectDefaultEvent(events) || events[0];
-      setSelectedEvent({
-        id: defaultEvent.id,
-        title: defaultEvent.title,
-        semester: defaultEvent.semester || '',
-        status: defaultEvent.status,
+    if (competitions.length > 0 && !storeSelectedCompetition) {
+      const defaultCompetition = selectDefaultCompetition(competitions) || competitions[0];
+      setSelectedCompetition({
+        id: defaultCompetition.id,
+        title: defaultCompetition.title,
+        semester: defaultCompetition.semester || '',
+        status: defaultCompetition.status,
       });
     }
-  }, [events, storeSelectedEvent, setSelectedEvent]);
+  }, [competitions, storeSelectedCompetition, setSelectedCompetition]);
 
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    if (storeSelectedEvent) return events.find((event) => event.id === storeSelectedEvent.id) || events[0];
-    return selectDefaultEvent(events) || events[0];
-  }, [events, storeSelectedEvent]);
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    if (storeSelectedCompetition) return competitions.find((competition) => competition.id === storeSelectedCompetition.id) || competitions[0];
+    return selectDefaultCompetition(competitions) || competitions[0];
+  }, [competitions, storeSelectedCompetition]);
 
-  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 20 }, { enabled: Boolean(activeEvent?.id) });
+  const roundsQuery = useRoundsQuery({ competitionId: activeCompetition?.id, limit: 20 }, { enabled: Boolean(activeCompetition?.id) });
   const rounds: Round[] = roundsQuery.data || [];
   const activeRound = selectedRoundId
     ? rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null
@@ -123,9 +123,9 @@ export function useJudgeCodeReviewsView() {
   });
 
   return {
-    events,
+    competitions,
     eventsQuery,
-    activeEvent,
+    activeCompetition,
     rounds,
     roundsQuery,
     activeRound,

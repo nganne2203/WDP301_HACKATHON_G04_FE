@@ -31,14 +31,14 @@ export const githubApi = {
   checkUsernameAvailability: (username: string, excludeSelf = false) =>
     api.get<GitHubUsernameAvailability>('/github/username-availability', { params: { username, excludeSelf } }),
 
-  getConfig: (eventId: string) =>
-    api.get<GitHubConfig>('/github/config', { params: { eventId } }),
+  getConfig: (competitionId: string) =>
+    api.get<GitHubConfig>('/github/config', { params: { competitionId } }),
 
   saveConfig: (data: SaveGitHubConfigRequest) =>
     api.post<GitHubConfig>('/github/config', data),
 
-  testConnection: (eventId: string) =>
-    api.post<TestGitHubConnectionResult>('/github/config/test', { eventId }),
+  testConnection: (competitionId: string) =>
+    api.post<TestGitHubConnectionResult>('/github/config/test', { competitionId }),
 
   createRepository: (data: CreateGitHubRepositoryRequest) =>
     api.post<CreateGitHubRepositoryResult>('/github/repositories', data),
@@ -70,9 +70,9 @@ export const githubApi = {
   bulkCreateRepositories: (data: BulkCreateGitHubRepositoriesRequest) =>
     api.post<BulkCreateGitHubRepositoriesResult>('/github/repositories/bulk', data),
 
-  bulkGrantAccess: (data: { eventId: string }) =>
+  bulkGrantAccess: (data: { competitionId: string }) =>
     api.post<any>('/github/collaborators/bulk-grant', data),
 
-  bulkRevokeAccess: (data: { eventId: string }) =>
+  bulkRevokeAccess: (data: { competitionId: string }) =>
     api.post<any>('/github/collaborators/bulk-revoke', data),
 };

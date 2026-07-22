@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { finalistsApi } from '@/entities/finalist/api';
 import { rankingsApi } from '@/entities/ranking/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, useMyTeamQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useMyTeamQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -20,33 +20,33 @@ const PLACE_LABELS = ['1st Place', '2nd Place', '3rd Place'];
 export function ParticipantResultsView() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
-  const storeSelectedEvent = useStore((state) => state.selectedEvent);
+  const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
   const [selectedRoundId, setSelectedRoundId] = useState('');
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
-  const selectedEvent = events.find((event) => event.id === storeSelectedEvent?.id) || events[0] || null;
-  const activeEventId = selectedEvent?.id || '';
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
+  const selectedCompetition = competitions.find((competition) => competition.id === storeSelectedCompetition?.id) || competitions[0] || null;
+  const activeCompetitionId = selectedCompetition?.id || '';
 
-  const teamQuery = useMyTeamQuery(activeEventId);
+  const teamQuery = useMyTeamQuery(activeCompetitionId);
   const team = teamQuery.data;
 
-  const roundsQuery = useRoundsQuery({ eventId: activeEventId, limit: 20 }, { enabled: Boolean(activeEventId) });
+  const roundsQuery = useRoundsQuery({ competitionId: activeCompetitionId, limit: 20 }, { enabled: Boolean(activeCompetitionId) });
   const rounds = roundsQuery.data || [];
   const activeRound = rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null;
   const activeRoundId = activeRound?.id || '';
 
   const rankingsQuery = useQuery({
-    queryKey: queryKeys.rankings.list(activeEventId, activeRoundId),
-    enabled: Boolean(activeEventId && activeRoundId && appRole),
-    queryFn: async () => (await rankingsApi.list({ eventId: activeEventId, roundId: activeRoundId, limit: 50 })).data,
+    queryKey: queryKeys.rankings.list(activeCompetitionId, activeRoundId),
+    enabled: Boolean(activeCompetitionId && activeRoundId && appRole),
+    queryFn: async () => (await rankingsApi.list({ competitionId: activeCompetitionId, roundId: activeRoundId, limit: 50 })).data,
   });
   const rankings = rankingsQuery.data || [];
 
   const finalistsQuery = useQuery({
-    queryKey: queryKeys.finalists.list(activeEventId, activeRoundId),
-    enabled: Boolean(activeEventId && activeRoundId && appRole),
-    queryFn: async () => (await finalistsApi.list({ eventId: activeEventId, roundId: activeRoundId, limit: 50 })).data,
+    queryKey: queryKeys.finalists.list(activeCompetitionId, activeRoundId),
+    enabled: Boolean(activeCompetitionId && activeRoundId && appRole),
+    queryFn: async () => (await finalistsApi.list({ competitionId: activeCompetitionId, roundId: activeRoundId, limit: 50 })).data,
   });
   const finalists = finalistsQuery.data || [];
 

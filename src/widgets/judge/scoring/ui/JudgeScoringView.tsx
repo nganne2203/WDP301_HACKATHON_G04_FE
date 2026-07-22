@@ -34,7 +34,7 @@ export function JudgeScoring() {
 
       <div className="flex flex-col gap-3 md:flex-row">
         <div className="w-full md:w-60">
-          <Select value={view.activeRound?.id || ''} onValueChange={view.setSelectedRoundId} disabled={!view.activeEvent || view.roundsQuery.isLoading}>
+          <Select value={view.activeRound?.id || ''} onValueChange={view.setSelectedRoundId} disabled={!view.activeCompetition || view.roundsQuery.isLoading}>
             <SelectTrigger><SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading...' : 'Select round'} /></SelectTrigger>
             <SelectContent>
               {view.rounds.map((round) => (
@@ -48,7 +48,7 @@ export function JudgeScoring() {
       {!view.activeRound && !view.roundsQuery.isLoading && (
         <Alert>
           <AlertTitle>No round selected</AlertTitle>
-          <AlertDescription>Select an event and round to start scoring.</AlertDescription>
+          <AlertDescription>Select an competition and round to start scoring.</AlertDescription>
         </Alert>
       )}
 
@@ -129,7 +129,7 @@ export function JudgeScoring() {
             <AlertDialogTitle>Submit Score Sheet</AlertDialogTitle>
             <AlertDialogDescription>
               You are submitting the score sheet for <strong>{view.selectedTeam?.name}</strong> with a total of{' '}
-              <strong>{formatScore(view.totalScore)}</strong> points. This cannot be modified after submission.
+              <strong>{formatScore(view.totalScore)}</strong> final points. This cannot be modified after submission.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
