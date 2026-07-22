@@ -334,7 +334,6 @@ export function useRepositoriesView() {
       if (!activeCompetitionId) throw new Error('Please select an competition first.');
       return (await githubApi.bulkCreateRepositories({
         competitionId: activeCompetitionId,
-        roundId: selectedRoundId === 'none' ? null : selectedRoundId,
         assignCollaborators: false,
       })).data;
     },

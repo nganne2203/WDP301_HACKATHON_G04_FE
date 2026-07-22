@@ -15,7 +15,6 @@ import {
   Scale,
   Send,
   Server,
-  Settings,
   Trophy,
   MessageSquare,
   Users,
@@ -47,7 +46,6 @@ const coordinatorNavigation: NavigationItem[] = [
   { icon: Scale, label: 'Judging', href: '/coordinator/judging' },
   { icon: Trophy, label: 'Results', href: '/coordinator/results' },
   { icon: Images, label: 'Media', href: '/coordinator/media' },
-  { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
 const adminNavigation: NavigationItem[] = [
@@ -69,7 +67,6 @@ const adminNavigation: NavigationItem[] = [
   { icon: KeyRound, label: 'Roles & Permissions', href: '/admin/rbac' },
   { icon: ClipboardList, label: 'Audit Logs', href: '/admin/audit-logs' },
   { icon: Server, label: 'Operations', href: '/admin/operations' },
-  { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 
 const judgeNavigation: NavigationItem[] = [

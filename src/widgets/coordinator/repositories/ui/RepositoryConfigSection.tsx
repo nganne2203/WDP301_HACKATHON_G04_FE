@@ -233,23 +233,11 @@ export function RepositoryConfigSection({ view }: { view: RepositoriesViewModel 
             Bulk Repository Operations
           </CardTitle>
           <CardDescription>
-            Create repositories in bulk (without assigning members), grant access in bulk, or revoke access in bulk for all teams in the competition.
+            Create one repository for every confirmed team without granting member access. Grant or revoke access for all competition repositories when needed.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-4">
-            <div className="space-y-2 max-w-sm">
-              <Label>Round</Label>
-              <Select value={view.selectedRoundId} onValueChange={view.setSelectedRoundId}>
-                <SelectTrigger><SelectValue placeholder="Select round (optional)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No round</SelectItem>
-                  {view.rounds.map((round) => (
-                    <SelectItem key={round.id} value={round.id}>{round.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="flex flex-wrap gap-3 pt-2">
               <Button
                 onClick={() => view.bulkCreateRepositoriesMutation.mutate()}
