@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
 import { workshopsApi } from '@/shared/api';
-import { selectDefaultEvent, useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { selectDefaultCompetition, useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Workshop } from '@/shared/api/types';
@@ -17,8 +17,8 @@ function canSubmitQuestionForWorkshop(workshop: Workshop | null) {
 
 export function useParticipantWorkshopsView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
   const appRole = useStore((state) => state.appRole);
   const userPermissions = useStore((state) => state.user?.permissions || []);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
@@ -28,40 +28,40 @@ export function useParticipantWorkshopsView() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isQuestionsOpen, setIsQuestionsOpen] = useState(false);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
 
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id)
-      || selectDefaultEvent(events)
-      || events[0];
-  }, [events, selectedEvent?.id]);
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id)
+      || selectDefaultCompetition(competitions)
+      || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
   useEffect(() => {
-    if (!activeEvent) return;
+    if (!activeCompetition) return;
 
     if (
-      selectedEvent?.id === activeEvent.id &&
-      selectedEvent.title === activeEvent.title &&
-      selectedEvent.semester === (activeEvent.semester || '') &&
-      selectedEvent.status === activeEvent.status
+      selectedCompetition?.id === activeCompetition.id &&
+      selectedCompetition.title === activeCompetition.title &&
+      selectedCompetition.semester === (activeCompetition.semester || '') &&
+      selectedCompetition.status === activeCompetition.status
     ) {
       return;
     }
 
-    setSelectedEvent({
-      id: activeEvent.id,
-      title: activeEvent.title,
-      semester: activeEvent.semester || '',
-      status: activeEvent.status,
+    setSelectedCompetition({
+      id: activeCompetition.id,
+      title: activeCompetition.title,
+      semester: activeCompetition.semester || '',
+      status: activeCompetition.status,
     });
-  }, [activeEvent, selectedEvent, setSelectedEvent]);
+  }, [activeCompetition, selectedCompetition, setSelectedCompetition]);
 
   const workshopsQuery = useQuery({
-    queryKey: queryKeys.workshops.list({ eventId: activeEvent?.id }),
-    enabled: Boolean(activeEvent?.id),
-    queryFn: () => workshopsApi.list({ eventId: activeEvent?.id }),
+    queryKey: queryKeys.workshops.list({ competitionId: activeCompetition?.id }),
+    enabled: Boolean(activeCompetition?.id),
+    queryFn: () => workshopsApi.list({ competitionId: activeCompetition?.id }),
   });
 
   const workshops = workshopsQuery.data?.data || [];
@@ -215,8 +215,8 @@ export function useParticipantWorkshopsView() {
   };
 
   return {
-    activeEvent,
-    events,
+    activeCompetition,
+    competitions,
     eventsQuery,
     workshops,
     workshopsQuery,

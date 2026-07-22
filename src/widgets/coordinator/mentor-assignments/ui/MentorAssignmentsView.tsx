@@ -6,7 +6,7 @@ import { Layers3, Loader2, UserRound, UsersRound } from 'lucide-react';
 import { TeamDetail, teamsApi } from '@/entities/team';
 import { useStore } from '@/entities/session/model/store';
 import { usersApi } from '@/entities/user/api';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Team, User } from '@/shared/api/types';
@@ -40,44 +40,44 @@ function getMentorLabel(mentor: Pick<User, 'fullName' | 'email'>) {
 
 export function MentorAssignmentsView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [selectedBoardNumber, setSelectedBoardNumber] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [selectedMentorIds, setSelectedMentorIds] = useState<string[]>([]);
 
-  const eventsQuery = useEventsQuery({ page: 1, limit: 100 });
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const eventsQuery = useCompetitionsQuery({ page: 1, limit: 100 });
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
   useEffect(() => {
     setSelectedBoardNumber('all');
     setPage(1);
     setEditingTeam(null);
     setSelectedMentorIds([]);
-  }, [activeEvent?.id]);
+  }, [activeCompetition?.id]);
 
   const boardTeamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: activeEvent?.id, status: 'CONFIRMED', limit: 100 }),
-    enabled: Boolean(activeEvent?.id),
-    queryFn: () => teamsApi.list({ eventId: activeEvent?.id, status: 'CONFIRMED', limit: 100 }),
+    queryKey: queryKeys.teams.list({ competitionId: activeCompetition?.id, status: 'CONFIRMED', limit: 100 }),
+    enabled: Boolean(activeCompetition?.id),
+    queryFn: () => teamsApi.list({ competitionId: activeCompetition?.id, status: 'CONFIRMED', limit: 100 }),
   });
 
   const teamsQuery = useQuery({
     queryKey: queryKeys.teams.list({
-      eventId: activeEvent?.id,
+      competitionId: activeCompetition?.id,
       status: 'CONFIRMED',
       boardNumber: selectedBoardNumber === 'all' ? undefined : Number(selectedBoardNumber),
       page,
       limit: 12,
     }),
-    enabled: Boolean(activeEvent?.id),
+    enabled: Boolean(activeCompetition?.id),
     queryFn: () => teamsApi.list({
-      eventId: activeEvent?.id,
+      competitionId: activeCompetition?.id,
       status: 'CONFIRMED',
       boardNumber: selectedBoardNumber === 'all' ? undefined : Number(selectedBoardNumber),
       page,
@@ -109,8 +109,8 @@ export function MentorAssignmentsView() {
   });
 
   const assignBoardMentorsMutation = useMutation({
-    mutationFn: ({ eventId, boardNumber, mentorIds }: { eventId: string; boardNumber: number; mentorIds: string[] }) =>
-      teamsApi.assignMentorsByBoard({ eventId, boardNumber, mentorIds }),
+    mutationFn: ({ competitionId, boardNumber, mentorIds }: { competitionId: string; boardNumber: number; mentorIds: string[] }) =>
+      teamsApi.assignMentorsByBoard({ competitionId, boardNumber, mentorIds }),
     onSuccess: (response) => {
       toast.success('Board mentor assignment saved', {
         description: `${response.data.updatedCount} team(s) updated in board ${response.data.boardNumber}.`,
@@ -132,10 +132,10 @@ export function MentorAssignmentsView() {
   const mentors = (mentorsQuery.data?.data || []).filter((mentor) => (
     mentor.status === 'ACTIVE'
   ));
-  const allEventTeams = boardTeamsQuery.data?.data || [];
+  const allCompetitionTeams = boardTeamsQuery.data?.data || [];
   const boardOptions = useMemo(() => {
     const grouped = new Map<number, number>();
-    allEventTeams.forEach((team) => {
+    allCompetitionTeams.forEach((team) => {
       if (!team.boardNumber) return;
       grouped.set(team.boardNumber, (grouped.get(team.boardNumber) || 0) + 1);
     });
@@ -143,12 +143,12 @@ export function MentorAssignmentsView() {
     return [...grouped.entries()]
       .sort((left, right) => left[0] - right[0])
       .map(([boardNumber, teamCount]) => ({ boardNumber, teamCount }));
-  }, [allEventTeams]);
+  }, [allCompetitionTeams]);
   const activeBoardNumber = selectedBoardNumber === 'all' ? null : Number(selectedBoardNumber);
   const teamsInSelectedBoard = useMemo(() => {
     if (!activeBoardNumber) return [];
-    return allEventTeams.filter((team) => team.boardNumber === activeBoardNumber);
-  }, [activeBoardNumber, allEventTeams]);
+    return allCompetitionTeams.filter((team) => team.boardNumber === activeBoardNumber);
+  }, [activeBoardNumber, allCompetitionTeams]);
 
   function openAssignmentDialog(team: Team) {
     setEditingTeam(team);
@@ -183,9 +183,9 @@ export function MentorAssignmentsView() {
   }
 
   async function saveBoardAssignments() {
-    if (!activeEvent?.id || !activeBoardNumber) return;
+    if (!activeCompetition?.id || !activeBoardNumber) return;
     await assignBoardMentorsMutation.mutateAsync({
-      eventId: activeEvent.id,
+      competitionId: activeCompetition.id,
       boardNumber: activeBoardNumber,
       mentorIds: selectedMentorIds,
     });
@@ -207,7 +207,7 @@ export function MentorAssignmentsView() {
               setSelectedBoardNumber(value);
               setPage(1);
             }}
-            disabled={!activeEvent?.id || boardTeamsQuery.isLoading}
+            disabled={!activeCompetition?.id || boardTeamsQuery.isLoading}
           >
             <SelectTrigger>
               <SelectValue placeholder="All boards" />
@@ -248,10 +248,10 @@ export function MentorAssignmentsView() {
         </Alert>
       )}
 
-      {!teamsQuery.isLoading && teams.length === 0 && activeEvent?.id && (
+      {!teamsQuery.isLoading && teams.length === 0 && activeCompetition?.id && (
         <Alert>
           <UsersRound className="h-4 w-4" />
-          <AlertTitle>No confirmed teams in this event</AlertTitle>
+          <AlertTitle>No confirmed teams in this competition</AlertTitle>
           <AlertDescription>Teams appear here only after their registration is confirmed.</AlertDescription>
         </Alert>
       )}
@@ -263,7 +263,7 @@ export function MentorAssignmentsView() {
           <AlertDescription>
             {teamsInSelectedBoard.length > 0
               ? `${teamsInSelectedBoard.length} team(s) are in this board. You can assign mentors to the entire board in one action.`
-              : 'No confirmed teams were found in this board for the selected event.'}
+              : 'No confirmed teams were found in this board for the selected competition.'}
           </AlertDescription>
         </Alert>
       )}
@@ -276,7 +276,7 @@ export function MentorAssignmentsView() {
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                   <div className="min-w-0 flex-1">
                     <CardTitle className="break-words">{team.name}</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground break-words">{team.event?.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground break-words">{team.competition?.title}</p>
                   </div>
                   <Badge className="w-fit shrink-0 self-start" variant="outline">
                     {team.assignedMentors?.length || 0} mentor(s)
@@ -345,7 +345,7 @@ export function MentorAssignmentsView() {
                 {editingTeam && (
                   <div className="rounded-lg border p-4">
                     <p className="text-sm font-medium">Team context</p>
-                    <p className="mt-2 text-sm text-muted-foreground">{editingTeam.event?.title}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{editingTeam.competition?.title}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {editingTeam.participants.length} participant(s), {editingTeam.invitations.length} invitation(s)
                     </p>
@@ -416,7 +416,7 @@ export function MentorAssignmentsView() {
                   {teamsInSelectedBoard.map((team) => (
                     <div key={team.id} className="rounded-md border px-3 py-2">
                       <p className="text-sm font-medium">{team.name}</p>
-                      <p className="text-xs text-muted-foreground break-words">{team.event?.title}</p>
+                      <p className="text-xs text-muted-foreground break-words">{team.competition?.title}</p>
                     </div>
                   ))}
                 </div>

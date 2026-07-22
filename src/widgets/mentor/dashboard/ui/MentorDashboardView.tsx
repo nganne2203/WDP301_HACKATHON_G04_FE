@@ -5,7 +5,7 @@ import { Calendar, Loader2, MessageSquare, Presentation, RefreshCw, UsersRound, 
 
 import { teamsApi } from '@/entities/team/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, useWorkshopsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useWorkshopsQuery, selectDefaultCompetition } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { workshopsApi } from '@/shared/api/workshops';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
@@ -23,36 +23,36 @@ function formatDateTime(value?: string | null) {
 export function MentorDashboardView() {
   const user = useStore((state) => state.user);
   const appRole = useStore((state) => state.appRole);
-  const selectedEvent = useStore((state) => state.selectedEvent);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
   const [selectedSpeakerWorkshopId, setSelectedSpeakerWorkshopId] = useState<string>('');
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
 
-  // Initialize selectedEvent in store if not present and events are available
+  // Initialize selectedCompetition in store if not present and competitions are available
   useEffect(() => {
-    if (events.length > 0 && !selectedEvent) {
-      const defaultEvent = selectDefaultEvent(events) || events[0];
-      setSelectedEvent({
-        id: defaultEvent.id,
-        title: defaultEvent.title,
-        semester: defaultEvent.semester,
-        status: defaultEvent.status,
+    if (competitions.length > 0 && !selectedCompetition) {
+      const defaultCompetition = selectDefaultCompetition(competitions) || competitions[0];
+      setSelectedCompetition({
+        id: defaultCompetition.id,
+        title: defaultCompetition.title,
+        semester: defaultCompetition.semester,
+        status: defaultCompetition.status,
       });
     }
-  }, [events, selectedEvent, setSelectedEvent]);
+  }, [competitions, selectedCompetition, setSelectedCompetition]);
 
   const workshopsQuery = useWorkshopsQuery(
-    { eventId: selectedEvent?.id, presenterId: user?.id, limit: 20 },
-    { enabled: Boolean(selectedEvent?.id && user?.id) }
+    { competitionId: selectedCompetition?.id, presenterId: user?.id, limit: 20 },
+    { enabled: Boolean(selectedCompetition?.id && user?.id) }
   );
   const workshops = workshopsQuery.data || [];
 
   const teamsQuery = useQuery({
-    queryKey: queryKeys.teams.list({ eventId: selectedEvent?.id, limit: 10 }),
-    enabled: Boolean(selectedEvent?.id),
-    queryFn: async () => (await teamsApi.list({ eventId: selectedEvent?.id, limit: 10 })).data,
+    queryKey: queryKeys.teams.list({ competitionId: selectedCompetition?.id, limit: 10 }),
+    enabled: Boolean(selectedCompetition?.id),
+    queryFn: async () => (await teamsApi.list({ competitionId: selectedCompetition?.id, limit: 10 })).data,
   });
   const teams = teamsQuery.data || [];
 
@@ -113,8 +113,8 @@ export function MentorDashboardView() {
           <h1 className="text-2xl font-semibold mb-1">{isSpeaker ? 'Speaker Dashboard' : 'Mentor Dashboard'}</h1>
           <p className="text-sm text-muted-foreground">
             {isSpeaker
-              ? 'Track your workshop schedule and event context.'
-              : 'Track your mentoring sessions and get a quick event snapshot.'}
+              ? 'Track your workshop schedule and competition context.'
+              : 'Track your mentoring sessions and get a quick competition snapshot.'}
           </p>
         </div>
       </div>
@@ -150,12 +150,12 @@ export function MentorDashboardView() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              Event Status
+              Competition Status
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold">{selectedEvent?.status || '—'}</p>
-            <p className="text-sm text-muted-foreground mt-1">{selectedEvent?.title || 'No event selected'}</p>
+            <p className="text-3xl font-semibold">{selectedCompetition?.status || '—'}</p>
+            <p className="text-sm text-muted-foreground mt-1">{selectedCompetition?.title || 'No competition selected'}</p>
           </CardContent>
         </Card>
       </div>
@@ -181,8 +181,8 @@ export function MentorDashboardView() {
                 <AlertTitle>{isSpeaker ? 'No speaking sessions' : 'No mentoring workshops'}</AlertTitle>
                 <AlertDescription>
                   {isSpeaker
-                    ? 'No workshops are assigned to you as presenter for the selected event.'
-                    : 'No workshops are assigned to you for the selected event.'}
+                    ? 'No workshops are assigned to you as presenter for the selected competition.'
+                    : 'No workshops are assigned to you for the selected competition.'}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -191,7 +191,7 @@ export function MentorDashboardView() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-medium">{workshop.title}</p>
-                      <p className="text-sm text-muted-foreground">{workshop.event?.title || selectedEvent?.title}</p>
+                      <p className="text-sm text-muted-foreground">{workshop.competition?.title || selectedCompetition?.title}</p>
                     </div>
                     <Badge variant="outline">{workshop.status}</Badge>
                   </div>
@@ -298,11 +298,11 @@ export function MentorDashboardView() {
           </CardHeader>
           <CardContent className="space-y-3">
             <Button asChild className="w-full" variant="outline">
-              <Link to="/mentor/teams">Browse Event Teams</Link>
+              <Link to="/mentor/teams">Browse Competition Teams</Link>
             </Button>
-            {selectedEvent?.id && (
+            {selectedCompetition?.id && (
               <Button asChild className="w-full" variant="outline">
-                <Link to={`/events/${selectedEvent.id}/gallery`}>Open Event Gallery</Link>
+                <Link to={`/competitions/${selectedCompetition.id}/gallery`}>Open Competition Gallery</Link>
               </Button>
             )}
 

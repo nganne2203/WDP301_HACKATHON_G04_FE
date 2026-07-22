@@ -2,7 +2,7 @@ import { useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { MetricCard } from '@/widgets/dashboard/ui/MetricCard';
-import { EventStepper } from '@/widgets/dashboard/ui/EventStepper';
+import { CompetitionStepper } from '@/widgets/dashboard/ui/CompetitionStepper';
 import {
   Users,
   UsersRound,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Progress } from '@/shared/ui/progress';
-import { useEventsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { useStore } from '@/entities/session/model/store';
 import { queryKeys } from '@/lib/queryKeys';
 import { participantsApi } from '@/shared/api/participants';
@@ -25,7 +25,7 @@ import { teamsApi } from '@/shared/api/teams';
 import { rankingsApi } from '@/shared/api/rankings';
 import { auditApi } from '@/shared/api/audit';
 import { timelinesApi } from '@/shared/api/timelines';
-import type { AuditLog, Event, Ranking, Round, ScoreSheet, Submission, TimelineEvent } from '@/shared/api/types';
+import type { AuditLog, Competition, Ranking, Round, ScoreSheet, Submission, TimelineActivity } from '@/shared/api/types';
 
 function percent(value: number, total: number) {
   if (!total) return 0;
@@ -36,22 +36,22 @@ function uniqueCount(values: Array<string | null | undefined>) {
   return new Set(values.filter(Boolean)).size;
 }
 
-function getActiveEvent(events: Event[], selectedEventId?: string) {
+function getActiveCompetition(competitions: Competition[], selectedCompetitionId?: string) {
   return (
-    events.find((event) => event.id === selectedEventId) ||
-    events.find((event) => event.status === 'ONGOING') ||
-    events.find((event) => event.status === 'OPEN_REGISTRATION') ||
-    events[0] ||
+    competitions.find((competition) => competition.id === selectedCompetitionId) ||
+    competitions.find((competition) => competition.status === 'ONGOING') ||
+    competitions.find((competition) => competition.status === 'OPEN_REGISTRATION') ||
+    competitions[0] ||
     null
   );
 }
 
-function toSelectedEvent(event: Event) {
+function toSelectedCompetition(competition: Competition) {
   return {
-    id: event.id,
-    title: event.title,
-    semester: event.semester || event.season || String(event.year || ''),
-    status: event.status,
+    id: competition.id,
+    title: competition.title,
+    semester: competition.semester || competition.season || String(competition.year || ''),
+    status: competition.status,
   };
 }
 
@@ -71,7 +71,7 @@ function getTimelineTime(value: string | null | undefined) {
   return Number.isNaN(time) ? Number.MAX_SAFE_INTEGER : time;
 }
 
-function buildLifecycleSteps(timelines: TimelineEvent[]) {
+function buildLifecycleSteps(timelines: TimelineActivity[]) {
   return [...timelines]
     .sort((a, b) => getTimelineTime(a.startTime) - getTimelineTime(b.startTime))
     .map((timeline) => ({
@@ -110,80 +110,80 @@ function formatAuditText(log: AuditLog) {
 }
 
 export function CoordinatorDashboard() {
-  const selectedEventId = useStore((state) => state.selectedEvent?.id);
-  const setSelectedEvent = useStore((state) => state.setSelectedEvent);
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => getActiveEvent(events, selectedEventId), [events, selectedEventId]);
-  const activeEventId = activeEvent?.id;
-  const ongoingEvent = events.find((event) => event.status === 'ONGOING') || null;
+  const selectedCompetitionId = useStore((state) => state.selectedCompetition?.id);
+  const setSelectedCompetition = useStore((state) => state.setSelectedCompetition);
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => getActiveCompetition(competitions, selectedCompetitionId), [competitions, selectedCompetitionId]);
+  const activeCompetitionId = activeCompetition?.id;
+  const ongoingCompetition = competitions.find((competition) => competition.status === 'ONGOING') || null;
 
-  // Initialize selectedEvent in store if not present and events are available
+  // Initialize selectedCompetition in store if not present and competitions are available
   useEffect(() => {
-    if (events.length > 0 && !selectedEventId) {
-      const defaultEvent = getActiveEvent(events);
-      if (defaultEvent) {
-        setSelectedEvent(toSelectedEvent(defaultEvent));
+    if (competitions.length > 0 && !selectedCompetitionId) {
+      const defaultCompetition = getActiveCompetition(competitions);
+      if (defaultCompetition) {
+        setSelectedCompetition(toSelectedCompetition(defaultCompetition));
       }
     }
-  }, [events, selectedEventId, setSelectedEvent]);
+  }, [competitions, selectedCompetitionId, setSelectedCompetition]);
 
-  const handleSelectEvent = (eventId: string) => {
-    const event = events.find((item) => item.id === eventId);
-    if (!event) return;
-    setSelectedEvent(toSelectedEvent(event));
+  const handleSelectCompetition = (competitionId: string) => {
+    const competition = competitions.find((item) => item.id === competitionId);
+    if (!competition) return;
+    setSelectedCompetition(toSelectedCompetition(competition));
   };
 
-  const handleSelectOngoingEvent = () => {
-    if (!ongoingEvent) return;
-    setSelectedEvent(toSelectedEvent(ongoingEvent));
+  const handleSelectOngoingCompetition = () => {
+    if (!ongoingCompetition) return;
+    setSelectedCompetition(toSelectedCompetition(ongoingCompetition));
   };
 
   const participantsQuery = useQuery({
-    queryKey: queryKeys.participants.list({ eventId: activeEventId, limit: 10 }),
-    enabled: Boolean(activeEventId),
-    queryFn: () => participantsApi.list({ eventId: activeEventId, limit: 10 }),
+    queryKey: queryKeys.participants.list({ competitionId: activeCompetitionId, limit: 10 }),
+    enabled: Boolean(activeCompetitionId),
+    queryFn: () => participantsApi.list({ competitionId: activeCompetitionId, limit: 10 }),
   });
 
   const teamsQuery = useQuery({
-    queryKey: [...queryKeys.teams.all, 'dashboard', activeEventId, 'confirmed'],
-    enabled: Boolean(activeEventId),
-    queryFn: () => teamsApi.list({ eventId: activeEventId, status: 'CONFIRMED', page: 1, limit: 1 }),
+    queryKey: [...queryKeys.teams.all, 'dashboard', activeCompetitionId, 'confirmed'],
+    enabled: Boolean(activeCompetitionId),
+    queryFn: () => teamsApi.list({ competitionId: activeCompetitionId, status: 'CONFIRMED', page: 1, limit: 1 }),
   });
 
   const roundsQuery = useRoundsQuery(
-    { eventId: activeEventId, limit: 10 },
-    { enabled: Boolean(activeEventId) }
+    { competitionId: activeCompetitionId, limit: 10 },
+    { enabled: Boolean(activeCompetitionId) }
   );
 
   const submissionsQuery = useQuery({
-    queryKey: queryKeys.submissions.list({ eventId: activeEventId, limit: 100 }),
-    enabled: Boolean(activeEventId),
-    queryFn: async () => (await submissionsApi.list({ eventId: activeEventId, limit: 100 })).data,
+    queryKey: queryKeys.submissions.list({ competitionId: activeCompetitionId, limit: 100 }),
+    enabled: Boolean(activeCompetitionId),
+    queryFn: async () => (await submissionsApi.list({ competitionId: activeCompetitionId, limit: 100 })).data,
   });
 
   const repositoriesQuery = useQuery({
-    queryKey: [...queryKeys.repositories.all, 'dashboard', activeEventId],
-    enabled: Boolean(activeEventId),
-    queryFn: () => repositoriesApi.list({ eventId: activeEventId, limit: 10 }),
+    queryKey: [...queryKeys.repositories.all, 'dashboard', activeCompetitionId],
+    enabled: Boolean(activeCompetitionId),
+    queryFn: () => repositoriesApi.list({ competitionId: activeCompetitionId, limit: 10 }),
   });
 
   const checkedInQuery = useQuery({
-    queryKey: queryKeys.participants.list({ eventId: activeEventId, confirmedTeamsOnly: true, checkInStatus: 'CHECKED_IN', limit: 1 }),
-    enabled: Boolean(activeEventId),
-    queryFn: () => participantsApi.list({ eventId: activeEventId, confirmedTeamsOnly: true, checkInStatus: 'CHECKED_IN', limit: 1 }),
+    queryKey: queryKeys.participants.list({ competitionId: activeCompetitionId, confirmedTeamsOnly: true, checkInStatus: 'CHECKED_IN', limit: 1 }),
+    enabled: Boolean(activeCompetitionId),
+    queryFn: () => participantsApi.list({ competitionId: activeCompetitionId, confirmedTeamsOnly: true, checkInStatus: 'CHECKED_IN', limit: 1 }),
   });
 
   const checkInEligibleQuery = useQuery({
-    queryKey: queryKeys.participants.list({ eventId: activeEventId, confirmedTeamsOnly: true, limit: 1 }),
-    enabled: Boolean(activeEventId),
-    queryFn: () => participantsApi.list({ eventId: activeEventId, confirmedTeamsOnly: true, limit: 1 }),
+    queryKey: queryKeys.participants.list({ competitionId: activeCompetitionId, confirmedTeamsOnly: true, limit: 1 }),
+    enabled: Boolean(activeCompetitionId),
+    queryFn: () => participantsApi.list({ competitionId: activeCompetitionId, confirmedTeamsOnly: true, limit: 1 }),
   });
 
   const timelinesQuery = useQuery({
-    queryKey: [...queryKeys.timelines.all, 'dashboard', activeEventId],
-    enabled: Boolean(activeEventId),
-    queryFn: () => timelinesApi.list({ eventId: activeEventId, page: 1, limit: 10 }),
+    queryKey: [...queryKeys.timelines.all, 'dashboard', activeCompetitionId],
+    enabled: Boolean(activeCompetitionId),
+    queryFn: () => timelinesApi.list({ competitionId: activeCompetitionId, page: 1, limit: 10 }),
   });
 
   const auditLogsQuery = useQuery({
@@ -195,16 +195,16 @@ export function CoordinatorDashboard() {
   const activeRound = useMemo(() => getCurrentRound(rounds), [rounds]);
 
   const scoreSheetsQuery = useQuery({
-    queryKey: queryKeys.scoreSheets.list({ eventId: activeEventId, limit: 100 }),
-    enabled: Boolean(activeEventId),
-    queryFn: () => scoringApi.listSheets({ eventId: activeEventId, limit: 100 }),
+    queryKey: queryKeys.scoreSheets.list({ competitionId: activeCompetitionId, limit: 100 }),
+    enabled: Boolean(activeCompetitionId),
+    queryFn: () => scoringApi.listSheets({ competitionId: activeCompetitionId, limit: 100 }),
   });
 
   const rankingsQuery = useQuery({
-    queryKey: queryKeys.rankings.list(activeEventId),
-    enabled: Boolean(activeEventId),
+    queryKey: queryKeys.rankings.list(activeCompetitionId),
+    enabled: Boolean(activeCompetitionId),
     queryFn: async () => (
-      await rankingsApi.list({ eventId: activeEventId, limit: 100 })
+      await rankingsApi.list({ competitionId: activeCompetitionId, limit: 100 })
     ).data,
   });
 
@@ -241,7 +241,7 @@ export function CoordinatorDashboard() {
   const finalists = uniqueCount(
     rankings.filter((ranking) => ranking.isSelectedForFinal).map((ranking) => ranking.teamId)
   );
-  const maxTeams = activeEvent?.maxTeams || totalTeams;
+  const maxTeams = activeCompetition?.maxTeams || totalTeams;
   const judgingProgress = percent(teamsEvaluated, totalTeams);
   const loadingValue = eventsQuery.isLoading || participantsQuery.isLoading || teamsQuery.isLoading;
   const lifecycleSteps = buildLifecycleSteps(timelines);
@@ -283,13 +283,13 @@ export function CoordinatorDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Event Lifecycle</CardTitle>
+          <CardTitle>Competition Lifecycle</CardTitle>
         </CardHeader>
         <CardContent>
           {timelinesQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading event schedule...</p>
+            <p className="text-sm text-muted-foreground">Loading competition schedule...</p>
           ) : lifecycleSteps.length > 0 ? (
-            <EventStepper steps={lifecycleSteps} />
+            <CompetitionStepper steps={lifecycleSteps} />
           ) : (
             <p className="text-sm text-muted-foreground">No schedule items yet.</p>
           )}

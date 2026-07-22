@@ -53,13 +53,13 @@ export function RepositoryDangerZoneCard({ view }: { view: RepositoriesViewModel
                 Type <strong>REVOKE MEMBERS</strong> to confirm. This operation continues even if one removal fails.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <Input value={view.confirmationText} onChange={(event) => view.setConfirmationText(event.target.value)} placeholder="REVOKE MEMBERS" />
+            <Input value={view.confirmationText} onChange={(competition) => view.setConfirmationText(competition.target.value)} placeholder="REVOKE MEMBERS" />
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => view.setConfirmationText('')}>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 disabled={view.confirmationText !== 'REVOKE MEMBERS' || view.revokeMembersMutation.isPending}
-                onClick={(event) => {
-                  event.preventDefault();
+                onClick={(competition) => {
+                  competition.preventDefault();
                   view.revokeMembersMutation.mutate();
                 }}
                 className="bg-destructive text-white hover:bg-destructive/90"

@@ -1,12 +1,12 @@
 import type {
   CreateTimelineRequest,
-  TimelineEvent,
-  TimelineEventType,
+  TimelineActivity,
+  TimelineActivityType,
   TimelineStatus,
   UpdateTimelineRequest,
 } from '@/shared/api/types';
 
-export const timelineTypeOptions: TimelineEventType[] = ['WORKSHOP', 'CHECK_IN', 'ROUND', 'RESULT_PUBLISHING', 'CEREMONY', 'OTHER'];
+export const timelineTypeOptions: TimelineActivityType[] = ['WORKSHOP', 'CHECK_IN', 'ROUND', 'RESULT_PUBLISHING', 'CEREMONY', 'OTHER'];
 export const timelineStatusOptions: TimelineStatus[] = ['SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'];
 
 export interface TimelineFormState {
@@ -14,7 +14,7 @@ export interface TimelineFormState {
   description: string;
   startTime: string;
   endTime: string;
-  eventType: TimelineEventType;
+  activityType: TimelineActivityType;
   status: TimelineStatus;
 }
 
@@ -24,7 +24,7 @@ export function createEmptyTimelineForm(): TimelineFormState {
     description: '',
     startTime: '',
     endTime: '',
-    eventType: 'OTHER',
+    activityType: 'OTHER',
     status: 'SCHEDULED',
   };
 }
@@ -52,25 +52,25 @@ export function formatDateTime(value?: string | null) {
   return new Date(value).toLocaleString();
 }
 
-export function mapTimelineToForm(timeline: TimelineEvent): TimelineFormState {
+export function mapTimelineToForm(timeline: TimelineActivity): TimelineFormState {
   return {
     title: timeline.title,
     description: timeline.description || '',
     startTime: toDateTimeInputValue(timeline.startTime),
     endTime: toDateTimeInputValue(timeline.endTime),
-    eventType: timeline.eventType,
+    activityType: timeline.activityType,
     status: timeline.status,
   };
 }
 
-export function buildTimelinePayload(form: TimelineFormState, eventId: string): CreateTimelineRequest {
+export function buildTimelinePayload(form: TimelineFormState, competitionId: string): CreateTimelineRequest {
   return {
-    eventId,
+    competitionId,
     title: form.title.trim(),
     description: normalizeOptionalText(form.description),
     startTime: toApiDateTimeValue(form.startTime),
     endTime: toApiDateTimeValue(form.endTime),
-    eventType: form.eventType,
+    activityType: form.activityType,
     status: form.status,
   };
 }
@@ -81,11 +81,11 @@ export function buildTimelineUpdatePayload(form: TimelineFormState): UpdateTimel
     description: normalizeOptionalText(form.description),
     startTime: form.startTime ? toApiDateTimeValue(form.startTime) : undefined,
     endTime: form.endTime ? toApiDateTimeValue(form.endTime) : undefined,
-    eventType: form.eventType,
+    activityType: form.activityType,
     status: form.status,
   };
 }
 
-export function formatTimelineType(type: TimelineEventType) {
+export function formatTimelineType(type: TimelineActivityType) {
   return type.replaceAll('_', ' ');
 }

@@ -5,10 +5,9 @@ import { toast } from 'sonner';
 import { roundsApi } from '@/entities/round/api';
 import { useStore } from '@/entities/session/model/store';
 import {
-  useEventsQuery,
+  useCompetitionsQuery,
   useRoundsQuery,
   useRubricsQuery,
-  useTeamsQuery,
   useTracksQuery,
   useUsersQuery,
 } from '@/hooks/queries/useCommonQueries';
@@ -19,7 +18,6 @@ import {
   buildCreateRoundPayload,
   buildUpdateRoundPayload,
   createEmptyRoundForm,
-  filterTeamsByTrack,
   getRoundErrorMessage,
   isJudgeUser,
   mapRoundToForm,
@@ -28,7 +26,7 @@ import {
 
 export function useRoundsView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -36,28 +34,25 @@ export function useRoundsView() {
   const [createForm, setCreateForm] = useState<RoundFormState>(createEmptyRoundForm());
   const [editForm, setEditForm] = useState<RoundFormState>(createEmptyRoundForm());
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
-  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
+  const roundsQuery = useRoundsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
 
-  const tracksQuery = useTracksQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
+  const tracksQuery = useTracksQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
 
-  const rubricsQuery = useRubricsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
-
-  const teamsQuery = useTeamsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
+  const rubricsQuery = useRubricsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
 
   const judgesQuery = useUsersQuery({ page: 1, limit: 100, roles: ['JUDGE', 'ADMIN'] });
 
   const rounds = roundsQuery.data || [];
   const tracks = tracksQuery.data || [];
   const rubrics = rubricsQuery.data || [];
-  const teams = teamsQuery.data || [];
   const judges = (judgesQuery.data?.data || []).filter(isJudgeUser);
 
   const createMutation = useMutation({
@@ -100,10 +95,10 @@ export function useRoundsView() {
   });
 
   const submitCreateRound = () => {
-    if (!activeEvent) return;
+    if (!activeCompetition) return;
 
     try {
-      createMutation.mutate(buildCreateRoundPayload(createForm, activeEvent));
+      createMutation.mutate(buildCreateRoundPayload(createForm, activeCompetition));
     } catch (error) {
       toast.error('Failed to create round', { description: getRoundErrorMessage(error) });
     }
@@ -113,14 +108,14 @@ export function useRoundsView() {
     if (!selectedRound) return;
 
     try {
-      updateMutation.mutate({ id: selectedRound.id, payload: buildUpdateRoundPayload(editForm, activeEvent) });
+      updateMutation.mutate({ id: selectedRound.id, payload: buildUpdateRoundPayload(editForm, activeCompetition) });
     } catch (error) {
       toast.error('Failed to update round', { description: getRoundErrorMessage(error) });
     }
   };
 
   return {
-    activeEvent,
+    activeCompetition,
     createForm,
     createMutation,
     createOpen,
@@ -128,9 +123,8 @@ export function useRoundsView() {
     deleteOpen,
     editForm,
     editOpen,
-    events,
+    competitions,
     eventsQuery,
-    filterTeamsByTrack,
     judges,
     judgesQuery,
     rounds,
@@ -146,8 +140,6 @@ export function useRoundsView() {
     setEditForm,
     setEditOpen,
     setSelectedRound,
-    teams,
-    teamsQuery,
     tracks,
     tracksQuery,
     updateMutation,

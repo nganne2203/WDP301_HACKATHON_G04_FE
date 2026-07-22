@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { CreateEventRequest, Event, EventStatus, FinalistSelectionMode } from '@/shared/api/types';
+import type { CreateCompetitionRequest, Competition, CompetitionStatus, FinalistSelectionMode } from '@/shared/api/types';
 
-export const eventStatusOptions: { value: EventStatus; label: string }[] = [
+export const competitionStatusOptions: { value: CompetitionStatus; label: string }[] = [
   { value: 'DRAFT', label: 'Draft' },
   { value: 'OPEN_REGISTRATION', label: 'Open Registration' },
   { value: 'REGISTRATION_CLOSED', label: 'Registration Closed' },
@@ -11,7 +11,7 @@ export const eventStatusOptions: { value: EventStatus; label: string }[] = [
   { value: 'ARCHIVED', label: 'Archived' },
 ];
 
-export const eventLifecycleTransitions: Partial<Record<EventStatus, EventStatus>> = {
+export const eventLifecycleTransitions: Partial<Record<CompetitionStatus, CompetitionStatus>> = {
   DRAFT: 'OPEN_REGISTRATION',
   OPEN_REGISTRATION: 'REGISTRATION_CLOSED',
   REGISTRATION_CLOSED: 'ONGOING',
@@ -20,13 +20,13 @@ export const eventLifecycleTransitions: Partial<Record<EventStatus, EventStatus>
   COMPLETED: 'ARCHIVED',
 };
 
-export const eventLifecycleActionLabels: Record<EventStatus, string> = {
+export const eventLifecycleActionLabels: Record<CompetitionStatus, string> = {
   DRAFT: 'Open registration',
   OPEN_REGISTRATION: 'Close registration',
-  REGISTRATION_CLOSED: 'Start event',
+  REGISTRATION_CLOSED: 'Start competition',
   ONGOING: 'Start scoring',
-  SCORING: 'Complete event',
-  COMPLETED: 'Archive event',
+  SCORING: 'Complete competition',
+  COMPLETED: 'Archive competition',
   ARCHIVED: 'Archived',
 };
 
@@ -35,16 +35,6 @@ export const finalistSelectionModeOptions: { value: FinalistSelectionMode; label
     value: 'FIXED_PER_BOARD',
     label: 'Fixed per board',
     description: 'Take the top N teams from each judging board.',
-  },
-  {
-    value: 'TOP_PER_BOARD_WITH_WILDCARD',
-    label: 'Board winners + wildcard',
-    description: 'Take top teams per board, then fill remaining slots by overall score.',
-  },
-  {
-    value: 'OVERALL_SCORE',
-    label: 'Overall score',
-    description: 'Ignore board quotas and take the highest ranked teams overall.',
   },
   {
     value: 'CUSTOM',
@@ -65,12 +55,12 @@ export const eventFormSchema = z.object({
   semester: z.string().max(50).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  minTeamMembers: optionalNumber,
+  maxTeamMembers: optionalNumber,
   boardCount: optionalNumber,
   maxTeamsPerBoard: optionalNumber,
   finalistsPerBoard: optionalNumber,
-  finalistCount: optionalNumber,
-  finalistSelectionMode: z.enum(['FIXED_PER_BOARD', 'TOP_PER_BOARD_WITH_WILDCARD', 'OVERALL_SCORE', 'CUSTOM']).optional(),
-  fillRemainingFinalistsByOverallScore: z.boolean().optional(),
+  finalistSelectionMode: z.enum(['FIXED_PER_BOARD', 'CUSTOM']).optional(),
 }).superRefine((data, ctx) => {
   if (data.startDate && data.endDate) {
     const start = new Date(data.startDate);
@@ -85,31 +75,28 @@ export const eventFormSchema = z.object({
     }
   }
 
-  if (data.finalistSelectionMode === 'FIXED_PER_BOARD' && data.boardCount && data.finalistsPerBoard && data.finalistCount) {
-    const expectedFinalists = data.boardCount * data.finalistsPerBoard;
-
-    if (data.finalistCount !== expectedFinalists) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['finalistCount'],
-        message: `For fixed per board mode, total finalists must be ${expectedFinalists}.`,
-      });
-    }
-  }
-
-  if (data.finalistsPerBoard && data.finalistCount && data.finalistsPerBoard > data.finalistCount) {
+  if (data.finalistsPerBoard && data.maxTeamsPerBoard && data.finalistsPerBoard > data.maxTeamsPerBoard) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['finalistsPerBoard'],
-      message: 'Finalists per board cannot exceed total finalists.',
+      message: 'Teams advancing per board cannot exceed max teams per board.',
+    });
+  }
+
+  if (data.minTeamMembers && data.maxTeamMembers && data.minTeamMembers > data.maxTeamMembers) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['maxTeamMembers'],
+      message: 'Maximum team size cannot be less than minimum team size.',
     });
   }
 });
 
-export type EventFormValues = z.infer<typeof eventFormSchema>;
+export type CompetitionFormValues = z.infer<typeof eventFormSchema>;
 
-export function toCreateEventRequest(data: EventFormValues): CreateEventRequest {
+export function toCreateCompetitionRequest(data: CompetitionFormValues): CreateCompetitionRequest {
   const competitionConfig = buildCompetitionConfig(data);
+  const finalistCount = calculateFinalistCount(data);
 
   return {
     title: data.title,
@@ -117,14 +104,17 @@ export function toCreateEventRequest(data: EventFormValues): CreateEventRequest 
     semester: data.semester || undefined,
     startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
     endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
+    minTeamMembers: data.minTeamMembers,
+    maxTeamMembers: data.maxTeamMembers,
     finalistSlotsPerTrack: data.finalistsPerBoard,
-    totalFinalistSlots: data.finalistCount,
+    totalFinalistSlots: finalistCount,
     competitionConfig,
   };
 }
 
-export function toUpdateEventRequest(data: EventFormValues): Partial<CreateEventRequest> {
+export function toUpdateCompetitionRequest(data: CompetitionFormValues): Partial<CreateCompetitionRequest> {
   const competitionConfig = buildCompetitionConfig(data);
+  const finalistCount = calculateFinalistCount(data);
 
   return {
     title: data.title,
@@ -132,36 +122,39 @@ export function toUpdateEventRequest(data: EventFormValues): Partial<CreateEvent
     semester: data.semester || undefined,
     startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
     endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
+    minTeamMembers: data.minTeamMembers,
+    maxTeamMembers: data.maxTeamMembers,
     finalistSlotsPerTrack: data.finalistsPerBoard,
-    totalFinalistSlots: data.finalistCount,
+    totalFinalistSlots: finalistCount,
     competitionConfig,
   };
 }
 
-export function toEditEventFormValues(event: Event): EventFormValues {
+export function toEditCompetitionFormValues(competition: Competition): CompetitionFormValues {
+  const persistedMode = competition.competitionConfig?.finalistSelectionMode;
+  const finalistSelectionMode = persistedMode === 'CUSTOM' ? 'CUSTOM' : 'FIXED_PER_BOARD';
+
   return {
-    title: event.title,
-    description: event.description || '',
-    semester: event.semester || '',
-    startDate: event.startDate ? event.startDate.split('T')[0] : '',
-    endDate: event.endDate ? event.endDate.split('T')[0] : '',
-    boardCount: event.competitionConfig?.boardCount,
-    maxTeamsPerBoard: event.competitionConfig?.maxTeamsPerBoard,
-    finalistsPerBoard: event.competitionConfig?.finalistsPerBoard ?? event.finalistSlotsPerTrack,
-    finalistCount: event.competitionConfig?.finalistCount ?? event.totalFinalistSlots,
-    finalistSelectionMode: event.competitionConfig?.finalistSelectionMode ?? 'FIXED_PER_BOARD',
-    fillRemainingFinalistsByOverallScore: event.competitionConfig?.fillRemainingFinalistsByOverallScore ?? false,
+    title: competition.title,
+    description: competition.description || '',
+    semester: competition.semester || '',
+    startDate: competition.startDate ? competition.startDate.split('T')[0] : '',
+    endDate: competition.endDate ? competition.endDate.split('T')[0] : '',
+    minTeamMembers: competition.minTeamMembers,
+    maxTeamMembers: competition.maxTeamMembers,
+    boardCount: competition.competitionConfig?.boardCount,
+    maxTeamsPerBoard: competition.competitionConfig?.maxTeamsPerBoard,
+    finalistsPerBoard: competition.competitionConfig?.finalistsPerBoard ?? competition.finalistSlotsPerTrack,
+    finalistSelectionMode,
   };
 }
 
-function buildCompetitionConfig(data: EventFormValues): CreateEventRequest['competitionConfig'] | undefined {
+function buildCompetitionConfig(data: CompetitionFormValues): CreateCompetitionRequest['competitionConfig'] | undefined {
   const hasConfig = Boolean(
     data.boardCount
     || data.maxTeamsPerBoard
     || data.finalistsPerBoard
-    || data.finalistCount
     || data.finalistSelectionMode
-    || data.fillRemainingFinalistsByOverallScore
   );
 
   if (!hasConfig) return undefined;
@@ -170,20 +163,24 @@ function buildCompetitionConfig(data: EventFormValues): CreateEventRequest['comp
     boardCount: data.boardCount,
     maxTeamsPerBoard: data.maxTeamsPerBoard,
     finalistsPerBoard: data.finalistsPerBoard,
-    finalistCount: data.finalistCount,
+    finalistCount: calculateFinalistCount(data),
     finalistSelectionMode: data.finalistSelectionMode || 'FIXED_PER_BOARD',
-    fillRemainingFinalistsByOverallScore: data.fillRemainingFinalistsByOverallScore || false,
   };
 }
 
-export function describeAdvancementRule(event?: Event | null) {
-  if (!event) return 'No event selected.';
+function calculateFinalistCount(data: Pick<CompetitionFormValues, 'boardCount' | 'finalistsPerBoard'>) {
+  if (!data.boardCount || !data.finalistsPerBoard) return undefined;
+  return data.boardCount * data.finalistsPerBoard;
+}
 
-  const config = event.competitionConfig;
+export function describeAdvancementRule(competition?: Competition | null) {
+  if (!competition) return 'No competition selected.';
+
+  const config = competition.competitionConfig;
   const mode = config?.finalistSelectionMode || 'FIXED_PER_BOARD';
   const boardCount = config?.boardCount;
-  const finalistsPerBoard = config?.finalistsPerBoard ?? event.finalistSlotsPerTrack;
-  const finalistCount = config?.finalistCount ?? event.totalFinalistSlots;
+  const finalistsPerBoard = config?.finalistsPerBoard ?? competition.finalistSlotsPerTrack;
+  const finalistCount = config?.finalistCount ?? competition.totalFinalistSlots;
 
   if (mode === 'FIXED_PER_BOARD' && boardCount && finalistsPerBoard) {
     return `${boardCount} board(s), top ${finalistsPerBoard} team(s) per board advance (${finalistCount || boardCount * finalistsPerBoard} total).`;
@@ -211,20 +208,20 @@ export function parseInviteEmails(value: string) {
     .filter(Boolean);
 }
 
-export function formatEventDate(dateStr?: string | null) {
+export function formatCompetitionDate(dateStr?: string | null) {
   if (!dateStr) return '-';
   return new Date(dateStr).toLocaleDateString();
 }
 
-export function mapEventStatus(status: EventStatus) {
+export function mapCompetitionStatus(status: CompetitionStatus) {
   return status.toLowerCase();
 }
 
-export function getNextEventStatus(status: EventStatus) {
+export function getNextCompetitionStatus(status: CompetitionStatus) {
   return eventLifecycleTransitions[status] || null;
 }
 
-export function getEventLifecycleActionLabel(status: EventStatus) {
+export function getCompetitionLifecycleActionLabel(status: CompetitionStatus) {
   return eventLifecycleActionLabels[status];
 }
 

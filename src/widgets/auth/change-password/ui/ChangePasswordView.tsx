@@ -29,8 +29,8 @@ export function ChangePassword() {
   const confirmPasswordMatched = confirmPassword.length > 0 && newPassword.length >= 8 && newPassword === confirmPassword;
   const canSubmit = Boolean(currentPassword && newPassword.length >= 8 && confirmPasswordMatched && !submitting);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(competition: FormEvent<HTMLFormElement>) {
+    competition.preventDefault();
 
     if (newPassword.length < 8) {
       toast.error('New password must be at least 8 characters.');
@@ -82,7 +82,7 @@ export function ChangePassword() {
                   type={showCurrentPassword ? 'text' : 'password'}
                   className="pr-10"
                   value={currentPassword}
-                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  onChange={(competition) => setCurrentPassword(competition.target.value)}
                   required
                 />
                 <button
@@ -103,7 +103,7 @@ export function ChangePassword() {
                   type={showNewPassword ? 'text' : 'password'}
                   className="pr-10"
                   value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
+                  onChange={(competition) => setNewPassword(competition.target.value)}
                   required
                   minLength={8}
                   aria-invalid={newPasswordTooShort}
@@ -132,7 +132,7 @@ export function ChangePassword() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   className="pr-10"
                   value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  onChange={(competition) => setConfirmPassword(competition.target.value)}
                   required
                   minLength={8}
                   aria-invalid={confirmPasswordMismatch}

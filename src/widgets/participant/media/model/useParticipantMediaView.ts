@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
 import { mediaApi } from '@/entities/media/api';
-import { useEventsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { MediaItem } from '@/shared/api/types';
 
@@ -19,7 +19,7 @@ import {
 export function useParticipantMediaView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -51,17 +51,17 @@ export function useParticipantMediaView() {
     return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
+  const competitions = eventsQuery.data || [];
 
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
   const historyFilters = buildHistoryFilters({
-    eventId: activeEvent?.id || 'ALL',
+    competitionId: activeCompetition?.id || 'ALL',
     mediaType: historyType,
     status: historyStatus,
     fromDate,
@@ -121,14 +121,14 @@ export function useParticipantMediaView() {
     },
   });
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setFile(event.target.files?.[0] || null);
+  const handleFileChange = (competition: ChangeEvent<HTMLInputElement>) => {
+    setFile(competition.target.files?.[0] || null);
   };
 
-  const handleUpload = (event: FormEvent) => {
-    event.preventDefault();
-    if (!activeEvent?.id) {
-      toast.error('Select an event in the header before uploading.');
+  const handleUpload = (competition: FormEvent) => {
+    competition.preventDefault();
+    if (!activeCompetition?.id) {
+      toast.error('Select an competition in the header before uploading.');
       return;
     }
     if (!title.trim()) {
@@ -145,7 +145,7 @@ export function useParticipantMediaView() {
     }
 
     const formData = new FormData();
-    formData.append('eventId', activeEvent.id);
+    formData.append('competitionId', activeCompetition.id);
     formData.append('title', title.trim());
     formData.append('description', description.trim());
     formData.append('tags', tags.trim());
@@ -161,7 +161,7 @@ export function useParticipantMediaView() {
 
   return {
     user,
-    selectedEventId: activeEvent?.id || '',
+    selectedCompetitionId: activeCompetition?.id || '',
     title,
     setTitle,
     description,
@@ -195,7 +195,7 @@ export function useParticipantMediaView() {
     setDeleteMedia,
     fileError,
     eventsQuery,
-    events,
+    competitions,
     historyQuery,
     historyItems,
     pagination,

@@ -49,7 +49,7 @@ const ROLE_OPTIONS = [
   { label: 'All roles', value: 'all' },
   { label: 'Admin', value: 'ADMIN' },
   { label: 'Coordinator', value: 'COORDINATOR' },
-  { label: 'Event Coordinator', value: 'EVENT_COORDINATOR' },
+  { label: 'Competition Coordinator', value: 'COMPETITION_COORDINATOR' },
   { label: 'Judge', value: 'JUDGE' },
   { label: 'Mentor', value: 'MENTOR' },
   { label: 'Speaker', value: 'SPEAKER' },
@@ -64,7 +64,7 @@ const ENTITY_OPTIONS = [
   { label: 'Permission', value: 'Permission' },
   { label: 'Team', value: 'Team' },
   { label: 'Team Invitation', value: 'TeamInvitation' },
-  { label: 'Event', value: 'Event' },
+  { label: 'Competition', value: 'Competition' },
   { label: 'Round', value: 'Round' },
   { label: 'Rubric', value: 'Rubric' },
   { label: 'Criterion', value: 'Criterion' },
@@ -165,7 +165,7 @@ function AuditDetailsDialog({
     <Dialog open={Boolean(log)} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="!w-[min(760px,calc(100vw-2rem))] !max-w-none sm:!max-w-none max-h-[85vh] overflow-y-auto overflow-x-hidden p-0">
         <DialogHeader className="px-6 pt-6 pr-14">
-          <DialogTitle>Audit Event Details</DialogTitle>
+          <DialogTitle>Audit Competition Details</DialogTitle>
         </DialogHeader>
         {log && (
           <div className="space-y-5 px-6 pb-6 min-w-0">
@@ -318,7 +318,7 @@ export function AuditLogsView() {
             Audit Logs
           </h1>
           <p className="text-sm text-muted-foreground">
-            Review account activity, security events, and system changes.
+            Review account activity, security competitions, and system changes.
           </p>
         </div>
         <div className="flex gap-2">
@@ -342,7 +342,7 @@ export function AuditLogsView() {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Events</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Competitions</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{totalItems.toLocaleString()}</p>
@@ -378,12 +378,12 @@ export function AuditLogsView() {
               <Label htmlFor="audit-search">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="audit-search" className="pl-9" placeholder="User, request id, entity..." value={filters.search || ''} onChange={(event) => updateFilter('search', event.target.value)} />
+                <Input id="audit-search" className="pl-9" placeholder="User, request id, entity..." value={filters.search || ''} onChange={(competition) => updateFilter('search', competition.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-filter">User</Label>
-              <Input id="user-filter" placeholder="Email or username" value={filters.username || ''} onChange={(event) => updateFilter('username', event.target.value)} />
+              <Input id="user-filter" placeholder="Email or username" value={filters.username || ''} onChange={(competition) => updateFilter('username', competition.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
@@ -426,11 +426,11 @@ export function AuditLogsView() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="from-filter">From</Label>
-              <Input id="from-filter" type="date" value={filters.from || ''} onChange={(event) => updateFilter('from', event.target.value)} />
+              <Input id="from-filter" type="date" value={filters.from || ''} onChange={(competition) => updateFilter('from', competition.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="to-filter">To</Label>
-              <Input id="to-filter" type="date" value={filters.to || ''} onChange={(event) => updateFilter('to', event.target.value)} />
+              <Input id="to-filter" type="date" value={filters.to || ''} onChange={(competition) => updateFilter('to', competition.target.value)} />
             </div>
             <div className="flex items-end">
               <Button variant="outline" onClick={clearFilters}>Clear</Button>

@@ -75,7 +75,7 @@ export function Judging() {
           <Select
             value={view.activeRound?.id || ''}
             onValueChange={view.setSelectedRoundId}
-            disabled={!view.activeEvent || view.roundsQuery.isLoading}
+            disabled={!view.activeCompetition || view.roundsQuery.isLoading}
           >
             <SelectTrigger>
               <SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading rounds...' : 'Select judging stage'} />
@@ -209,7 +209,7 @@ export function Judging() {
           <AlertDialogHeader>
             <AlertDialogTitle>Randomize Board Assignment</AlertDialogTitle>
             <AlertDialogDescription>
-              Eligible teams from <strong>{view.activeEvent?.title}</strong> will be distributed across all boards in
+              Eligible teams from <strong>{view.activeCompetition?.title}</strong> will be distributed across all boards in
               the selected judging stage. You can review the complete lineup before saving.
             </AlertDialogDescription>
           </AlertDialogHeader>

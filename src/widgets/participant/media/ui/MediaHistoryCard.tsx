@@ -78,11 +78,11 @@ export function MediaHistoryCard({
               {mediaStatuses.map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Input type="number" placeholder="Year" value={year} onChange={(event) => { setYear(event.target.value); setPage(1); }} />
-          <Input type="date" value={fromDate} onChange={(event) => { setFromDate(event.target.value); setPage(1); }} />
-          <Input type="date" value={toDate} onChange={(event) => { setToDate(event.target.value); setPage(1); }} />
-          <Input type="number" min={1} max={53} placeholder="Week" value={week} onChange={(event) => { setWeek(event.target.value); setPage(1); }} />
-          <Input type="number" min={1} max={12} placeholder="Month" value={month} onChange={(event) => { setMonth(event.target.value); setPage(1); }} />
+          <Input type="number" placeholder="Year" value={year} onChange={(competition) => { setYear(competition.target.value); setPage(1); }} />
+          <Input type="date" value={fromDate} onChange={(competition) => { setFromDate(competition.target.value); setPage(1); }} />
+          <Input type="date" value={toDate} onChange={(competition) => { setToDate(competition.target.value); setPage(1); }} />
+          <Input type="number" min={1} max={53} placeholder="Week" value={week} onChange={(competition) => { setWeek(competition.target.value); setPage(1); }} />
+          <Input type="number" min={1} max={12} placeholder="Month" value={month} onChange={(competition) => { setMonth(competition.target.value); setPage(1); }} />
         </div>
 
         {historyLoading ? (

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { githubApi } from '@/entities/github/api';
 import { repositoriesApi } from '@/entities/repository/api';
 import { useStore } from '@/entities/session/model/store';
-import { useEventsQuery, useRoundsQuery, useTeamsQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useRoundsQuery, useTeamsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Repository, RepositoryAccessState, RepositoryStatus, RevokeGitHubMembersResult } from '@/shared/api/types';
 import { useDebouncedValue } from '@/shared/lib/useDebouncedValue';
@@ -16,7 +16,7 @@ export const PERMISSIONS = ['pull', 'triage', 'push', 'maintain', 'admin'] as co
 
 export function useRepositoriesView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [repositoriesPage, setRepositoriesPage] = useState(1);
   const [repositorySearch, setRepositorySearch] = useState('');
   const [repositoryStatus, setRepositoryStatus] = useState<'all' | RepositoryStatus>('all');
@@ -47,13 +47,13 @@ export function useRepositoriesView() {
   const [confirmationText, setConfirmationText] = useState('');
   const [revokeResult, setRevokeResult] = useState<RevokeGitHubMembersResult | null>(null);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
-  const activeEventId = activeEvent?.id || '';
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
+  const activeCompetitionId = activeCompetition?.id || '';
 
   useEffect(() => {
     setRepositoriesPage(1);
@@ -61,30 +61,30 @@ export function useRepositoriesView() {
     setSelectedRoundId('none');
     setSelectedRepositoryId('');
     setSelectedRepository(null);
-  }, [activeEventId]);
+  }, [activeCompetitionId]);
 
   const configQuery = useQuery({
-    queryKey: queryKeys.github.config(activeEventId),
-    enabled: Boolean(activeEventId),
-    queryFn: async () => (await githubApi.getConfig(activeEventId)).data,
+    queryKey: queryKeys.github.config(activeCompetitionId),
+    enabled: Boolean(activeCompetitionId),
+    queryFn: async () => (await githubApi.getConfig(activeCompetitionId)).data,
   });
 
-  const teamsQuery = useTeamsQuery({ eventId: activeEventId, limit: 10 }, { enabled: Boolean(activeEventId) });
+  const teamsQuery = useTeamsQuery({ competitionId: activeCompetitionId, limit: 10 }, { enabled: Boolean(activeCompetitionId) });
 
-  const roundsQuery = useRoundsQuery({ eventId: activeEventId, limit: 10 }, { enabled: Boolean(activeEventId) });
+  const roundsQuery = useRoundsQuery({ competitionId: activeCompetitionId, limit: 10 }, { enabled: Boolean(activeCompetitionId) });
 
   const repositoriesQuery = useQuery({
     queryKey: queryKeys.repositories.list({
-      eventId: activeEventId,
+      competitionId: activeCompetitionId,
       page: repositoriesPage,
       limit: 10,
       search: debouncedRepositorySearch || undefined,
       status: repositoryStatus === 'all' ? undefined : repositoryStatus,
       accessState: repositoryAccessState === 'all' ? undefined : repositoryAccessState,
     }),
-    enabled: Boolean(activeEventId),
+    enabled: Boolean(activeCompetitionId),
     queryFn: () => repositoriesApi.list({
-      eventId: activeEventId,
+      competitionId: activeCompetitionId,
       page: repositoriesPage,
       limit: 10,
       search: debouncedRepositorySearch || undefined,
@@ -116,7 +116,7 @@ export function useRepositoriesView() {
     setRepositorySearch('');
     setRepositoryStatus('all');
     setRepositoryAccessState('all');
-  }, [activeEventId]);
+  }, [activeCompetitionId]);
 
   useEffect(() => {
     setRepositoriesPage(1);
@@ -138,9 +138,9 @@ export function useRepositoriesView() {
 
   const saveConfigMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       return (await githubApi.saveConfig({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         organizationName,
         ownerUsername,
         githubToken,
@@ -150,15 +150,15 @@ export function useRepositoriesView() {
     onSuccess: async () => {
       setGithubToken('');
       toast.success('GitHub configuration saved');
-      await queryClient.invalidateQueries({ queryKey: queryKeys.github.config(activeEventId) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.github.config(activeCompetitionId) });
     },
     onError: (error) => toast.error('Could not save GitHub configuration', { description: getApiErrorMessage(error) }),
   });
 
   const testConnectionMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
-      return (await githubApi.testConnection(activeEventId)).data;
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
+      return (await githubApi.testConnection(activeCompetitionId)).data;
     },
     onSuccess: (result) => {
       toast.success('GitHub connection works', {
@@ -170,10 +170,10 @@ export function useRepositoriesView() {
 
   const createRepositoryMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       if (!selectedTeamId) throw new Error('Please select a team first.');
       return (await githubApi.createRepository({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         teamId: selectedTeamId,
         roundId: selectedRoundId === 'none' ? null : selectedRoundId,
         repoName,
@@ -196,9 +196,9 @@ export function useRepositoriesView() {
 
   const assignCollaboratorMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       return (await githubApi.assignCollaborator(collabRepoName, collabUsername, {
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         permission: collabPermission,
       })).data;
     },
@@ -214,9 +214,9 @@ export function useRepositoriesView() {
 
   const revokeCollaboratorMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       return (await githubApi.revokeCollaborator(collabRepoName, collabUsername, {
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
       })).data;
     },
     onSuccess: async (result) => {
@@ -231,8 +231,8 @@ export function useRepositoriesView() {
 
   const registerWebhookMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
-      return (await githubApi.registerRepositoryWebhook(collabRepoName, { eventId: activeEventId })).data;
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
+      return (await githubApi.registerRepositoryWebhook(collabRepoName, { competitionId: activeCompetitionId })).data;
     },
     onSuccess: async (result) => {
       toast.success('Webhook registered', {
@@ -245,9 +245,9 @@ export function useRepositoriesView() {
 
   const inviteMemberMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       return (await githubApi.inviteOrganizationMember({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         email: inviteEmail,
         role: 'direct_member',
       })).data;
@@ -263,9 +263,9 @@ export function useRepositoriesView() {
 
   const revokeMembersMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       return (await githubApi.revokeMembers({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         confirmationText: 'REVOKE MEMBERS',
       })).data;
     },
@@ -308,10 +308,10 @@ export function useRepositoriesView() {
 
   const linkRepositoryMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       if (!selectedTeamId) throw new Error('Please select a team first.');
       return (await repositoriesApi.create({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         teamId: selectedTeamId,
         githubOwner: linkOwner,
         githubRepo: linkRepo,
@@ -331,9 +331,9 @@ export function useRepositoriesView() {
 
   const bulkCreateRepositoriesMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
       return (await githubApi.bulkCreateRepositories({
-        eventId: activeEventId,
+        competitionId: activeCompetitionId,
         roundId: selectedRoundId === 'none' ? null : selectedRoundId,
         assignCollaborators: false,
       })).data;
@@ -356,8 +356,8 @@ export function useRepositoriesView() {
 
   const bulkGrantAccessMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
-      return (await githubApi.bulkGrantAccess({ eventId: activeEventId })).data;
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
+      return (await githubApi.bulkGrantAccess({ competitionId: activeCompetitionId })).data;
     },
     onSuccess: (result) => {
       toast.success('Bulk collaborator access granted', {
@@ -376,8 +376,8 @@ export function useRepositoriesView() {
 
   const bulkRevokeAccessMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEventId) throw new Error('Please select an event first.');
-      return (await githubApi.bulkRevokeAccess({ eventId: activeEventId })).data;
+      if (!activeCompetitionId) throw new Error('Please select an competition first.');
+      return (await githubApi.bulkRevokeAccess({ competitionId: activeCompetitionId })).data;
     },
     onSuccess: (result) => {
       toast.success('Bulk collaborator access revoked', {
@@ -429,9 +429,9 @@ export function useRepositoriesView() {
     setConfirmationText,
     revokeResult,
     eventsQuery,
-    events,
-    activeEvent,
-    activeEventId,
+    competitions,
+    activeCompetition,
+    activeCompetitionId,
     configQuery,
     teamsQuery,
     roundsQuery,

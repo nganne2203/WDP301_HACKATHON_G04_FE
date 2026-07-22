@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Label } from '@/shared/ui/label';
 import { Textarea } from '@/shared/ui/textarea';
 
-export function EventInvitationsDialog({
+export function CompetitionInvitationsDialog({
   open,
   onOpenChange,
   eventTitle,
@@ -32,10 +32,10 @@ export function EventInvitationsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-5 h-5" />
-            Send Event Invitations
+            Send Competition Invitations
           </DialogTitle>
           <DialogDescription>
-            Send registration invitation emails for {eventTitle || 'this event'}.
+            Send registration invitation emails for {eventTitle || 'this competition'}.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -46,7 +46,7 @@ export function EventInvitationsDialog({
               rows={5}
               placeholder="participant1@example.com, participant2@example.com"
               value={inviteEmails}
-              onChange={(event) => setInviteEmails(event.target.value)}
+              onChange={(competition) => setInviteEmails(competition.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -56,7 +56,7 @@ export function EventInvitationsDialog({
               rows={3}
               placeholder="Optional invitation message"
               value={inviteMessage}
-              onChange={(event) => setInviteMessage(event.target.value)}
+              onChange={(competition) => setInviteMessage(competition.target.value)}
             />
           </div>
           <div className="flex justify-end gap-2 pt-2">

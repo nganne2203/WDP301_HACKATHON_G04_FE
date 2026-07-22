@@ -63,7 +63,7 @@ export function Workshops() {
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!view.activeEvent}>
+              <Button disabled={!view.activeCompetition}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Workshop
               </Button>
@@ -72,7 +72,7 @@ export function Workshops() {
               <div className="flex-shrink-0 px-6 pt-6">
               <DialogHeader>
                 <DialogTitle>Create Workshop</DialogTitle>
-                <DialogDescription>Schedule a workshop for {view.activeEvent?.title || 'the selected event'}.</DialogDescription>
+                <DialogDescription>Schedule a workshop for {view.activeCompetition?.title || 'the selected competition'}.</DialogDescription>
               </DialogHeader>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-6">
@@ -98,13 +98,13 @@ export function Workshops() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <WorkshopMetricCard label="Total Workshops" value={String(view.workshops.length)} helper="Scheduled in selected event" />
+        <WorkshopMetricCard label="Total Workshops" value={String(view.workshops.length)} helper="Scheduled in selected competition" />
         <WorkshopMetricCard label="Live Now" value={String(view.liveCount)} helper="Sessions currently active" />
         <WorkshopMetricCard label="Completed" value={String(view.completedCount)} helper="Finished workshops" />
       </div>
 
       {view.eventsQuery.error && (
-        <WorkshopInlineError message={view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load events'} />
+        <WorkshopInlineError message={view.eventsQuery.error instanceof ApiError ? view.eventsQuery.error.firstError : 'Failed to load competitions'} />
       )}
 
       {view.workshopsQuery.error && (
@@ -146,7 +146,7 @@ export function Workshops() {
             {!view.eventsQuery.isLoading && !view.workshopsQuery.isLoading && view.workshops.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
-                  No workshops found for this event.
+                  No workshops found for this competition.
                 </TableCell>
               </TableRow>
             )}
@@ -337,7 +337,7 @@ export function Workshops() {
                 className="mt-3 min-h-24"
                 disabled={!view.canCreateWorkshopQuestions || !view.canSubmitWorkshopQuestion || view.createQuestionMutation.isPending}
                 maxLength={1000}
-                onChange={(event) => view.setQuestionContent(event.target.value)}
+                onChange={(competition) => view.setQuestionContent(competition.target.value)}
                 placeholder="Ask the speaker a question"
                 value={view.questionContent}
               />

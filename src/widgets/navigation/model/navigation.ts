@@ -33,10 +33,10 @@ export interface NavigationItem {
 
 const coordinatorNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/coordinator' },
-  { icon: Calendar, label: 'Events', href: '/coordinator/events' },
+  { icon: Calendar, label: 'Competitions', href: '/coordinator/competitions' },
+  { icon: GitBranch, label: 'Tracks', href: '/coordinator/tracks' },
   { icon: Calendar, label: 'Rounds', href: '/coordinator/rounds' },
   { icon: FileText, label: 'Rubrics', href: '/coordinator/rubrics' },
-  { icon: GitBranch, label: 'Tracks', href: '/coordinator/tracks' },
   { icon: Clock3, label: 'Timelines', href: '/coordinator/timelines' },
   { icon: Presentation, label: 'Workshops', href: '/coordinator/workshops' },
   { icon: Users, label: 'Users', href: '/coordinator/participants' },
@@ -52,10 +52,10 @@ const coordinatorNavigation: NavigationItem[] = [
 
 const adminNavigation: NavigationItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/coordinator' },
-  { icon: Calendar, label: 'Events', href: '/coordinator/events' },
+  { icon: Calendar, label: 'Competitions', href: '/coordinator/competitions' },
+  { icon: GitBranch, label: 'Tracks', href: '/coordinator/tracks' },
   { icon: Calendar, label: 'Rounds', href: '/coordinator/rounds' },
   { icon: FileText, label: 'Rubrics', href: '/coordinator/rubrics' },
-  { icon: GitBranch, label: 'Tracks', href: '/coordinator/tracks' },
   { icon: Clock3, label: 'Timelines', href: '/coordinator/timelines' },
   { icon: Presentation, label: 'Workshops', href: '/coordinator/workshops' },
   { icon: Users, label: 'Users', href: '/coordinator/participants' },

@@ -130,7 +130,7 @@ function SubmissionInput({
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} placeholder="https://..." />
+      <Input id={id} value={value} disabled={disabled} onChange={(competition) => onChange(competition.target.value)} placeholder="https://..." />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import { useStore } from '@/entities/session/model/store';
 import { workshopsApi } from '@/shared/api';
-import { useEventsQuery, useTimelinesQuery, useUsersQuery } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useTimelinesQuery, useUsersQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Workshop } from '@/shared/api/types';
@@ -21,7 +21,7 @@ import {
 
 export function useWorkshopsView() {
   const queryClient = useQueryClient();
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -39,29 +39,29 @@ export function useWorkshopsView() {
   const canViewWorkshopRatings = useStore((state) => state.hasPermission('WORKSHOP_RATING_VIEW'));
   const canViewWorkshopFeedback = useStore((state) => state.hasPermission('WORKSHOP_FEEDBACK_VIEW'));
 
-  const eventsQuery = useEventsQuery();
+  const eventsQuery = useCompetitionsQuery();
 
-  const events = eventsQuery.data || [];
-  const activeEvent = useMemo(() => {
-    if (!events.length) return null;
-    return events.find((event) => event.id === selectedEvent?.id) || events[0];
-  }, [events, selectedEvent?.id]);
+  const competitions = eventsQuery.data || [];
+  const activeCompetition = useMemo(() => {
+    if (!competitions.length) return null;
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
+  }, [competitions, selectedCompetition?.id]);
 
   const workshopsQuery = useQuery({
-    queryKey: queryKeys.workshops.list({ eventId: activeEvent?.id, page, limit: 10 }),
-    enabled: Boolean(activeEvent?.id),
-    queryFn: () => workshopsApi.list({ eventId: activeEvent?.id, page, limit: 10 }),
+    queryKey: queryKeys.workshops.list({ competitionId: activeCompetition?.id, page, limit: 10 }),
+    enabled: Boolean(activeCompetition?.id),
+    queryFn: () => workshopsApi.list({ competitionId: activeCompetition?.id, page, limit: 10 }),
   });
 
 
   const workshopTimelinesQuery = useTimelinesQuery(
     {
-      eventId: activeEvent?.id,
-      eventType: 'WORKSHOP',
+      competitionId: activeCompetition?.id,
+      activityType: 'WORKSHOP',
       page: 1,
       limit: 10,
     },
-    { enabled: Boolean(activeEvent?.id) }
+    { enabled: Boolean(activeCompetition?.id) }
   );
 
   const presenterUsersQuery = useUsersQuery({ page: 1, limit: 100 });
@@ -174,7 +174,7 @@ export function useWorkshopsView() {
   });
 
   const handleCreate = () => {
-    if (!activeEvent?.id) return;
+    if (!activeCompetition?.id) return;
     if (!createForm.title.trim()) {
       toast.error('Workshop title is required');
       return;
@@ -183,7 +183,7 @@ export function useWorkshopsView() {
       toast.error('Start time and end time are required');
       return;
     }
-    createMutation.mutate(buildWorkshopPayload(createForm, activeEvent.id));
+    createMutation.mutate(buildWorkshopPayload(createForm, activeCompetition.id));
   };
 
   const handleUpdate = () => {
@@ -235,7 +235,7 @@ export function useWorkshopsView() {
   const completedCount = workshops.filter((workshop) => workshop.status === 'COMPLETED').length;
 
   return {
-    activeEvent,
+    activeCompetition,
     completedCount,
     createForm,
     createMutation,
@@ -244,7 +244,7 @@ export function useWorkshopsView() {
     deleteOpen,
     editForm,
     editOpen,
-    events,
+    competitions,
     eventsQuery,
     handleCreate,
     handleCreateQuestion,

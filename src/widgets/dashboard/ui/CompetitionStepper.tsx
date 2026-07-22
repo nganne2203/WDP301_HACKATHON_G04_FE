@@ -6,11 +6,11 @@ interface Step {
   status: 'completed' | 'active' | 'pending';
 }
 
-interface EventStepperProps {
+interface CompetitionStepperProps {
   steps: Step[];
 }
 
-export function EventStepper({ steps }: EventStepperProps) {
+export function CompetitionStepper({ steps }: CompetitionStepperProps) {
   return (
     <div className="w-full overflow-x-auto pb-4">
       <div className="flex items-center gap-2 min-w-max">

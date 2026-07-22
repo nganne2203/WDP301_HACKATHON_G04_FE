@@ -19,13 +19,13 @@ function formatCountdown(totalSeconds: number) {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function getStorageKey(eventId: string) {
-  return `seal:check-in-qr:${eventId}`;
+function getStorageKey(competitionId: string) {
+  return `seal:check-in-qr:${competitionId}`;
 }
 
-function readStoredQr(eventId: string): CheckInQr | null {
+function readStoredQr(competitionId: string): CheckInQr | null {
   try {
-    const value = window.sessionStorage.getItem(getStorageKey(eventId));
+    const value = window.sessionStorage.getItem(getStorageKey(competitionId));
     if (!value) return null;
     const stored = JSON.parse(value) as CheckInQr;
     return getRemainingSeconds(stored.expiresAt) > 0 ? stored : null;
@@ -34,44 +34,44 @@ function readStoredQr(eventId: string): CheckInQr | null {
   }
 }
 
-export function EventCheckInQrPanel({ eventId, eventTitle }: { eventId?: string; eventTitle?: string }) {
+export function CompetitionCheckInQrPanel({ competitionId, eventTitle }: { competitionId?: string; eventTitle?: string }) {
   const [qr, setQr] = useState<CheckInQr | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
   const qrMutation = useMutation({
-    mutationFn: () => participantsApi.generateCheckInQr(eventId!),
+    mutationFn: () => participantsApi.generateCheckInQr(competitionId!),
     onSuccess: (response) => {
       setQr(response.data);
       setRemainingSeconds(getRemainingSeconds(response.data.expiresAt));
-      window.sessionStorage.setItem(getStorageKey(eventId!), JSON.stringify(response.data));
+      window.sessionStorage.setItem(getStorageKey(competitionId!), JSON.stringify(response.data));
     },
   });
 
   useEffect(() => {
-    if (!eventId) {
+    if (!competitionId) {
       setQr(null);
       setRemainingSeconds(0);
       return;
     }
 
-    const storedQr = readStoredQr(eventId);
+    const storedQr = readStoredQr(competitionId);
     if (storedQr) {
       setQr(storedQr);
       setRemainingSeconds(getRemainingSeconds(storedQr.expiresAt));
       return;
     }
 
-    window.sessionStorage.removeItem(getStorageKey(eventId));
+    window.sessionStorage.removeItem(getStorageKey(competitionId));
     setQr(null);
     setRemainingSeconds(0);
-  }, [eventId]);
+  }, [competitionId]);
 
   useEffect(() => {
     if (!qr?.expiresAt) return;
     const updateCountdown = () => {
       const seconds = getRemainingSeconds(qr.expiresAt);
       setRemainingSeconds(seconds);
-      if (seconds === 0 && eventId) window.sessionStorage.removeItem(getStorageKey(eventId));
+      if (seconds === 0 && competitionId) window.sessionStorage.removeItem(getStorageKey(competitionId));
     };
     updateCountdown();
     const interval = window.setInterval(updateCountdown, 1000);
@@ -82,22 +82,22 @@ export function EventCheckInQrPanel({ eventId, eventTitle }: { eventId?: string;
   const errorMessage = qrMutation.error instanceof ApiError
     ? qrMutation.error.firstError
     : qrMutation.error
-      ? 'Unable to generate the event check-in QR.'
+      ? 'Unable to generate the competition check-in QR.'
       : null;
 
   const downloadQr = () => {
     if (!qr) return;
     const link = document.createElement('a');
     link.href = qr.qrCodeDataUrl;
-    link.download = `check-in-${(eventTitle || 'event').replace(/\s+/g, '-').toLowerCase()}.png`;
+    link.download = `check-in-${(eventTitle || 'competition').replace(/\s+/g, '-').toLowerCase()}.png`;
     link.click();
   };
 
-  if (!eventId) {
+  if (!competitionId) {
     return (
       <div className="flex aspect-square flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-slate-50 p-6 text-center">
         <QrCode className="h-14 w-14 text-slate-400" />
-        <p className="text-sm text-muted-foreground">Select an event to generate its check-in QR.</p>
+        <p className="text-sm text-muted-foreground">Select an competition to generate its check-in QR.</p>
       </div>
     );
   }
@@ -118,7 +118,7 @@ export function EventCheckInQrPanel({ eventId, eventTitle }: { eventId?: string;
           <>
             <img
               src={qr.qrCodeDataUrl}
-              alt="Event check-in QR"
+              alt="Competition check-in QR"
               className={`h-full w-full object-contain ${isExpired ? 'opacity-20 blur-[1px]' : ''}`}
             />
             {isExpired && (

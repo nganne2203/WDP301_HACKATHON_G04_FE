@@ -16,11 +16,11 @@ const Notifications = lazy(async () => ({ default: (await import('@/pages/Notifi
 const TeamInvitationConfirmation = lazy(async () => ({
   default: (await import('@/pages/TeamInvitationConfirmation')).TeamInvitationConfirmation,
 }));
-const EventGallery = lazy(async () => ({ default: (await import('@/pages/EventGallery')).EventGallery }));
+const CompetitionGallery = lazy(async () => ({ default: (await import('@/pages/CompetitionGallery')).CompetitionGallery }));
 const CoordinatorDashboard = lazy(async () => ({
   default: (await import('@/pages/coordinator/Dashboard')).CoordinatorDashboard,
 }));
-const Events = lazy(async () => ({ default: (await import('@/pages/coordinator/Events')).Events }));
+const Competitions = lazy(async () => ({ default: (await import('@/pages/coordinator/Competitions')).Competitions }));
 const Rounds = lazy(async () => ({ default: (await import('@/pages/coordinator/Rounds')).Rounds }));
 const Rubrics = lazy(async () => ({ default: (await import('@/pages/coordinator/Rubrics')).Rubrics }));
 const Tracks = lazy(async () => ({ default: (await import('@/pages/coordinator/Tracks')).Tracks }));
@@ -182,10 +182,10 @@ export function AppRouter() {
             }
           />
           <Route
-            path="/coordinator/events"
+            path="/coordinator/competitions"
             element={
               <ProtectedRoute allowedRoles={['coordinator', 'admin']}>
-                <Events />
+                <Competitions />
               </ProtectedRoute>
             }
           />
@@ -395,10 +395,10 @@ export function AppRouter() {
             }
           />
           <Route
-            path="/events/:eventId/gallery"
+            path="/competitions/:competitionId/gallery"
             element={
               <ProtectedRoute>
-                <EventGallery />
+                <CompetitionGallery />
               </ProtectedRoute>
             }
           />

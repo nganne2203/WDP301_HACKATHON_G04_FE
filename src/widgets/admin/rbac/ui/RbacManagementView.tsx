@@ -88,7 +88,7 @@ function RoleForm({
           <Input
             id="role-name"
             value={form.name}
-            onChange={(event) => onChange({ ...form, name: event.target.value.toUpperCase() })}
+            onChange={(competition) => onChange({ ...form, name: competition.target.value.toUpperCase() })}
             placeholder="REVIEWER"
           />
         </div>
@@ -97,7 +97,7 @@ function RoleForm({
           <Input
             id="role-code"
             value={form.code}
-            onChange={(event) => onChange({ ...form, code: event.target.value.toUpperCase() })}
+            onChange={(competition) => onChange({ ...form, code: competition.target.value.toUpperCase() })}
             placeholder="REVIEWER"
           />
         </div>
@@ -107,8 +107,8 @@ function RoleForm({
         <Input
           id="role-description"
           value={form.description}
-          onChange={(event) => onChange({ ...form, description: event.target.value })}
-          placeholder="Can review operational records and event evidence."
+          onChange={(competition) => onChange({ ...form, description: competition.target.value })}
+          placeholder="Can review operational records and competition evidence."
         />
       </div>
     </div>
@@ -399,7 +399,7 @@ export function RbacManagementView() {
                     className="pl-9"
                     placeholder="Search roles"
                     value={roleSearch}
-                    onChange={(event) => setRoleSearch(event.target.value)}
+                    onChange={(competition) => setRoleSearch(competition.target.value)}
                   />
                 </div>
 
@@ -497,7 +497,7 @@ export function RbacManagementView() {
                     className="pl-9"
                     placeholder="Search permissions"
                     value={permissionSearch}
-                    onChange={(event) => setPermissionSearch(event.target.value)}
+                    onChange={(competition) => setPermissionSearch(competition.target.value)}
                   />
                 </div>
 
@@ -588,7 +588,7 @@ export function RbacManagementView() {
                                 <Input
                                   id={`permission-name-${permission.id}`}
                                   value={draft.name}
-                                  onChange={(event) => handlePermissionDraftChange(permission, { ...draft, name: event.target.value })}
+                                  onChange={(competition) => handlePermissionDraftChange(permission, { ...draft, name: competition.target.value })}
                                 />
                               </div>
                               <div className="space-y-1">
@@ -596,7 +596,7 @@ export function RbacManagementView() {
                                 <Input
                                   id={`permission-module-${permission.id}`}
                                   value={draft.module}
-                                  onChange={(event) => handlePermissionDraftChange(permission, { ...draft, module: event.target.value.toUpperCase() })}
+                                  onChange={(competition) => handlePermissionDraftChange(permission, { ...draft, module: competition.target.value.toUpperCase() })}
                                 />
                               </div>
                               <div className="space-y-1 sm:col-span-2">
@@ -604,7 +604,7 @@ export function RbacManagementView() {
                                 <Input
                                   id={`permission-description-${permission.id}`}
                                   value={draft.description}
-                                  onChange={(event) => handlePermissionDraftChange(permission, { ...draft, description: event.target.value })}
+                                  onChange={(competition) => handlePermissionDraftChange(permission, { ...draft, description: competition.target.value })}
                                 />
                               </div>
                             </div>

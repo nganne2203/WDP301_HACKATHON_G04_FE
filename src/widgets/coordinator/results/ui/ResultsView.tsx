@@ -3,7 +3,7 @@ import { Award, CheckCircle2, Loader2, Medal, RefreshCcw, Send, Trophy, Upload, 
 
 import { useResultsView } from '../model/useResultsView';
 
-import { describeAdvancementRule } from '@/features/event-management/model/event-form';
+import { describeAdvancementRule } from '@/features/competition-management/model/competition-form';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import {
   AlertDialog,
@@ -123,7 +123,7 @@ export function Results() {
               <Button
                 variant="outline"
                 onClick={() => view.generateRankingsMutation.mutate()}
-                disabled={!view.canGenerateRankingsForRound || view.generateRankingsMutation.isPending || !view.activeEventId || !view.activeRoundId}
+                disabled={!view.canGenerateRankingsForRound || view.generateRankingsMutation.isPending || !view.activeCompetitionId || !view.activeRoundId}
                 className="w-full"
                 title={view.activeRound?.roundType === 'PRELIMINARY' ? 'Rankings are generated only for the final round.' : undefined}
               >
@@ -158,7 +158,7 @@ export function Results() {
         <Users className="h-4 w-4" />
         <AlertTitle>Current advancement rule</AlertTitle>
         <AlertDescription>
-          {describeAdvancementRule(view.activeEvent)}
+          {describeAdvancementRule(view.activeCompetition)}
         </AlertDescription>
       </Alert>
 
@@ -167,14 +167,14 @@ export function Results() {
         <Alert>
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Loading rankings…</AlertTitle>
-          <AlertDescription>Loading scores for this event.</AlertDescription>
+          <AlertDescription>Loading scores for this competition.</AlertDescription>
         </Alert>
       ) : view.rankings.length === 0 ? (
         <Alert>
           <Trophy className="h-4 w-4" />
           <AlertTitle>No rankings yet</AlertTitle>
           <AlertDescription>
-            Select an event and round, then click "Generate Rankings" to calculate scores from locked score sheets.
+            Select an competition and round, then click "Generate Rankings" to calculate scores from locked score sheets.
           </AlertDescription>
         </Alert>
       ) : (
@@ -268,7 +268,7 @@ export function Results() {
               <Textarea
                 id="manual-selection-reason"
                 value={view.manualSelectionReason}
-                onChange={(event) => view.setManualSelectionReason(event.target.value)}
+                onChange={(competition) => view.setManualSelectionReason(competition.target.value)}
                 placeholder="Optional: e.g. Organizer manual review after tie-break discussion."
                 rows={2}
               />

@@ -7,11 +7,11 @@ export const queryKeys = {
     all: ['auth'] as const,
     me: () => [...queryKeys.auth.all, 'me'] as const,
   },
-  events: {
-    all: ['events'] as const,
-    lists: () => [...queryKeys.events.all, 'list'] as const,
-    list: (query?: QueryParams) => [...queryKeys.events.lists(), params(query)] as const,
-    detail: (id?: string) => [...queryKeys.events.all, 'detail', id] as const,
+  competitions: {
+    all: ['competitions'] as const,
+    lists: () => [...queryKeys.competitions.all, 'list'] as const,
+    list: (query?: QueryParams) => [...queryKeys.competitions.lists(), params(query)] as const,
+    detail: (id?: string) => [...queryKeys.competitions.all, 'detail', id] as const,
   },
   rounds: {
     all: ['rounds'] as const,
@@ -34,11 +34,11 @@ export const queryKeys = {
     all: ['teams'] as const,
     lists: () => [...queryKeys.teams.all, 'list'] as const,
     list: (query?: QueryParams) => [...queryKeys.teams.lists(), params(query)] as const,
-    availability: (eventId?: string, name?: string) =>
-      [...queryKeys.teams.all, 'availability', eventId, name] as const,
-    inviteEligibility: (eventId?: string, email?: string, githubUsername?: string) =>
-      [...queryKeys.teams.all, 'invite-eligibility', eventId, email, githubUsername] as const,
-    my: (eventId?: string) => [...queryKeys.teams.all, 'my', eventId] as const,
+    availability: (competitionId?: string, name?: string) =>
+      [...queryKeys.teams.all, 'availability', competitionId, name] as const,
+    inviteEligibility: (competitionId?: string, email?: string, githubUsername?: string) =>
+      [...queryKeys.teams.all, 'invite-eligibility', competitionId, email, githubUsername] as const,
+    my: (competitionId?: string) => [...queryKeys.teams.all, 'my', competitionId] as const,
   },
   users: {
     all: ['users'] as const,
@@ -79,7 +79,7 @@ export const queryKeys = {
   media: {
     all: ['media'] as const,
     history: (query?: QueryParams) => [...queryKeys.media.all, 'history', params(query)] as const,
-    gallery: (eventId?: string, query?: QueryParams) => [...queryKeys.media.all, 'gallery', eventId, params(query)] as const,
+    gallery: (competitionId?: string, query?: QueryParams) => [...queryKeys.media.all, 'gallery', competitionId, params(query)] as const,
     admin: (query?: QueryParams) => [...queryKeys.media.all, 'admin', params(query)] as const,
     statistics: (query?: QueryParams) => [...queryKeys.media.all, 'statistics', params(query)] as const,
   },
@@ -96,7 +96,7 @@ export const queryKeys = {
   },
   github: {
     all: ['github'] as const,
-    config: (eventId?: string) => [...queryKeys.github.all, 'config', eventId] as const,
+    config: (competitionId?: string) => [...queryKeys.github.all, 'config', competitionId] as const,
     user: (username?: string) => [...queryKeys.github.all, 'user', username] as const,
     userSearch: (query?: string) => [...queryKeys.github.all, 'user-search', query] as const,
     usernameAvailability: (username?: string, excludeSelf?: boolean) =>
@@ -110,8 +110,8 @@ export const queryKeys = {
   },
   operations: {
     all: ['operations'] as const,
-    dashboard: (eventId?: string) => [...queryKeys.operations.all, 'dashboard', eventId] as const,
-    pipeline: (eventId?: string) => [...queryKeys.operations.all, 'pipeline', eventId] as const,
+    dashboard: (competitionId?: string) => [...queryKeys.operations.all, 'dashboard', competitionId] as const,
+    pipeline: (competitionId?: string) => [...queryKeys.operations.all, 'pipeline', competitionId] as const,
   },
   roles: {
     all: ['roles'] as const,
@@ -128,11 +128,11 @@ export const queryKeys = {
   },
   rankings: {
     all: ['rankings'] as const,
-    list: (eventId?: string, roundId?: string) => [...queryKeys.rankings.all, eventId, roundId] as const,
+    list: (competitionId?: string, roundId?: string) => [...queryKeys.rankings.all, competitionId, roundId] as const,
   },
   finalists: {
     all: ['finalists'] as const,
-    list: (eventId?: string, roundId?: string) => [...queryKeys.finalists.all, eventId, roundId] as const,
+    list: (competitionId?: string, roundId?: string) => [...queryKeys.finalists.all, competitionId, roundId] as const,
   },
   scoreSheets: {
     all: ['score-sheets'] as const,

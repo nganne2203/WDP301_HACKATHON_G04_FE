@@ -1,6 +1,6 @@
 // Mock data for the SEAL Hackathon Platform
 
-export const mockEvent = {
+export const mockCompetition = {
   id: 'evt-2026a',
   title: 'SEAL Hackathon 2026',
   semester: '2026A',

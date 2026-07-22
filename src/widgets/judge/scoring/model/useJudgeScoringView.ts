@@ -10,7 +10,7 @@ import { repositoriesApi } from '@/entities/repository/api';
 import { rubricsApi } from '@/entities/rubric/api';
 import { scoringApi } from '@/entities/score-sheet/api';
 import { submissionsApi } from '@/entities/submission/api';
-import { useEventsQuery, useRoundsQuery, selectDefaultEvent } from '@/hooks/queries/useCommonQueries';
+import { useCompetitionsQuery, useRoundsQuery, selectDefaultCompetition } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Criterion, JudgingBoard, Round, ScoreSheet } from '@/shared/api/types';
 
@@ -27,7 +27,7 @@ export function getJudgeScoringErrorMessage(error: unknown) {
 export function useJudgeScoringView() {
   const queryClient = useQueryClient();
   const user = useStore((state) => state.user);
-  const selectedEvent = useStore((state) => state.selectedEvent);
+  const selectedCompetition = useStore((state) => state.selectedCompetition);
   const [searchParams] = useSearchParams();
 
   const urlRoundId = searchParams.get('roundId') || '';
@@ -49,14 +49,14 @@ export function useJudgeScoringView() {
   const [generalComment, setGeneralComment] = useState('');
   const [submitConfirm, setSubmitConfirm] = useState(false);
 
-  const eventsQuery = useEventsQuery();
-  const events = eventsQuery.data || [];
+  const eventsQuery = useCompetitionsQuery();
+  const competitions = eventsQuery.data || [];
   
-  const activeEvent = useMemo(() => {
-    return events.find((event) => event.id === selectedEvent?.id) || selectDefaultEvent(events);
-  }, [events, selectedEvent?.id]);
+  const activeCompetition = useMemo(() => {
+    return competitions.find((competition) => competition.id === selectedCompetition?.id) || selectDefaultCompetition(competitions);
+  }, [competitions, selectedCompetition?.id]);
 
-  const roundsQuery = useRoundsQuery({ eventId: activeEvent?.id, limit: 10 }, { enabled: Boolean(activeEvent?.id) });
+  const roundsQuery = useRoundsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
   const rounds: Round[] = roundsQuery.data || [];
   
   const activeRound = useMemo(() => {
@@ -177,7 +177,7 @@ export function useJudgeScoringView() {
     mutationFn: (submit: boolean) =>
       scoringApi.submitSheet({
         scoreSheetId: existingSheet?.id,
-        eventId: activeEvent!.id,
+        competitionId: activeCompetition!.id,
         roundId: activeRound!.id,
         boardId: myBoard!.id,
         teamId: selectedTeam!.id,
@@ -231,8 +231,8 @@ export function useJudgeScoringView() {
     submitConfirm,
     setSubmitConfirm,
     eventsQuery,
-    events,
-    activeEvent,
+    competitions,
+    activeCompetition,
     roundsQuery,
     rounds,
     activeRound,

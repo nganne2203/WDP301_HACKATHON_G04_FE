@@ -33,7 +33,7 @@
 
 ## Backend Changes
 - Thêm `dedupeKey` optional vào `Notification` để chống tạo trùng thông báo định kỳ, ví dụ:
-  - `event-start:{eventId}:{window}:{userId}`
+  - `event-start:{competitionId}:{window}:{userId}`
   - `round-deadline:{roundId}:{window}:{userId}`
   - `workshop-start:{workshopId}:{window}:{userId}`
   - `result-published:{roundId}:{userId}`
@@ -52,7 +52,7 @@
   - Khi kết quả được publish trong `RANKING_SERVICE.publishResults`.
   - Khi submission được `ACCEPTED` hoặc `REJECTED`, gửi cho leader/team members.
 - Metadata mỗi notification có tối thiểu:
-  - `eventId`, `roundId`, `teamId` nếu có.
+  - `competitionId`, `roundId`, `teamId` nếu có.
   - `targetPath` để FE navigate, ví dụ `/participant/submissions`, `/judge/scoring`, `/participant/results`, `/mentor/teams`.
 
 ## Frontend Changes
