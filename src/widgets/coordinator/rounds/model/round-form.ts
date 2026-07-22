@@ -122,6 +122,8 @@ function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boo
   const eventWindowFields = [
     { label: 'Start time', value: form.startTime },
     { label: 'End time', value: form.endTime },
+    { label: 'Submission deadline', value: form.submissionDeadline },
+    { label: 'Publish time', value: form.publishTime },
   ];
 
   for (const field of eventWindowFields) {
@@ -154,6 +156,35 @@ function validateRoundSchedule(form: RoundFormState, options?: { allowPast?: boo
       code: 'VALIDATION_ERROR',
       message: 'End time cannot be earlier than start time',
       errors: ['End time cannot be earlier than start time'],
+    }, 400);
+  }
+
+  const submissionDeadline = toComparableDate(form.submissionDeadline);
+  if (start && submissionDeadline && submissionDeadline < start) {
+    throw new ApiError({
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: 'Submission deadline must be after or equal to start time',
+      errors: ['Submission deadline must be after or equal to start time'],
+    }, 400);
+  }
+
+  if (submissionDeadline && end && submissionDeadline > end) {
+    throw new ApiError({
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: 'Submission deadline must be before or equal to end time',
+      errors: ['Submission deadline must be before or equal to end time'],
+    }, 400);
+  }
+
+  const publishTime = toComparableDate(form.publishTime);
+  if (publishTime && end && publishTime < end) {
+    throw new ApiError({
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: 'Publish time must be after or equal to end time',
+      errors: ['Publish time must be after or equal to end time'],
     }, 400);
   }
 }
@@ -261,11 +292,31 @@ export function getRoundDateTimeMax(competition?: Competition | null) {
   return minDateTimeInput(getCompetitionEndDateTimeInputValue(competition));
 }
 
+export function getSubmissionDeadlineMin(form: RoundFormState, competition?: Competition | null) {
+  return maxDateTimeInput(
+    getCurrentDateTimeLocalInputValue(),
+    getCompetitionStartDateTimeInputValue(competition),
+    form.startTime
+  );
+}
+
+export function getSubmissionDeadlineMax(form: RoundFormState, competition?: Competition | null) {
+  return minDateTimeInput(form.endTime || undefined, getCompetitionEndDateTimeInputValue(competition));
+}
+
+export function getPublishTimeMin(form: RoundFormState, competition?: Competition | null) {
+  return maxDateTimeInput(
+    getCurrentDateTimeLocalInputValue(),
+    getCompetitionStartDateTimeInputValue(competition),
+    form.endTime
+  );
+}
+
 export function isJudgeUser(user: User) {
   const roleNames = user.roles
     .map((role) => (typeof role === 'string' ? role : role.code || role.name))
     .map((role) => role?.toUpperCase());
-  return roleNames.includes('JUDGE') || roleNames.includes('ADMIN');
+  return roleNames.includes('JUDGE');
 }
 
 export function getRoundErrorMessage(error: unknown) {

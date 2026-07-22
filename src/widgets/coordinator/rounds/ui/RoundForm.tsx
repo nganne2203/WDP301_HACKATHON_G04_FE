@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/shared/ui/textarea';
 
 import {
-  getCurrentDateTimeLocalInputValue,
+  getPublishTimeMin,
   getRoundDateTimeMax,
   getRoundEndMin,
   getRoundStartMin,
+  getSubmissionDeadlineMax,
+  getSubmissionDeadlineMin,
   roundStatusOptions,
   roundTypeOptions,
   toggleId,
@@ -36,10 +38,12 @@ export function RoundForm({
   competition?: Competition | null;
   assignedTeams?: NonNullable<Round['assignedTeams']>;
 }) {
-  const now = getCurrentDateTimeLocalInputValue();
   const roundStartMin = getRoundStartMin(competition);
   const roundEndMin = getRoundEndMin(form, competition);
   const roundDateTimeMax = getRoundDateTimeMax(competition);
+  const submissionDeadlineMin = getSubmissionDeadlineMin(form, competition);
+  const submissionDeadlineMax = getSubmissionDeadlineMax(form, competition);
+  const publishTimeMin = getPublishTimeMin(form, competition);
 
   return (
     <div className="grid gap-4 py-4">
@@ -128,14 +132,16 @@ export function RoundForm({
           id="round-deadline"
           label="Submission Deadline"
           value={form.submissionDeadline}
-          min={now}
+          min={submissionDeadlineMin}
+          max={submissionDeadlineMax}
           onChange={(value) => onChange((current) => ({ ...current, submissionDeadline: value }))}
         />
         <DateTimeField
           id="round-publish"
           label="Publish Time"
           value={form.publishTime}
-          min={form.endTime || now}
+          min={publishTimeMin}
+          max={roundDateTimeMax}
           onChange={(value) => onChange((current) => ({ ...current, publishTime: value }))}
         />
       </div>
