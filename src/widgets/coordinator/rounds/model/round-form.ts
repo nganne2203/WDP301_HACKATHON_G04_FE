@@ -216,7 +216,7 @@ export function mapRoundToForm(round: Round): RoundFormState {
     trackId: round.trackId || 'none',
     rubricId: round.rubricId || 'none',
     assignedTeamIds: round.assignedTeamIds || [],
-    assignedJudgeIds: round.assignedJudgeIds || [],
+    assignedJudgeIds: round.assignedJudgeIds || round.assignedJudges?.map((judge) => judge.id) || [],
     startTime: formatDateTimeInput(round.startTime),
     endTime: formatDateTimeInput(round.endTime),
     submissionDeadline: formatDateTimeInput(round.submissionDeadline),

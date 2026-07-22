@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Users } from 'lucide-react';
 
-import type { Competition, Round, RoundStatus, RoundType, Rubric, Track, User } from '@/shared/api/types';
+import type { Competition, Round, RoundStatus, RoundType, Rubric, Track } from '@/shared/api/types';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -29,14 +29,16 @@ export function RoundForm({
   judges,
   competition,
   assignedTeams = [],
+  readOnly = false,
 }: {
   form: RoundFormState;
   onChange: Dispatch<SetStateAction<RoundFormState>>;
   tracks: Track[];
   rubrics: Rubric[];
-  judges: User[];
+  judges: Array<{ id: string; fullName?: string; email?: string }>;
   competition?: Competition | null;
   assignedTeams?: NonNullable<Round['assignedTeams']>;
+  readOnly?: boolean;
 }) {
   const roundStartMin = getRoundStartMin(competition);
   const roundEndMin = getRoundEndMin(form, competition);
@@ -46,7 +48,7 @@ export function RoundForm({
   const publishTimeMin = getPublishTimeMin(form, competition);
 
   return (
-    <div className="grid gap-4 py-4">
+    <fieldset className="m-0 grid min-w-0 gap-4 border-0 p-0 py-4" disabled={readOnly}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="round-name">Round Name</Label>
@@ -202,7 +204,7 @@ export function RoundForm({
         onToggle={(id) => onChange((current) => ({ ...current, assignedJudgeIds: toggleId(current.assignedJudgeIds, id) }))}
         emptyMessage="No judge accounts found."
       />
-    </div>
+    </fieldset>
   );
 }
 
