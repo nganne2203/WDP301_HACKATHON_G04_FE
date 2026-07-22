@@ -1,4 +1,6 @@
-import { Calendar, Loader2, MoreVertical, Plus, Users } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, Loader2, MoreVertical, Plus } from 'lucide-react';
+import type { Round } from '@/shared/api/types';
 
 import {
   AlertDialog,
@@ -38,6 +40,7 @@ import { RoundForm } from './RoundForm';
 
 export function Rounds() {
   const view = useRoundsView();
+  const [detailsRound, setDetailsRound] = useState<Round | null>(null);
 
   return (
     <div className="p-6 space-y-6">
@@ -173,6 +176,9 @@ export function Rounds() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setDetailsRound(round)}>
+                        View details
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
                           view.setSelectedRound(round);
@@ -199,6 +205,31 @@ export function Rounds() {
           </TableBody>
         </Table>
       </Card>
+
+      <Dialog open={Boolean(detailsRound)} onOpenChange={(open) => { if (!open) setDetailsRound(null); }}>
+        <DialogContent className="flex max-h-[90vh] !w-[min(48rem,calc(100vw-2rem))] !max-w-none flex-col overflow-hidden p-0">
+          <div className="flex-shrink-0 px-6 pt-6">
+          <DialogHeader>
+            <DialogTitle>{detailsRound?.name || 'Round details'}</DialogTitle>
+            <DialogDescription>View the round configuration, assigned teams, and judges.</DialogDescription>
+          </DialogHeader>
+          </div>
+          {detailsRound && (
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
+              <RoundForm
+                assignedTeams={detailsRound.assignedTeams}
+                competition={view.activeCompetition}
+                form={view.mapRoundToForm(detailsRound)}
+                judges={detailsRound.assignedJudges || []}
+                onChange={() => undefined}
+                readOnly
+                rubrics={view.rubrics}
+                tracks={view.tracks}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
         <DialogContent className="max-h-[85vh] !w-[min(48rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">

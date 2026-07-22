@@ -1,5 +1,6 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { AlertCircle, Ban, CheckCircle, Download, Loader2, Pencil, Plus, Search, X, XCircle } from 'lucide-react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
+import { AlertCircle, Ban, CheckCircle, Download, Eye, Loader2, Pencil, Plus, Search, X, XCircle } from 'lucide-react';
+import type { User } from '@/shared/api/types';
 
 import { ApiError } from '@/shared/api/client';
 import { Avatar, AvatarFallback } from '@/shared/ui/avatar';
@@ -43,6 +44,7 @@ import { useParticipantsView } from '../model/useParticipantsView';
 
 export function Participants() {
   const view = useParticipantsView();
+  const [detailsUser, setDetailsUser] = useState<User | null>(null);
 
   return (
     <div className="p-6 space-y-6">
@@ -190,6 +192,10 @@ export function Participants() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setDetailsUser(user)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View details
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => view.openEditDialog(user)}>
                             <Pencil className="w-4 h-4 mr-2" />
                             Edit
@@ -262,6 +268,59 @@ export function Participants() {
         </Card>
       )}
 
+      <Dialog open={Boolean(detailsUser)} onOpenChange={(open) => { if (!open) setDetailsUser(null); }}>
+        <DialogContent className="max-h-[85vh] !w-[min(48rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detailsUser?.fullName || 'User details'}</DialogTitle>
+            <DialogDescription>Account, role, contact, and participant profile information.</DialogDescription>
+          </DialogHeader>
+          {detailsUser && (
+            <div className="space-y-6 text-sm">
+              <div className="flex items-center gap-4 rounded-lg border p-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarFallback className="bg-blue-100 text-blue-700">
+                    {getParticipantInitials(detailsUser.fullName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold">{detailsUser.fullName}</p>
+                  <p className="truncate text-muted-foreground">{detailsUser.email}</p>
+                </div>
+                {getParticipantStatusBadge(detailsUser.status)}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <DetailField label="Authentication Provider" value={detailsUser.authProvider} />
+                <DetailField label="Registration Source" value={detailsUser.registrationSource} />
+                <DetailField label="Must Change Password" value={detailsUser.mustChangePassword ? 'Yes' : 'No'} />
+                <DetailField label="GitHub Username" value={detailsUser.githubUsername || '-'} />
+                <DetailField label="Phone" value={detailsUser.phone || '-'} />
+                <DetailField label="Student Type" value={detailsUser.studentType || '-'} />
+                <DetailField label="Student ID" value={detailsUser.studentId || '-'} />
+                <DetailField label="School" value={detailsUser.schoolName || '-'} />
+                <DetailField label="Created At" value={formatDetailDate(detailsUser.createdAt)} />
+                <DetailField label="Updated At" value={formatDetailDate(detailsUser.updatedAt)} />
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Roles</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {detailsUser.roles.length
+                    ? detailsUser.roles.map((role) => (
+                      <span className="rounded-full border bg-muted/30 px-3 py-1 text-xs font-medium" key={role.id || role.code || role.name}>
+                        {(role.code || role.name || 'UNKNOWN').replaceAll('_', ' ')}
+                      </span>
+                    ))
+                    : <span className="text-muted-foreground">No roles assigned.</span>}
+                </div>
+              </div>
+
+              <DetailField label="Bio" value={detailsUser.bio || 'No bio'} multiline />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <ParticipantUserDialog
         form={view.createForm}
         mode="create"
@@ -283,6 +342,20 @@ export function Participants() {
       />
     </div>
   );
+}
+
+function DetailField({ label, multiline, value }: { label: string; multiline?: boolean; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={multiline ? 'mt-1 whitespace-pre-wrap break-words' : 'mt-1 break-words font-medium'}>{value}</p>
+    </div>
+  );
+}
+
+function formatDetailDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString();
 }
 
 function ParticipantUserDialog({

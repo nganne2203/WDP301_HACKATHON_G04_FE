@@ -782,7 +782,6 @@ export interface CreateGitHubRepositoryResult {
 
 export interface BulkCreateGitHubRepositoriesRequest {
   competitionId: string;
-  roundId: string | null;
   assignCollaborators?: boolean;
 }
 

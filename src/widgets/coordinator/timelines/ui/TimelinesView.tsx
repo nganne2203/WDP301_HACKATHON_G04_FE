@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Clock3, Loader2, MoreVertical, Plus } from 'lucide-react';
+import type { TimelineActivity } from '@/shared/api/types';
 
 import { ApiError } from '@/shared/api/client';
 import {
@@ -40,6 +42,7 @@ import { TimelineForm, TimelineInlineError, TimelineMetricCard } from './Timelin
 
 export function Timelines() {
   const view = useTimelinesView();
+  const [detailsTimeline, setDetailsTimeline] = useState<TimelineActivity | null>(null);
 
   return (
     <div className="p-6 space-y-6">
@@ -158,6 +161,9 @@ export function Timelines() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setDetailsTimeline(timeline)}>
+                        View details
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => view.openEditDialog(timeline)}>
                         Edit item
                       </DropdownMenuItem>
@@ -179,6 +185,29 @@ export function Timelines() {
         </Table>
         <ListPagination page={view.page} pagination={view.pagination} onPageChange={view.setPage} />
       </Card>
+
+      <Dialog open={Boolean(detailsTimeline)} onOpenChange={(open) => { if (!open) setDetailsTimeline(null); }}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detailsTimeline?.title || 'Timeline item details'}</DialogTitle>
+            <DialogDescription>Schedule and activity information for this timeline item.</DialogDescription>
+          </DialogHeader>
+          {detailsTimeline && (
+            <div className="space-y-5 text-sm">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <DetailField label="Competition" value={detailsTimeline.competition?.title || view.activeCompetition?.title || '-'} />
+                <DetailField label="Activity Type" value={formatTimelineType(detailsTimeline.activityType)} />
+                <DetailField label="Status" value={detailsTimeline.status} />
+                <DetailField label="Start Time" value={formatDateTime(detailsTimeline.startTime)} />
+                <DetailField label="End Time" value={formatDateTime(detailsTimeline.endTime)} />
+                <DetailField label="Created At" value={formatDateTime(detailsTimeline.createdAt)} />
+                <DetailField label="Updated At" value={formatDateTime(detailsTimeline.updatedAt)} />
+              </div>
+              <DetailField label="Description" value={detailsTimeline.description || 'No description'} multiline />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
         <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden p-0">
@@ -221,6 +250,15 @@ export function Timelines() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function DetailField({ label, multiline, value }: { label: string; multiline?: boolean; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={multiline ? 'mt-1 whitespace-pre-wrap break-words' : 'mt-1 break-words font-medium'}>{value}</p>
     </div>
   );
 }
