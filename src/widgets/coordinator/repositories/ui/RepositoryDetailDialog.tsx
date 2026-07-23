@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Bot, Github, Loader2 } from 'lucide-react';
 
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from '@/shared/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
+import { ListPagination } from '@/shared/ui/list-pagination';
 
 import { formatDate, shortSha, webhookVariant } from '../model/repository-view.utils';
 
@@ -26,43 +28,49 @@ export function RepositoryDetailDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const [pages, setPages] = useState({ commits: 1, diffs: 1, analysis: 1, impact: 1, ai: 1 });
+
+  useEffect(() => {
+    setPages({ commits: 1, diffs: 1, analysis: 1, impact: 1, ai: 1 });
+  }, [repository?.id]);
+
   const commitsQuery = useQuery({
-    queryKey: queryKeys.repositories.commits(repository?.id),
+    queryKey: [...queryKeys.repositories.commits(repository?.id), pages.commits],
     enabled: open && Boolean(repository?.id),
-    queryFn: async () => (await repositoriesApi.listCommits(repository!.id, 1, 10)).data,
+    queryFn: () => repositoriesApi.listCommits(repository!.id, pages.commits, 5),
   });
 
   const diffQuery = useQuery({
-    queryKey: queryKeys.repositories.diffs(repository?.id),
+    queryKey: [...queryKeys.repositories.diffs(repository?.id), pages.diffs],
     enabled: open && Boolean(repository?.id),
-    queryFn: async () => (await repositoriesApi.listCommitDiffs(repository!.id, 1, 5)).data,
+    queryFn: () => repositoriesApi.listCommitDiffs(repository!.id, pages.diffs, 5),
   });
 
   const analysisQuery = useQuery({
-    queryKey: queryKeys.repositories.analysis(repository?.id),
+    queryKey: [...queryKeys.repositories.analysis(repository?.id), pages.analysis],
     enabled: open && Boolean(repository?.id),
-    queryFn: async () => (await repositoriesApi.listStaticAnalysis(repository!.id, 1, 5)).data,
+    queryFn: () => repositoriesApi.listStaticAnalysis(repository!.id, pages.analysis, 5),
   });
 
   const impactQuery = useQuery({
-    queryKey: queryKeys.repositories.impact(repository?.id),
+    queryKey: [...queryKeys.repositories.impact(repository?.id), pages.impact],
     enabled: open && Boolean(repository?.id),
-    queryFn: async () => (await repositoriesApi.listImpactDecisions(repository!.id, 1, 5)).data,
+    queryFn: () => repositoriesApi.listImpactDecisions(repository!.id, pages.impact, 5),
   });
 
   const reviewsQuery = useQuery({
-    queryKey: queryKeys.repositories.aiReviews(repository?.id),
+    queryKey: [...queryKeys.repositories.aiReviews(repository?.id), pages.ai],
     enabled: open && Boolean(repository?.id),
-    queryFn: async () => (await repositoriesApi.listAiReviews(repository!.id, 1, 5)).data,
+    queryFn: () => repositoriesApi.listAiReviews(repository!.id, pages.ai, 5),
   });
 
   if (!repository) return null;
 
-  const commits = commitsQuery.data?.commits || [];
-  const diffs = diffQuery.data || [];
-  const analyses = analysisQuery.data || [];
-  const impacts = impactQuery.data || [];
-  const aiReviews = reviewsQuery.data?.aiReviews || [];
+  const commits = commitsQuery.data?.data.commits || [];
+  const diffs = diffQuery.data?.data || [];
+  const analyses = analysisQuery.data?.data || [];
+  const impacts = impactQuery.data?.data || [];
+  const aiReviews = reviewsQuery.data?.data.aiReviews || [];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -140,6 +148,11 @@ export function RepositoryDetailDialog({
                 </div>
               ))
             )}
+            <ListPagination
+              page={pages.commits}
+              pagination={commitsQuery.data?.pagination}
+              onPageChange={(page) => setPages((current) => ({ ...current, commits: page }))}
+            />
           </TabsContent>
 
           <TabsContent value="diffs" className="space-y-3 pt-3">
@@ -176,6 +189,11 @@ export function RepositoryDetailDialog({
                 </div>
               ))
             )}
+            <ListPagination
+              page={pages.diffs}
+              pagination={diffQuery.data?.pagination}
+              onPageChange={(page) => setPages((current) => ({ ...current, diffs: page }))}
+            />
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-3 pt-3">
@@ -204,6 +222,11 @@ export function RepositoryDetailDialog({
                 </div>
               ))
             )}
+            <ListPagination
+              page={pages.analysis}
+              pagination={analysisQuery.data?.pagination}
+              onPageChange={(page) => setPages((current) => ({ ...current, analysis: page }))}
+            />
           </TabsContent>
 
           <TabsContent value="impact" className="space-y-3 pt-3">
@@ -234,6 +257,11 @@ export function RepositoryDetailDialog({
                 </div>
               ))
             )}
+            <ListPagination
+              page={pages.impact}
+              pagination={impactQuery.data?.pagination}
+              onPageChange={(page) => setPages((current) => ({ ...current, impact: page }))}
+            />
           </TabsContent>
 
           <TabsContent value="ai" className="space-y-3 pt-3">
@@ -264,6 +292,11 @@ export function RepositoryDetailDialog({
                 </div>
               ))
             )}
+            <ListPagination
+              page={pages.ai}
+              pagination={reviewsQuery.data?.pagination}
+              onPageChange={(page) => setPages((current) => ({ ...current, ai: page }))}
+            />
           </TabsContent>
         </div>
       </Tabs>

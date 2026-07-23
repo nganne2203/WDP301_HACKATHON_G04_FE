@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { FileText, Loader2, MoreVertical, Plus } from 'lucide-react';
+import type { Rubric } from '@/shared/api/types';
 
 import {
   AlertDialog,
@@ -38,6 +40,7 @@ import { formatScore } from '../model/rubric-form';
 
 export function Rubrics() {
   const view = useRubricsView();
+  const [detailsRubric, setDetailsRubric] = useState<Rubric | null>(null);
 
   return (
     <div className="p-6 space-y-6">
@@ -166,6 +169,9 @@ export function Rubrics() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setDetailsRubric(rubric)}>
+                        View details
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => view.openCriteriaDialog(rubric)}>
                         Manage criteria
                       </DropdownMenuItem>
@@ -183,6 +189,56 @@ export function Rubrics() {
           </TableBody>
         </Table>
       </Card>
+
+      <Dialog open={Boolean(detailsRubric)} onOpenChange={(open) => { if (!open) setDetailsRubric(null); }}>
+        <DialogContent className="max-h-[85vh] !w-[min(48rem,calc(100vw-2rem))] !max-w-none overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detailsRubric?.title || 'Rubric details'}</DialogTitle>
+            <DialogDescription>Scoring configuration and criteria included in this rubric.</DialogDescription>
+          </DialogHeader>
+          {detailsRubric && (
+            <div className="space-y-6 text-sm">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <DetailField label="Competition" value={detailsRubric.competition?.title || view.activeCompetition?.title || '-'} />
+                <DetailField label="Round" value={detailsRubric.round?.name || 'Reusable'} />
+                <DetailField label="Status" value={detailsRubric.status || 'DRAFT'} />
+                <DetailField label="Scoring Coefficient" value={formatScore(detailsRubric.criterionMaxScore)} />
+                <DetailField label="Assigned Weight" value={formatScore(detailsRubric.criteriaWeightTotal)} />
+                <DetailField label="Total Weight" value={formatScore(detailsRubric.totalScore)} />
+                <DetailField label="Created At" value={formatDetailDate(detailsRubric.createdAt)} />
+                <DetailField label="Updated At" value={formatDetailDate(detailsRubric.updatedAt)} />
+              </div>
+              <DetailField label="Description" value={detailsRubric.description || 'No description'} multiline />
+              <div>
+                <p className="font-medium">Criteria ({detailsRubric.criteria.length})</p>
+                {detailsRubric.criteria.length ? (
+                  <div className="mt-3 space-y-3">
+                    {[...detailsRubric.criteria].sort((a, b) => (a.order || 0) - (b.order || 0)).map((criterion) => (
+                      <div className="rounded-lg border p-4" key={criterion.id}>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium">{criterion.order ? `${criterion.order}. ` : ''}{criterion.name}</p>
+                            <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{criterion.description || 'No description'}</p>
+                          </div>
+                          <div className="text-right text-xs">
+                            <p>Weight: <span className="font-medium">{formatScore(criterion.weight)}</span></p>
+                          </div>
+                        </div>
+                        {(criterion.judgeOnly || criterion.aiSupportForAudit) && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {criterion.judgeOnly && <Badge variant="outline">Judge only</Badge>}
+                            {criterion.aiSupportForAudit && <Badge variant="outline">AI audit support</Badge>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="mt-2 text-muted-foreground">No criteria configured.</p>}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
         <DialogContent className="max-w-2xl">
@@ -236,4 +292,18 @@ export function Rubrics() {
       </AlertDialog>
     </div>
   );
+}
+
+function DetailField({ label, multiline, value }: { label: string; multiline?: boolean; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={multiline ? 'mt-1 whitespace-pre-wrap break-words' : 'mt-1 break-words font-medium'}>{value}</p>
+    </div>
+  );
+}
+
+function formatDetailDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString();
 }
