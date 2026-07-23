@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Users } from 'lucide-react';
 
-import type { Competition, Round, RoundStatus, RoundType, Rubric, Track, User } from '@/shared/api/types';
+import type { Competition, Round, RoundStatus, RoundType, Rubric, Track } from '@/shared/api/types';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/shared/ui/textarea';
 
 import {
-  getCurrentDateTimeLocalInputValue,
+  getPublishTimeMin,
   getRoundDateTimeMax,
   getRoundEndMin,
   getRoundStartMin,
+  getSubmissionDeadlineMax,
+  getSubmissionDeadlineMin,
   roundStatusOptions,
   roundTypeOptions,
   toggleId,
@@ -27,22 +29,26 @@ export function RoundForm({
   judges,
   competition,
   assignedTeams = [],
+  readOnly = false,
 }: {
   form: RoundFormState;
   onChange: Dispatch<SetStateAction<RoundFormState>>;
   tracks: Track[];
   rubrics: Rubric[];
-  judges: User[];
+  judges: Array<{ id: string; fullName?: string; email?: string }>;
   competition?: Competition | null;
   assignedTeams?: NonNullable<Round['assignedTeams']>;
+  readOnly?: boolean;
 }) {
-  const now = getCurrentDateTimeLocalInputValue();
   const roundStartMin = getRoundStartMin(competition);
   const roundEndMin = getRoundEndMin(form, competition);
   const roundDateTimeMax = getRoundDateTimeMax(competition);
+  const submissionDeadlineMin = getSubmissionDeadlineMin(form, competition);
+  const submissionDeadlineMax = getSubmissionDeadlineMax(form, competition);
+  const publishTimeMin = getPublishTimeMin(form, competition);
 
   return (
-    <div className="grid gap-4 py-4">
+    <fieldset className="m-0 grid min-w-0 gap-4 border-0 p-0 py-4" disabled={readOnly}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="round-name">Round Name</Label>
@@ -128,14 +134,16 @@ export function RoundForm({
           id="round-deadline"
           label="Submission Deadline"
           value={form.submissionDeadline}
-          min={now}
+          min={submissionDeadlineMin}
+          max={submissionDeadlineMax}
           onChange={(value) => onChange((current) => ({ ...current, submissionDeadline: value }))}
         />
         <DateTimeField
           id="round-publish"
           label="Publish Time"
           value={form.publishTime}
-          min={form.endTime || now}
+          min={publishTimeMin}
+          max={roundDateTimeMax}
           onChange={(value) => onChange((current) => ({ ...current, publishTime: value }))}
         />
       </div>
@@ -196,7 +204,7 @@ export function RoundForm({
         onToggle={(id) => onChange((current) => ({ ...current, assignedJudgeIds: toggleId(current.assignedJudgeIds, id) }))}
         emptyMessage="No judge accounts found."
       />
-    </div>
+    </fieldset>
   );
 }
 

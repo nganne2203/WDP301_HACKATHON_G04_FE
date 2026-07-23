@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { GitBranch, Loader2, MoreVertical, Plus } from 'lucide-react';
+import type { Track } from '@/shared/api/types';
 
 import { ApiError } from '@/shared/api/client';
 import {
@@ -38,6 +40,7 @@ import { TrackForm, TrackInlineError, TrackMetricCard } from './TrackForm';
 
 export function Tracks() {
   const view = useTracksView();
+  const [detailsTrack, setDetailsTrack] = useState<Track | null>(null);
 
   return (
     <div className="p-6 space-y-6">
@@ -168,6 +171,9 @@ export function Tracks() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setDetailsTrack(track)}>
+                        View details
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => view.openEditDialog(track)}>
                         Edit track
                       </DropdownMenuItem>
@@ -182,6 +188,32 @@ export function Tracks() {
           </TableBody>
         </Table>
       </Card>
+
+      <Dialog open={Boolean(detailsTrack)} onOpenChange={(open) => { if (!open) setDetailsTrack(null); }}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detailsTrack?.name || 'Track details'}</DialogTitle>
+            <DialogDescription>Configuration, topic, and capacity for this competition track.</DialogDescription>
+          </DialogHeader>
+          {detailsTrack && (
+            <div className="space-y-5 text-sm">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <DetailField label="Competition" value={detailsTrack.competition?.title || view.activeCompetition?.title || '-'} />
+                <DetailField label="Code" value={detailsTrack.code || '-'} />
+                <DetailField label="Type" value={formatTrackType(detailsTrack.type)} />
+                <DetailField label="Status" value={detailsTrack.status || 'DRAFT'} />
+                <DetailField label="Maximum Teams" value={detailsTrack.maxTeams ? String(detailsTrack.maxTeams) : '-'} />
+                <DetailField label="Assigned Teams" value={String(detailsTrack.teamIds.length)} />
+                <DetailField label="Created At" value={formatDetailDate(detailsTrack.createdAt)} />
+                <DetailField label="Updated At" value={formatDetailDate(detailsTrack.updatedAt)} />
+              </div>
+              <DetailField label="Topic" value={detailsTrack.topic || '-'} multiline />
+              <DetailField label="Description" value={detailsTrack.description || 'No description'} multiline />
+              <DetailField label="Problem Statement" value={detailsTrack.problemStatement || 'No problem statement'} multiline />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={view.editOpen} onOpenChange={view.setEditOpen}>
         <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0">
@@ -226,4 +258,18 @@ export function Tracks() {
       </AlertDialog>
     </div>
   );
+}
+
+function DetailField({ label, multiline, value }: { label: string; multiline?: boolean; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={multiline ? 'mt-1 whitespace-pre-wrap break-words' : 'mt-1 break-words font-medium'}>{value}</p>
+    </div>
+  );
+}
+
+function formatDetailDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString();
 }
