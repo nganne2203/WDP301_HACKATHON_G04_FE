@@ -29,6 +29,7 @@ export function RubricCriteriaDialog({
   onCreateCriterion,
   onUpdateCriterion,
   onDeleteCriterion,
+  readOnly = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -43,6 +44,7 @@ export function RubricCriteriaDialog({
   onCreateCriterion: (rubricId: string, form: CriterionFormState) => void;
   onUpdateCriterion: (rubricId: string, criterionId: string, form: CriterionFormState) => void;
   onDeleteCriterion: (rubricId: string, criterionId: string) => void;
+  readOnly?: boolean;
 }) {
   const scale = Number(selectedRubric?.totalScore || 100);
   const currentWeightTotal = roundScore((selectedRubric?.criteria || []).reduce((sum, criterion) => sum + Number(criterion.weight || 0), 0));
@@ -58,10 +60,14 @@ export function RubricCriteriaDialog({
       <DialogContent className="max-h-[90vh] !w-[min(96vw,1280px)] !max-w-[min(96vw,1280px)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{selectedRubric?.title || 'Rubric Criteria'}</DialogTitle>
-          <DialogDescription>Maintain detailed scoring criteria for judges.</DialogDescription>
+          <DialogDescription>
+            {readOnly
+              ? 'This competition has been completed, so criteria are available for viewing only.'
+              : 'Maintain detailed scoring criteria for judges.'}
+          </DialogDescription>
         </DialogHeader>
         {selectedRubric && (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.95fr)]">
+          <div className={readOnly ? 'grid gap-6' : 'grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.95fr)]'}>
             <div className="space-y-3">
               <div className="rounded-lg border p-4">
                 <div className="flex items-center justify-between gap-3">
@@ -86,6 +92,7 @@ export function RubricCriteriaDialog({
                         Coefficient {formatScore(criterion.weight)} · Order {criterion.order || '-'}
                       </p>
                     </div>
+                    {!readOnly && (
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
@@ -106,6 +113,7 @@ export function RubricCriteriaDialog({
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
+                    )}
                   </div>
                   {criterion.description && <p className="text-sm text-muted-foreground">{criterion.description}</p>}
                   {criterion.aiInstruction && (
@@ -125,6 +133,7 @@ export function RubricCriteriaDialog({
               ))}
             </div>
 
+            {!readOnly && (
             <div className="min-w-0 space-y-4 rounded-lg border p-5 lg:min-w-[420px]">
               <div>
                 <h3 className="font-medium">{editingCriterion ? 'Edit Criterion' : 'Add Criterion'}</h3>
@@ -174,6 +183,7 @@ export function RubricCriteriaDialog({
                 )}
               </div>
             </div>
+            )}
           </div>
         )}
       </DialogContent>
