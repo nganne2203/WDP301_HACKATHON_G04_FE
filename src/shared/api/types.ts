@@ -1561,7 +1561,7 @@ export type JudgingBoardStatus = 'DRAFT' | 'ASSIGNED' | 'SCORING' | 'COMPLETED';
 export interface JudgingBoard {
   id: string;
   competitionId: string;
-  competition: { id: string; title: string } | null;
+  competition: { id: string; title: string; status?: CompetitionStatus } | null;
   roundId: string;
   round: { id: string; name: string; roundType: RoundType; status: RoundStatus } | null;
   trackId: string | null;
