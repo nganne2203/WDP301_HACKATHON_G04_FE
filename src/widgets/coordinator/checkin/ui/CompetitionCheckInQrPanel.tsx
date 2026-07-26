@@ -34,7 +34,15 @@ function readStoredQr(competitionId: string): CheckInQr | null {
   }
 }
 
-export function CompetitionCheckInQrPanel({ competitionId, eventTitle }: { competitionId?: string; eventTitle?: string }) {
+export function CompetitionCheckInQrPanel({
+  competitionId,
+  disabled = false,
+  eventTitle,
+}: {
+  competitionId?: string;
+  disabled?: boolean;
+  eventTitle?: string;
+}) {
   const [qr, setQr] = useState<CheckInQr | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
@@ -48,9 +56,10 @@ export function CompetitionCheckInQrPanel({ competitionId, eventTitle }: { compe
   });
 
   useEffect(() => {
-    if (!competitionId) {
+    if (!competitionId || disabled) {
       setQr(null);
       setRemainingSeconds(0);
+      if (competitionId) window.sessionStorage.removeItem(getStorageKey(competitionId));
       return;
     }
 
@@ -64,7 +73,7 @@ export function CompetitionCheckInQrPanel({ competitionId, eventTitle }: { compe
     window.sessionStorage.removeItem(getStorageKey(competitionId));
     setQr(null);
     setRemainingSeconds(0);
-  }, [competitionId]);
+  }, [competitionId, disabled]);
 
   useEffect(() => {
     if (!qr?.expiresAt) return;
@@ -110,7 +119,9 @@ export function CompetitionCheckInQrPanel({ competitionId, eventTitle }: { compe
             <div className="rounded-full bg-blue-100 p-4 text-blue-700">
               <QrCode className="h-12 w-12" />
             </div>
-            <p className="text-sm text-muted-foreground">Generate a short-lived QR for participants to scan.</p>
+            <p className="text-sm text-muted-foreground">
+              {disabled ? 'Check-in QR is available only while the competition is ongoing.' : 'Generate a short-lived QR for participants to scan.'}
+            </p>
           </div>
         )}
         {qrMutation.isPending && <Loader2 className="h-9 w-9 animate-spin text-blue-600" />}
@@ -146,7 +157,7 @@ export function CompetitionCheckInQrPanel({ competitionId, eventTitle }: { compe
       )}
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2">
-        <Button onClick={() => qrMutation.mutate()} disabled={qrMutation.isPending}>
+        <Button onClick={() => qrMutation.mutate()} disabled={disabled || qrMutation.isPending}>
           <RefreshCw className="mr-2 h-4 w-4" />
           {qr ? 'Generate new' : 'Generate QR'}
         </Button>

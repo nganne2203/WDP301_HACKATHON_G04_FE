@@ -8,6 +8,7 @@ import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { CreateTimelineRequest, TimelineActivity, UpdateTimelineRequest } from '@/shared/api/types';
+import { getCompetitionReadOnlyMessage, isCompetitionReadOnly } from '@/shared/lib/competition-readonly';
 
 import {
   buildTimelinePayload,
@@ -44,6 +45,20 @@ export function useTimelinesView() {
 
   const timelines = timelinesQuery.data?.data || [];
   const pagination = timelinesQuery.data?.pagination;
+  const timelinesReadOnly = isCompetitionReadOnly(activeCompetition);
+
+  const ensureTimelinesWritable = () => {
+    if (!timelinesReadOnly) return true;
+    toast.error('Competition is read-only', {
+      description: getCompetitionReadOnlyMessage('Timeline'),
+    });
+    return false;
+  };
+
+  const setCreateDialogOpen = (open: boolean) => {
+    if (open && !ensureTimelinesWritable()) return;
+    setCreateOpen(open);
+  };
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateTimelineRequest) => timelinesApi.create(payload),
@@ -92,6 +107,7 @@ export function useTimelinesView() {
 
   const handleCreate = () => {
     if (!activeCompetition?.id) return;
+    if (!ensureTimelinesWritable()) return;
     if (!createForm.title.trim()) {
       toast.error('Timeline title is required');
       return;
@@ -101,6 +117,7 @@ export function useTimelinesView() {
 
   const handleUpdate = () => {
     if (!selectedTimeline) return;
+    if (!ensureTimelinesWritable()) return;
     if (!editForm.title.trim()) {
       toast.error('Timeline title is required');
       return;
@@ -112,9 +129,22 @@ export function useTimelinesView() {
   };
 
   const openEditDialog = (timeline: TimelineActivity) => {
+    if (!ensureTimelinesWritable()) return;
     setSelectedTimeline(timeline);
     setEditForm(mapTimelineToForm(timeline));
     setEditOpen(true);
+  };
+
+  const openDeleteDialog = (timeline: TimelineActivity) => {
+    if (!ensureTimelinesWritable()) return;
+    setSelectedTimeline(timeline);
+    setDeleteOpen(true);
+  };
+
+  const handleDelete = () => {
+    if (!selectedTimeline) return;
+    if (!ensureTimelinesWritable()) return;
+    deleteMutation.mutate(selectedTimeline.id);
   };
 
   const completedCount = timelines.filter((timeline) => timeline.status === 'COMPLETED').length;
@@ -134,11 +164,13 @@ export function useTimelinesView() {
     competitions,
     eventsQuery,
     handleCreate,
+    handleDelete,
     handleUpdate,
+    openDeleteDialog,
     openEditDialog,
     selectedTimeline,
     setCreateForm,
-    setCreateOpen,
+    setCreateOpen: setCreateDialogOpen,
     setDeleteOpen,
     setEditForm,
     setEditOpen,
@@ -147,6 +179,7 @@ export function useTimelinesView() {
     setPage,
     setSelectedTimeline,
     timelines,
+    timelinesReadOnly,
     timelinesQuery,
     updateMutation,
   };

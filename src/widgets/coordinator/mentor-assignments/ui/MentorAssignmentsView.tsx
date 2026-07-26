@@ -10,6 +10,7 @@ import { useCompetitionsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Team, User } from '@/shared/api/types';
+import { getCompetitionReadOnlyMessage, isCompetitionReadOnly } from '@/shared/lib/competition-readonly';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -53,6 +54,7 @@ export function MentorAssignmentsView() {
     if (!competitions.length) return null;
     return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
   }, [competitions, selectedCompetition?.id]);
+  const mentorAssignmentsReadOnly = isCompetitionReadOnly(activeCompetition);
 
   useEffect(() => {
     setSelectedBoardNumber('all');
@@ -150,12 +152,22 @@ export function MentorAssignmentsView() {
     return allCompetitionTeams.filter((team) => team.boardNumber === activeBoardNumber);
   }, [activeBoardNumber, allCompetitionTeams]);
 
+  function ensureMentorAssignmentsWritable() {
+    if (!mentorAssignmentsReadOnly) return true;
+    toast.error('Competition is read-only', {
+      description: getCompetitionReadOnlyMessage('Mentor assignments'),
+    });
+    return false;
+  }
+
   function openAssignmentDialog(team: Team) {
+    if (!ensureMentorAssignmentsWritable()) return;
     setEditingTeam(team);
     setSelectedMentorIds(team.mentorIds || []);
   }
 
   function openBulkAssignDialog() {
+    if (!ensureMentorAssignmentsWritable()) return;
     if (!activeBoardNumber || teamsInSelectedBoard.length === 0) return;
     const commonMentorIds = teamsInSelectedBoard[0]?.mentorIds || [];
     const identicalMentorSets = teamsInSelectedBoard.every((team) => {
@@ -176,6 +188,7 @@ export function MentorAssignmentsView() {
 
   async function saveAssignments() {
     if (!editingTeam) return;
+    if (!ensureMentorAssignmentsWritable()) return;
     await updateMentorsMutation.mutateAsync({
       teamId: editingTeam.id,
       mentorIds: selectedMentorIds,
@@ -184,6 +197,7 @@ export function MentorAssignmentsView() {
 
   async function saveBoardAssignments() {
     if (!activeCompetition?.id || !activeBoardNumber) return;
+    if (!ensureMentorAssignmentsWritable()) return;
     await assignBoardMentorsMutation.mutateAsync({
       competitionId: activeCompetition.id,
       boardNumber: activeBoardNumber,
@@ -224,7 +238,7 @@ export function MentorAssignmentsView() {
           <Button
             className="w-full xl:w-auto"
             onClick={openBulkAssignDialog}
-            disabled={!activeBoardNumber || teamsInSelectedBoard.length === 0}
+            disabled={mentorAssignmentsReadOnly || !activeBoardNumber || teamsInSelectedBoard.length === 0}
           >
             <Layers3 className="mr-2 h-4 w-4" />
             Assign Board Mentors
@@ -298,7 +312,7 @@ export function MentorAssignmentsView() {
                 <SheetTrigger asChild>
                   <Button className="w-full sm:w-auto" variant="outline">View team details</Button>
                 </SheetTrigger>
-                <Button className="w-full sm:w-auto" onClick={() => openAssignmentDialog(team)}>Assign mentors</Button>
+                <Button className="w-full sm:w-auto" onClick={() => openAssignmentDialog(team)} disabled={mentorAssignmentsReadOnly}>Assign mentors</Button>
               </CardContent>
             </Card>
             <SheetContent className="w-full overflow-y-auto px-6 sm:max-w-xl">
@@ -362,6 +376,7 @@ export function MentorAssignmentsView() {
                         <label key={mentor.id} className="flex cursor-pointer items-start gap-3 rounded-md border p-3">
                           <Checkbox
                             checked={checked}
+                            disabled={mentorAssignmentsReadOnly}
                             onCheckedChange={(value) => toggleMentor(mentor.id, Boolean(value))}
                           />
                           <div className="min-w-0 flex-1">
@@ -385,7 +400,7 @@ export function MentorAssignmentsView() {
             <Button variant="outline" onClick={() => setEditingTeam(null)} disabled={updateMentorsMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={saveAssignments} disabled={!editingTeam || updateMentorsMutation.isPending}>
+            <Button onClick={saveAssignments} disabled={mentorAssignmentsReadOnly || !editingTeam || updateMentorsMutation.isPending}>
               {updateMentorsMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -446,6 +461,7 @@ export function MentorAssignmentsView() {
                       <label key={mentor.id} className="flex cursor-pointer items-start gap-3 rounded-md border p-3">
                         <Checkbox
                           checked={checked}
+                          disabled={mentorAssignmentsReadOnly}
                           onCheckedChange={(value) => toggleMentor(mentor.id, Boolean(value))}
                         />
                         <div className="min-w-0 flex-1">
@@ -474,7 +490,7 @@ export function MentorAssignmentsView() {
             </Button>
             <Button
               onClick={saveBoardAssignments}
-              disabled={!activeBoardNumber || assignBoardMentorsMutation.isPending}
+              disabled={mentorAssignmentsReadOnly || !activeBoardNumber || assignBoardMentorsMutation.isPending}
             >
               {assignBoardMentorsMutation.isPending ? (
                 <>
