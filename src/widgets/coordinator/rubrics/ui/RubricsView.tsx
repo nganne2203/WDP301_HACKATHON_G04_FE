@@ -21,6 +21,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
@@ -70,7 +71,10 @@ export function Rubrics() {
 
           <Dialog open={view.createOpen} onOpenChange={view.openCreateDialog}>
             <DialogTrigger asChild>
-              <Button disabled={!view.activeCompetition}>
+              <Button
+                disabled={!view.activeCompetition || view.rubricsReadOnly}
+                title={view.rubricsReadOnly ? 'Rubrics are read-only after the competition is completed.' : undefined}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Create Rubric
               </Button>
@@ -136,56 +140,61 @@ export function Rubrics() {
               </TableRow>
             )}
 
-            {view.rubrics.map((rubric) => (
-              <TableRow key={rubric.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-100 text-emerald-700">
-                      <FileText className="h-4 w-4" />
+            {view.rubrics.map((rubric) => {
+              const rubricReadOnly = view.isRubricReadOnly(rubric);
+
+              return (
+                <TableRow key={rubric.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-md bg-emerald-100 text-emerald-700">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{rubric.title}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{rubric.title}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>{rubric.round?.name || 'Reusable'}</TableCell>
-                <TableCell>
-                  <Badge variant={rubric.status === 'ACTIVE' ? 'default' : rubric.status === 'ARCHIVED' ? 'secondary' : 'outline'}>
-                    {rubric.status || 'DRAFT'}
-                  </Badge>
-                </TableCell>
-                <TableCell>{formatScore(rubric.criterionMaxScore)}</TableCell>
-                <TableCell>
-                  <span className={(rubric.criteriaWeightTotal ?? 0) === (rubric.totalScore ?? 100) ? '' : 'text-amber-600'}>
-                    {formatScore(rubric.criteriaWeightTotal)}
-                  </span>
-                </TableCell>
-                <TableCell>{formatScore(rubric.totalScore)}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setDetailsRubric(rubric)}>
-                        View details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => view.openCriteriaDialog(rubric)}>
-                        Manage criteria
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => view.openEditDialog(rubric)}>
-                        Edit rubric
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => view.openDeleteDialog(rubric)}>
-                        Delete rubric
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell>{rubric.round?.name || 'Reusable'}</TableCell>
+                  <TableCell>
+                    <Badge variant={rubric.status === 'ACTIVE' ? 'default' : rubric.status === 'ARCHIVED' ? 'secondary' : 'outline'}>
+                      {rubric.status || 'DRAFT'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatScore(rubric.criterionMaxScore)}</TableCell>
+                  <TableCell>
+                    <span className={(rubric.criteriaWeightTotal ?? 0) === (rubric.totalScore ?? 100) ? '' : 'text-amber-600'}>
+                      {formatScore(rubric.criteriaWeightTotal)}
+                    </span>
+                  </TableCell>
+                  <TableCell>{formatScore(rubric.totalScore)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setDetailsRubric(rubric)}>
+                          View details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => view.openCriteriaDialog(rubric)}>
+                          {rubricReadOnly ? 'View criteria' : 'Manage criteria'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem disabled={rubricReadOnly} onClick={() => view.openEditDialog(rubric)}>
+                          Edit rubric
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled={rubricReadOnly} className="text-destructive" onClick={() => view.openDeleteDialog(rubric)}>
+                          Delete rubric
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </Card>
@@ -272,6 +281,7 @@ export function Rubrics() {
         onCreateCriterion={view.submitCreateCriterion}
         onUpdateCriterion={view.submitUpdateCriterion}
         onDeleteCriterion={view.submitDeleteCriterion}
+        readOnly={view.isRubricReadOnly(view.selectedRubric)}
       />
 
       <AlertDialog open={view.deleteOpen} onOpenChange={view.setDeleteOpen}>
