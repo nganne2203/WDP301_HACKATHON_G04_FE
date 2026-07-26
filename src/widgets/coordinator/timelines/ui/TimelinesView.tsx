@@ -62,7 +62,7 @@ export function Timelines() {
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!view.activeCompetition}>
+              <Button disabled={!view.activeCompetition || view.timelinesReadOnly}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Timeline Item
               </Button>
@@ -81,7 +81,7 @@ export function Timelines() {
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={view.handleCreate} disabled={view.createMutation.isPending}>
+                <Button onClick={view.handleCreate} disabled={view.createMutation.isPending || view.timelinesReadOnly}>
                   {view.createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Timeline'}
                 </Button>
               </div>
@@ -164,15 +164,13 @@ export function Timelines() {
                       <DropdownMenuItem onClick={() => setDetailsTimeline(timeline)}>
                         View details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => view.openEditDialog(timeline)}>
+                      <DropdownMenuItem disabled={view.timelinesReadOnly} onClick={() => view.openEditDialog(timeline)}>
                         Edit item
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        disabled={view.timelinesReadOnly}
                         className="text-destructive"
-                        onClick={() => {
-                          view.setSelectedTimeline(timeline);
-                          view.setDeleteOpen(true);
-                        }}
+                        onClick={() => view.openDeleteDialog(timeline)}
                       >
                         Delete item
                       </DropdownMenuItem>
@@ -224,7 +222,7 @@ export function Timelines() {
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={view.handleUpdate} disabled={view.updateMutation.isPending}>
+            <Button onClick={view.handleUpdate} disabled={view.updateMutation.isPending || view.timelinesReadOnly}>
               {view.updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
             </Button>
           </div>
@@ -242,7 +240,8 @@ export function Timelines() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => view.selectedTimeline && view.deleteMutation.mutate(view.selectedTimeline.id)}
+              disabled={view.deleteMutation.isPending || view.timelinesReadOnly}
+              onClick={view.handleDelete}
               className="bg-destructive hover:bg-destructive/90"
             >
               {view.deleteMutation.isPending ? 'Deleting...' : 'Delete'}

@@ -63,7 +63,7 @@ export function Workshops() {
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!view.activeCompetition}>
+              <Button disabled={!view.activeCompetition || view.workshopsReadOnly}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Workshop
               </Button>
@@ -88,7 +88,7 @@ export function Workshops() {
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={view.handleCreate} disabled={view.createMutation.isPending}>
+                <Button onClick={view.handleCreate} disabled={view.createMutation.isPending || view.workshopsReadOnly}>
                   {view.createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Workshop'}
                 </Button>
               </div>
@@ -197,15 +197,13 @@ export function Workshops() {
                       <DropdownMenuItem onClick={() => view.openQuestionsDialog(workshop)}>
                         View speaker questions
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => view.openEditDialog(workshop)}>
+                      <DropdownMenuItem disabled={view.workshopsReadOnly} onClick={() => view.openEditDialog(workshop)}>
                         Edit workshop
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        disabled={view.workshopsReadOnly}
                         className="text-destructive"
-                        onClick={() => {
-                          view.setSelectedWorkshop(workshop);
-                          view.setDeleteOpen(true);
-                        }}
+                        onClick={() => view.openDeleteDialog(workshop)}
                       >
                         Delete workshop
                       </DropdownMenuItem>
@@ -273,7 +271,7 @@ export function Workshops() {
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={view.handleUpdate} disabled={view.updateMutation.isPending}>
+            <Button onClick={view.handleUpdate} disabled={view.updateMutation.isPending || view.workshopsReadOnly}>
               {view.updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
             </Button>
           </div>
@@ -291,7 +289,8 @@ export function Workshops() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => view.selectedWorkshop && view.deleteMutation.mutate(view.selectedWorkshop.id)}
+              disabled={view.deleteMutation.isPending || view.workshopsReadOnly}
+              onClick={view.handleDelete}
               className="bg-destructive hover:bg-destructive/90"
             >
               {view.deleteMutation.isPending ? 'Deleting...' : 'Delete'}
@@ -335,7 +334,12 @@ export function Workshops() {
               </p>
               <Textarea
                 className="mt-3 min-h-24"
-                disabled={!view.canCreateWorkshopQuestions || !view.canSubmitWorkshopQuestion || view.createQuestionMutation.isPending}
+                disabled={
+                  view.workshopsReadOnly ||
+                  !view.canCreateWorkshopQuestions ||
+                  !view.canSubmitWorkshopQuestion ||
+                  view.createQuestionMutation.isPending
+                }
                 maxLength={1000}
                 onChange={(competition) => view.setQuestionContent(competition.target.value)}
                 placeholder="Ask the speaker a question"
@@ -351,6 +355,7 @@ export function Workshops() {
                 className="mt-3"
                 disabled={
                   view.questionContent.trim().length < 2 ||
+                  view.workshopsReadOnly ||
                   !view.canCreateWorkshopQuestions ||
                   !view.canSubmitWorkshopQuestion ||
                   view.createQuestionMutation.isPending
@@ -397,9 +402,9 @@ export function Workshops() {
                 {view.workshopQuestions.map((question) => (
                   <WorkshopQuestionItem
                     key={question.id}
-                    canVote={view.canVoteWorkshopQuestions}
+                    canVote={view.canVoteWorkshopQuestions && !view.workshopsReadOnly}
                     isVoting={view.voteQuestionMutation.isPending && view.voteQuestionMutation.variables === question.id}
-                    onVote={() => view.voteQuestionMutation.mutate(question.id)}
+                    onVote={() => view.handleVoteQuestion(question.id)}
                     question={question}
                   />
                 ))}
