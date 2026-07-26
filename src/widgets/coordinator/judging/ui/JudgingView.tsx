@@ -59,7 +59,8 @@ export function Judging() {
         </div>
         <Button
           onClick={() => view.setShowRandomizeConfirm(true)}
-          disabled={view.activeRounds.length === 0 || view.randomizePreviewMutation.isPending}
+          disabled={view.activeRounds.length === 0 || view.randomizePreviewMutation.isPending || view.judgingReadOnly}
+          title={view.judgingReadOnly ? 'Judging assignments are read-only after the competition is completed.' : undefined}
         >
           {view.randomizePreviewMutation.isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -152,8 +153,11 @@ export function Judging() {
                   <p className="text-xs text-muted-foreground">No judges assigned yet</p>
                 ) : (
                   <div className="space-y-1">
-                    {board.judges.slice(0, 3).map((judge) => (
+                    {board.judges.slice(0, 3).map((judge, index) => (
                       <div key={judge.id} className="flex items-center gap-2 rounded-lg bg-gray-50 p-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-background text-xs font-semibold text-muted-foreground">
+                          {index + 1}
+                        </span>
                         <Avatar className="h-7 w-7">
                           <AvatarFallback className="bg-blue-100 text-xs text-blue-700">
                             {getInitials(judge.fullName || judge.email)}
@@ -209,13 +213,15 @@ export function Judging() {
           <AlertDialogHeader>
             <AlertDialogTitle>Randomize Board Assignment</AlertDialogTitle>
             <AlertDialogDescription>
-              Eligible teams from <strong>{view.activeCompetition?.title}</strong> will be distributed across all boards in
-              the selected judging stage. You can review the complete lineup before saving.
+              {view.judgingReadOnly
+                ? 'This competition has been completed, so board assignments are available for viewing only.'
+                : <>Eligible teams from <strong>{view.activeCompetition?.title}</strong> will be distributed across all boards in
+                  the selected judging stage. You can review the complete lineup before saving.</>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => view.randomizePreviewMutation.mutate()}>
+            <AlertDialogAction disabled={view.judgingReadOnly} onClick={() => view.randomizePreviewMutation.mutate()}>
               <Shuffle className="mr-2 h-4 w-4" />
               Randomize Now
             </AlertDialogAction>
@@ -251,10 +257,10 @@ export function Judging() {
                   </div>
                 </CardHeader>
                 <CardContent className="max-h-[58vh] space-y-2 overflow-y-auto pr-2">
-                  {board.teams.map((team) => (
+                  {board.teams.map((team, index) => (
                     <div key={team.id} className="rounded-md border px-3 py-2 text-sm">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium">{team.name}</span>
+                        <span className="font-medium">{index + 1}. {team.name}</span>
                         <span className="text-xs text-muted-foreground">Slot {team.placementSlot}</span>
                       </div>
                       <p className="text-xs text-muted-foreground">{team.chapterName || team.id}</p>
@@ -272,7 +278,7 @@ export function Judging() {
             <Button
               variant="outline"
               onClick={() => view.randomizePreviewMutation.mutate()}
-              disabled={view.randomizePreviewMutation.isPending}
+              disabled={view.randomizePreviewMutation.isPending || view.judgingReadOnly}
             >
               {view.randomizePreviewMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -283,7 +289,7 @@ export function Judging() {
             </Button>
             <Button
               onClick={() => view.confirmRandomizationMutation.mutate()}
-              disabled={view.confirmRandomizationMutation.isPending}
+              disabled={view.confirmRandomizationMutation.isPending || view.judgingReadOnly}
             >
               {view.confirmRandomizationMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -326,6 +332,7 @@ export function Judging() {
         open={Boolean(view.selectedBoard)}
         onClose={() => view.setSelectedBoard(null)}
         roundId={view.selectedBoard?.roundId || view.activeRound?.id || ''}
+        readOnly={view.judgingReadOnly}
       />
     </div>
   );
