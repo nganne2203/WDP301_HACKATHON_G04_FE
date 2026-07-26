@@ -9,6 +9,10 @@ import { useStore } from '@/entities/session/model/store';
 import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { RepositoryAccessAction } from '@/shared/api/types';
+import {
+  getCompetitionReadOnlyMessage,
+  isCompetitionReadOnly,
+} from '@/shared/lib/competition-readonly';
 
 function getApiErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
@@ -33,6 +37,7 @@ export function useResultsView() {
   const competitions = eventsQuery.data || [];
   const activeCompetition = competitions.find((e) => e.id === selectedCompetition?.id) || competitions[0] || null;
   const activeCompetitionId = activeCompetition?.id || '';
+  const resultsReadOnly = isCompetitionReadOnly(activeCompetition);
 
   const roundsQuery = useRoundsQuery({ competitionId: activeCompetitionId, limit: 10 }, { enabled: Boolean(activeCompetitionId) });
   const rounds = roundsQuery.data || [];
@@ -74,6 +79,7 @@ export function useResultsView() {
 
   const selectFinalistsMutation = useMutation({
     mutationFn: async () => {
+      if (resultsReadOnly) throw new Error(getCompetitionReadOnlyMessage('Finalist selection'));
       if (!activeCompetitionId) throw new Error('Please select an competition.');
       if (!activeRoundId) throw new Error('Please select a round.');
       return (await finalistsApi.select({ competitionId: activeCompetitionId, roundId: activeRoundId })).data;
@@ -107,6 +113,7 @@ export function useResultsView() {
 
   const selectManualFinalistsMutation = useMutation({
     mutationFn: async () => {
+      if (resultsReadOnly) throw new Error(getCompetitionReadOnlyMessage('Finalist selection'));
       if (!activeCompetitionId) throw new Error('Please select an competition.');
       if (!activeRoundId) throw new Error('Please select a round.');
       if (manualSelectedTeamIds.length === 0) throw new Error('Please select at least one team.');
@@ -126,6 +133,7 @@ export function useResultsView() {
   });
 
   const toggleManualTeamSelection = (teamId: string, checked: boolean) => {
+    if (resultsReadOnly) return;
     setManualSelectedTeamIds((current) => {
       if (checked) return current.includes(teamId) ? current : [...current, teamId];
       return current.filter((id) => id !== teamId);
@@ -153,6 +161,7 @@ export function useResultsView() {
     canGenerateRankingsForRound,
     canSelectFinalists,
     canPublishResults,
+    resultsReadOnly,
     isCustomSelectionMode,
     manualSelectedTeamIds,
     manualSelectionReason,

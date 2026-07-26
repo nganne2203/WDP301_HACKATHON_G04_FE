@@ -60,7 +60,10 @@ export function Rounds() {
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!view.activeCompetition}>
+              <Button
+                disabled={!view.activeCompetition || view.roundsReadOnly}
+                title={view.roundsReadOnly ? 'Rounds are view-only after the competition has been completed or archived.' : undefined}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Create Round
               </Button>
@@ -84,7 +87,7 @@ export function Rounds() {
                 </Button>
                 <Button
                   onClick={view.submitCreateRound}
-                  disabled={view.createMutation.isPending || !view.createForm.name.trim()}
+                  disabled={view.roundsReadOnly || view.createMutation.isPending || !view.createForm.name.trim()}
                 >
                   {view.createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Round'}
                 </Button>
@@ -180,6 +183,7 @@ export function Rounds() {
                         View details
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        disabled={view.roundsReadOnly}
                         onClick={() => {
                           view.setSelectedRound(round);
                           view.setEditForm(view.mapRoundToForm(round));
@@ -190,6 +194,7 @@ export function Rounds() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
+                        disabled={view.roundsReadOnly}
                         onClick={() => {
                           view.setSelectedRound(round);
                           view.setDeleteOpen(true);
@@ -245,6 +250,7 @@ export function Rounds() {
             judges={view.judges}
             competition={view.activeCompetition}
             assignedTeams={view.selectedRound?.assignedTeams}
+            readOnly={view.roundsReadOnly}
           />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
@@ -252,7 +258,7 @@ export function Rounds() {
             </Button>
             <Button
               onClick={view.submitUpdateRound}
-              disabled={view.updateMutation.isPending || !view.editForm.name.trim()}
+              disabled={view.roundsReadOnly || view.updateMutation.isPending || !view.editForm.name.trim()}
             >
               {view.updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
             </Button>
@@ -272,6 +278,7 @@ export function Rounds() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
+              disabled={view.roundsReadOnly || view.deleteMutation.isPending}
               onClick={() => view.selectedRound && view.deleteMutation.mutate(view.selectedRound.id)}
             >
               {view.deleteMutation.isPending ? 'Deleting...' : 'Delete'}

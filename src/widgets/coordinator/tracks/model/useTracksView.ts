@@ -8,6 +8,7 @@ import { useCompetitionsQuery, useTracksQuery } from '@/hooks/queries/useCommonQ
 import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { CreateTrackRequest, Track, UpdateTrackRequest } from '@/shared/api/types';
+import { getCompetitionReadOnlyMessage, isCompetitionReadOnly } from '@/shared/lib/competition-readonly';
 
 import {
   buildTrackPayload,
@@ -41,6 +42,20 @@ export function useTracksView() {
   );
 
   const tracks = tracksQuery.data || [];
+  const tracksReadOnly = isCompetitionReadOnly(activeCompetition);
+
+  const ensureTracksWritable = () => {
+    if (!tracksReadOnly) return true;
+    toast.error('Competition is read-only', {
+      description: getCompetitionReadOnlyMessage('Tracks'),
+    });
+    return false;
+  };
+
+  const setCreateDialogOpen = (open: boolean) => {
+    if (open && !ensureTracksWritable()) return;
+    setCreateOpen(open);
+  };
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateTrackRequest) => tracksApi.create(payload),
@@ -88,18 +103,21 @@ export function useTracksView() {
   });
 
   const openEditDialog = (track: Track) => {
+    if (!ensureTracksWritable()) return;
     setSelectedTrack(track);
     setEditForm(mapTrackToForm(track));
     setEditOpen(true);
   };
 
   const openDeleteDialog = (track: Track) => {
+    if (!ensureTracksWritable()) return;
     setSelectedTrack(track);
     setDeleteOpen(true);
   };
 
   const handleCreate = () => {
     if (!activeCompetition?.id) return;
+    if (!ensureTracksWritable()) return;
     if (!createForm.name.trim()) {
       toast.error('Track name is required');
       return;
@@ -110,6 +128,7 @@ export function useTracksView() {
 
   const handleUpdate = () => {
     if (!selectedTrack) return;
+    if (!ensureTracksWritable()) return;
     if (!editForm.name.trim()) {
       toast.error('Track name is required');
       return;
@@ -119,6 +138,12 @@ export function useTracksView() {
       id: selectedTrack.id,
       payload: buildTrackUpdatePayload(editForm),
     });
+  };
+
+  const handleDelete = () => {
+    if (!selectedTrack) return;
+    if (!ensureTracksWritable()) return;
+    deleteMutation.mutate(selectedTrack.id);
   };
 
   const confirmedTracks = tracks.filter((track) => track.status === 'OPEN' || track.status === 'COMPLETED').length;
@@ -136,16 +161,18 @@ export function useTracksView() {
     competitions,
     eventsQuery,
     handleCreate,
+    handleDelete,
     handleUpdate,
     openDeleteDialog,
     openEditDialog,
     selectedTrack,
     setCreateForm,
-    setCreateOpen,
+    setCreateOpen: setCreateDialogOpen,
     setDeleteOpen,
     setEditForm,
     setEditOpen,
     tracks,
+    tracksReadOnly,
     tracksQuery,
     updateMutation,
   };

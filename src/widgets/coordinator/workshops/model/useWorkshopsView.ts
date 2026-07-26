@@ -9,6 +9,7 @@ import { queryKeys } from '@/lib/queryKeys';
 import { ApiError } from '@/shared/api/client';
 import type { Workshop } from '@/shared/api/types';
 import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/workshops';
+import { getCompetitionReadOnlyMessage, isCompetitionReadOnly } from '@/shared/lib/competition-readonly';
 
 import {
   buildWorkshopPayload,
@@ -68,6 +69,20 @@ export function useWorkshopsView() {
 
   const workshops = workshopsQuery.data?.data || [];
   const pagination = workshopsQuery.data?.pagination;
+  const workshopsReadOnly = isCompetitionReadOnly(activeCompetition);
+
+  const ensureWorkshopsWritable = () => {
+    if (!workshopsReadOnly) return true;
+    toast.error('Competition is read-only', {
+      description: getCompetitionReadOnlyMessage('Workshops'),
+    });
+    return false;
+  };
+
+  const setCreateDialogOpen = (open: boolean) => {
+    if (open && !ensureWorkshopsWritable()) return;
+    setCreateOpen(open);
+  };
   const workshopTimelines = workshopTimelinesQuery.data || [];
   const presenterUsers = useMemo(() => {
     return (presenterUsersQuery.data?.data || [])
@@ -175,6 +190,7 @@ export function useWorkshopsView() {
 
   const handleCreate = () => {
     if (!activeCompetition?.id) return;
+    if (!ensureWorkshopsWritable()) return;
     if (!createForm.title.trim()) {
       toast.error('Workshop title is required');
       return;
@@ -188,6 +204,7 @@ export function useWorkshopsView() {
 
   const handleUpdate = () => {
     if (!selectedWorkshop) return;
+    if (!ensureWorkshopsWritable()) return;
     if (!editForm.title.trim()) {
       toast.error('Workshop title is required');
       return;
@@ -203,9 +220,16 @@ export function useWorkshopsView() {
   };
 
   const openEditDialog = (workshop: Workshop) => {
+    if (!ensureWorkshopsWritable()) return;
     setSelectedWorkshop(workshop);
     setEditForm(mapWorkshopToForm(workshop));
     setEditOpen(true);
+  };
+
+  const openDeleteDialog = (workshop: Workshop) => {
+    if (!ensureWorkshopsWritable()) return;
+    setSelectedWorkshop(workshop);
+    setDeleteOpen(true);
   };
 
   const openQuestionsDialog = (workshop: Workshop) => {
@@ -223,12 +247,27 @@ export function useWorkshopsView() {
 
   const handleCreateQuestion = () => {
     const content = questionContent.trim();
+    if (workshopsReadOnly) {
+      ensureWorkshopsWritable();
+      return;
+    }
     if (!selectedQuestionsWorkshop || content.length < 2 || !canCreateWorkshopQuestions || !canSubmitWorkshopQuestion) return;
 
     createQuestionMutation.mutate({
       workshopId: selectedQuestionsWorkshop.id,
       content,
     });
+  };
+
+  const handleDelete = () => {
+    if (!selectedWorkshop) return;
+    if (!ensureWorkshopsWritable()) return;
+    deleteMutation.mutate(selectedWorkshop.id);
+  };
+
+  const handleVoteQuestion = (questionId: string) => {
+    if (!ensureWorkshopsWritable()) return;
+    voteQuestionMutation.mutate(questionId);
   };
 
   const liveCount = workshops.filter((workshop) => workshop.status === 'LIVE').length;
@@ -248,8 +287,11 @@ export function useWorkshopsView() {
     eventsQuery,
     handleCreate,
     handleCreateQuestion,
+    handleDelete,
     handleUpdate,
+    handleVoteQuestion,
     liveCount,
+    openDeleteDialog,
     openEditDialog,
     openQuestionsDialog,
     openReviewsDialog,
@@ -266,7 +308,7 @@ export function useWorkshopsView() {
     createQuestionMutation,
     questionContent,
     setCreateForm,
-    setCreateOpen,
+    setCreateOpen: setCreateDialogOpen,
     setDeleteOpen,
     setEditForm,
     setEditOpen,
@@ -293,6 +335,7 @@ export function useWorkshopsView() {
     workshopTimelines,
     workshopTimelinesQuery,
     workshops,
+    workshopsReadOnly,
     workshopQuestions: workshopQuestionsQuery.data?.data || [],
     workshopQuestionsQuery,
     workshopRatings: workshopRatingsQuery.data?.data?.ratings || [],

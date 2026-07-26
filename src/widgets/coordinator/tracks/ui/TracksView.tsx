@@ -60,7 +60,7 @@ export function Tracks() {
             }}
           >
             <DialogTrigger asChild>
-              <Button disabled={!view.activeCompetition}>
+              <Button disabled={!view.activeCompetition || view.tracksReadOnly}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Track
               </Button>
@@ -81,7 +81,7 @@ export function Tracks() {
                 <Button variant="outline" onClick={() => view.setCreateOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={view.handleCreate} disabled={view.createMutation.isPending}>
+                <Button onClick={view.handleCreate} disabled={view.createMutation.isPending || view.tracksReadOnly}>
                   {view.createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Track'}
                 </Button>
               </div>
@@ -174,10 +174,10 @@ export function Tracks() {
                       <DropdownMenuItem onClick={() => setDetailsTrack(track)}>
                         View details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => view.openEditDialog(track)}>
+                      <DropdownMenuItem disabled={view.tracksReadOnly} onClick={() => view.openEditDialog(track)}>
                         Edit track
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => view.openDeleteDialog(track)}>
+                      <DropdownMenuItem disabled={view.tracksReadOnly} className="text-destructive" onClick={() => view.openDeleteDialog(track)}>
                         Delete track
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -230,7 +230,7 @@ export function Tracks() {
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={view.handleUpdate} disabled={view.updateMutation.isPending}>
+            <Button onClick={view.handleUpdate} disabled={view.updateMutation.isPending || view.tracksReadOnly}>
               {view.updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
             </Button>
           </div>
@@ -248,7 +248,8 @@ export function Tracks() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => view.selectedTrack && view.deleteMutation.mutate(view.selectedTrack.id)}
+              disabled={view.deleteMutation.isPending || view.tracksReadOnly}
+              onClick={view.handleDelete}
               className="bg-destructive hover:bg-destructive/90"
             >
               {view.deleteMutation.isPending ? 'Deleting...' : 'Delete'}

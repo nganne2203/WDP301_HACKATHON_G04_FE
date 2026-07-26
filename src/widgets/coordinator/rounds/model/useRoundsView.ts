@@ -13,6 +13,10 @@ import {
 } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { CreateRoundRequest, Round, UpdateRoundRequest } from '@/shared/api/types';
+import {
+  getCompetitionReadOnlyMessage,
+  isCompetitionReadOnly,
+} from '@/shared/lib/competition-readonly';
 
 import {
   buildCreateRoundPayload,
@@ -41,6 +45,7 @@ export function useRoundsView() {
     if (!competitions.length) return null;
     return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
   }, [competitions, selectedCompetition?.id]);
+  const roundsReadOnly = isCompetitionReadOnly(activeCompetition);
 
   const roundsQuery = useRoundsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
 
@@ -56,7 +61,10 @@ export function useRoundsView() {
   const judges = (judgesQuery.data?.data || []).filter(isJudgeUser);
 
   const createMutation = useMutation({
-    mutationFn: (payload: CreateRoundRequest) => roundsApi.create(payload),
+    mutationFn: (payload: CreateRoundRequest) => {
+      if (roundsReadOnly) throw new Error(getCompetitionReadOnlyMessage('Rounds'));
+      return roundsApi.create(payload);
+    },
     onSuccess: (response) => {
       toast.success('Round created', { description: `${response.data.name} has been added.` });
       queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
@@ -69,7 +77,10 @@ export function useRoundsView() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateRoundRequest }) => roundsApi.update(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateRoundRequest }) => {
+      if (roundsReadOnly) throw new Error(getCompetitionReadOnlyMessage('Rounds'));
+      return roundsApi.update(id, payload);
+    },
     onSuccess: (response) => {
       toast.success('Round updated', { description: `${response.data.name} has been updated.` });
       queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
@@ -82,7 +93,10 @@ export function useRoundsView() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => roundsApi.delete(id),
+    mutationFn: (id: string) => {
+      if (roundsReadOnly) throw new Error(getCompetitionReadOnlyMessage('Rounds'));
+      return roundsApi.delete(id);
+    },
     onSuccess: () => {
       toast.success('Round deleted');
       queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
@@ -96,6 +110,10 @@ export function useRoundsView() {
 
   const submitCreateRound = () => {
     if (!activeCompetition) return;
+    if (roundsReadOnly) {
+      toast.error(getCompetitionReadOnlyMessage('Rounds'));
+      return;
+    }
 
     try {
       createMutation.mutate(buildCreateRoundPayload(createForm, activeCompetition));
@@ -106,6 +124,10 @@ export function useRoundsView() {
 
   const submitUpdateRound = () => {
     if (!selectedRound) return;
+    if (roundsReadOnly) {
+      toast.error(getCompetitionReadOnlyMessage('Rounds'));
+      return;
+    }
 
     try {
       updateMutation.mutate({ id: selectedRound.id, payload: buildUpdateRoundPayload(editForm, activeCompetition) });
@@ -128,6 +150,7 @@ export function useRoundsView() {
     judges,
     judgesQuery,
     rounds,
+    roundsReadOnly,
     roundsQuery,
     rubrics,
     rubricsQuery,

@@ -7,6 +7,7 @@ import { useStore } from '@/entities/session/model/store';
 import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { JudgingBoard, JudgingBoardRandomizationPreview, Round } from '@/shared/api/types';
+import { isCompetitionReadOnly } from '@/shared/lib/competition-readonly';
 
 export function statusVariant(status: string) {
   if (status === 'SCORING') return 'default' as const;
@@ -31,6 +32,7 @@ export function useJudgingView() {
     () => competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0] || null,
     [competitions, selectedCompetition?.id]
   );
+  const judgingReadOnly = isCompetitionReadOnly(activeCompetition);
 
   const roundsQuery = useRoundsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
   const rounds: Round[] = roundsQuery.data || [];
@@ -61,6 +63,7 @@ export function useJudgingView() {
   const randomizePreviewMutation = useMutation({
     mutationFn: async () => {
       if (!activeCompetition || activeRounds.length === 0) throw new Error('No judging round selected');
+      if (judgingReadOnly) throw new Error('Judging board assignments are read-only for completed competitions');
       const response = await judgingBoardsApi.randomizePreview({ competitionId: activeCompetition.id, roundId: activeRound.id });
       return response.data;
     },
@@ -80,6 +83,7 @@ export function useJudgingView() {
       if (!activeCompetition || activeRounds.length === 0 || !randomizationPreview) {
         throw new Error('Missing data required to confirm board assignment');
       }
+      if (judgingReadOnly) throw new Error('Judging board assignments are read-only for completed competitions');
 
       return judgingBoardsApi.confirmRandomization({
         competitionId: activeCompetition.id,
@@ -120,6 +124,7 @@ export function useJudgingView() {
     rounds,
     activeRound,
     activeRounds,
+    judgingReadOnly,
     boardsQuery,
     boards,
     totalTeams,

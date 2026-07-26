@@ -38,11 +38,13 @@ export function BoardDetailDialog({
   open,
   onClose,
   roundId,
+  readOnly = false,
 }: {
   board: JudgingBoard | null;
   open: boolean;
   onClose: () => void;
   roundId: string;
+  readOnly?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [selectedJudgeIds, setSelectedJudgeIds] = useState<string[] | null>(null);
@@ -119,7 +121,12 @@ export function BoardDetailDialog({
 
   const currentJudgeIds = selectedJudgeIds ?? savedJudgeIds ?? board.judgeIds;
   const visibleJudges = (judgesQuery.data?.data || []).filter((judge) => currentJudgeIds.includes(judge.id));
-  const judgeAssignmentLocked = board.status === 'COMPLETED' || board.round?.status === 'COMPLETED';
+  const boardCompetitionStatus = board.competition?.status;
+  const judgeAssignmentLocked = readOnly ||
+    board.status === 'COMPLETED' ||
+    board.round?.status === 'COMPLETED' ||
+    boardCompetitionStatus === 'COMPLETED' ||
+    boardCompetitionStatus === 'ARCHIVED';
 
   const scoredCount = board.teams.filter((team) => teamScoreMap[team.id] !== undefined).length;
   const progress = board.teams.length > 0 ? Math.round((scoredCount / board.teams.length) * 100) : 0;
@@ -144,8 +151,11 @@ export function BoardDetailDialog({
               <p className="text-sm text-muted-foreground">No judges assigned yet.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {visibleJudges.map((judge) => (
+                {visibleJudges.map((judge, index) => (
                   <div key={judge.id} className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-blue-700">
+                      {index + 1}
+                    </span>
                     <Avatar className="w-6 h-6">
                       <AvatarFallback className="bg-blue-200 text-blue-800 text-xs">
                         {getInitials(judge.fullName || judge.email)}
@@ -157,7 +167,7 @@ export function BoardDetailDialog({
               </div>
             )}
             {judgeAssignmentLocked ? (
-              <p className="mt-3 text-xs text-muted-foreground">Judge assignments are locked because this board or round is completed.</p>
+              <p className="mt-3 text-xs text-muted-foreground">Judge assignments are locked because this competition is completed or archived, or the board/round is completed.</p>
             ) : <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowJudgeEditor((value) => !value)}>
               {showJudgeEditor ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
               {showJudgeEditor ? 'Hide judge assignment' : 'Assign or change judges'}
@@ -165,12 +175,13 @@ export function BoardDetailDialog({
             {!judgeAssignmentLocked && showJudgeEditor && <div className="mt-3 rounded-lg border bg-muted/20 p-3">
               <p className="mb-2 text-xs font-medium text-muted-foreground">Assign judges to this board</p>
               <div className="grid max-h-36 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
-                {(judgesQuery.data?.data || []).map((judge) => (
+                {(judgesQuery.data?.data || []).map((judge, index) => (
                   <label key={judge.id} className="flex cursor-pointer items-center gap-2 rounded-md border bg-background px-2 py-1.5 text-sm">
                     <Checkbox
                       checked={currentJudgeIds.includes(judge.id)}
                       onCheckedChange={(checked) => setSelectedJudgeIds((ids) => checked ? [...new Set([...(ids ?? board.judgeIds), judge.id])] : (ids ?? board.judgeIds).filter((id) => id !== judge.id))}
                     />
+                    <span className="w-5 shrink-0 text-xs font-semibold text-muted-foreground">{index + 1}.</span>
                     <span>{judge.fullName || judge.email}</span>
                   </label>
                 ))}
@@ -251,10 +262,10 @@ export function BoardDetailDialog({
                         <td className="px-3 py-2 text-right">
                           {submission ? (
                             <div className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm" disabled={submissionStatusMutation.isPending || submission.status === 'ACCEPTED'} onClick={() => submissionStatusMutation.mutate({ submissionId: submission.id, status: 'ACCEPTED' })}>
+                              <Button variant="outline" size="sm" disabled={readOnly || submissionStatusMutation.isPending || submission.status === 'ACCEPTED'} onClick={() => submissionStatusMutation.mutate({ submissionId: submission.id, status: 'ACCEPTED' })}>
                                 Accept
                               </Button>
-                              <Button variant="outline" size="sm" disabled={submissionStatusMutation.isPending || submission.status === 'REJECTED'} onClick={() => submissionStatusMutation.mutate({ submissionId: submission.id, status: 'REJECTED' })}>
+                              <Button variant="outline" size="sm" disabled={readOnly || submissionStatusMutation.isPending || submission.status === 'REJECTED'} onClick={() => submissionStatusMutation.mutate({ submissionId: submission.id, status: 'REJECTED' })}>
                                 Reject
                               </Button>
                             </div>

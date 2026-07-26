@@ -227,9 +227,12 @@ function ReadOnlyTeamList({
             Teams are assigned automatically after you confirm the randomized board lineup.
           </p>
         ) : (
-          assignedTeams.map((team) => (
-            <div key={team.id} className="rounded-md border p-3 text-sm font-medium">
-              {team.name || 'Unnamed team'}
+          assignedTeams.map((team, index) => (
+            <div key={team.id} className="flex items-center gap-3 rounded-md border p-3 text-sm font-medium">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                {index + 1}
+              </span>
+              <span>{team.name || 'Unnamed team'}</span>
             </div>
           ))
         )}
@@ -282,9 +285,12 @@ function SelectionList({
       </div>
       <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border p-3">
         {items.length === 0 && <p className="text-sm text-muted-foreground">{emptyMessage}</p>}
-        {items.map((item) => (
+        {items.map((item, index) => (
           <label key={item.id} className="flex cursor-pointer items-start gap-3 rounded-md border p-3">
             <Checkbox checked={selectedIds.includes(item.id)} onCheckedChange={() => onToggle(item.id)} />
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+              {index + 1}
+            </span>
             <div className="min-w-0">
               <p className="text-sm font-medium">{item.primary || item.id}</p>
               {item.secondary && <p className="text-xs text-muted-foreground">{item.secondary}</p>}

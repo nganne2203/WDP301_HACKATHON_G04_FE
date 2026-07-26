@@ -117,6 +117,7 @@ export function Checkin() {
     if (!competitions.length) return null;
     return competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0];
   }, [competitions, selectedCompetition?.id]);
+  const checkInActionsDisabled = !activeCompetition?.id || activeCompetition.status !== 'ONGOING';
 
   // Fetch real participants filtered by selected competition
   const { data: participantsResponse, isLoading: participantsLoading, error: participantsError } = useQuery({
@@ -169,6 +170,16 @@ export function Checkin() {
   });
 
   const workshops = workshopsResponse?.data || [];
+
+  function handleCheckIn(participantId: string) {
+    if (checkInActionsDisabled) {
+      toast.error('Check-in is not available', {
+        description: 'Check-in is only available while the competition is ongoing.',
+      });
+      return;
+    }
+    checkInMutation.mutate(participantId);
+  }
 
   async function handleExportAttendance() {
     if (!activeCompetition?.id) {
@@ -277,7 +288,11 @@ export function Checkin() {
             <CardTitle className="text-base">Competition check-in QR</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <CompetitionCheckInQrPanel competitionId={activeCompetition?.id} eventTitle={activeCompetition?.title} />
+            <CompetitionCheckInQrPanel
+              competitionId={activeCompetition?.id}
+              disabled={checkInActionsDisabled}
+              eventTitle={activeCompetition?.title}
+            />
           </CardContent>
         </Card>
 
@@ -440,8 +455,8 @@ export function Checkin() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={checkInMutation.isPending}
-                            onClick={() => checkInMutation.mutate(p.id)}
+                            disabled={checkInActionsDisabled || checkInMutation.isPending}
+                            onClick={() => handleCheckIn(p.id)}
                           >
                             {checkInMutation.isPending ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
