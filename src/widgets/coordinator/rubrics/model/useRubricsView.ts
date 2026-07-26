@@ -7,6 +7,7 @@ import { useStore } from '@/entities/session/model/store';
 import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type {
+  Competition,
   CreateCriterionRequest,
   CreateRubricRequest,
   Criterion,
@@ -27,6 +28,12 @@ import {
   mapRubricToForm,
   type RubricFormState,
 } from './rubric-form';
+
+const readOnlyCompetitionStatuses = new Set(['COMPLETED', 'ARCHIVED']);
+
+function isCompletedCompetition(competition?: Pick<Competition, 'status'> | { status?: string | null } | null) {
+  return readOnlyCompetitionStatuses.has(String(competition?.status || '').toUpperCase());
+}
 
 export function useRubricsView() {
   const queryClient = useQueryClient();
@@ -69,6 +76,16 @@ export function useRubricsView() {
 
   const rounds = roundsQuery.data || [];
   const rubrics = rubricsQuery.data || [];
+  const rubricsReadOnly = isCompletedCompetition(activeCompetition);
+
+  const isRubricReadOnly = (rubric?: Rubric | null) =>
+    isCompletedCompetition(rubric?.competition) || rubricsReadOnly;
+
+  const notifyReadOnly = () => {
+    toast.info('Rubrics are read-only', {
+      description: 'This competition has been completed, so rubrics can only be viewed.',
+    });
+  };
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateRubricRequest) => rubricsApi.create(payload),
@@ -144,6 +161,10 @@ export function useRubricsView() {
   });
 
   const openCreateDialog = (open: boolean) => {
+    if (open && rubricsReadOnly) {
+      notifyReadOnly();
+      return;
+    }
     setCreateOpen(open);
     if (!open) {
       setCreateForm(createRubricForm());
@@ -158,23 +179,39 @@ export function useRubricsView() {
   };
 
   const openEditDialog = (rubric: Rubric) => {
+    if (isRubricReadOnly(rubric)) {
+      notifyReadOnly();
+      return;
+    }
     setSelectedRubric(rubric);
     setEditForm(mapRubricToForm(rubric));
     setEditOpen(true);
   };
 
   const openDeleteDialog = (rubric: Rubric) => {
+    if (isRubricReadOnly(rubric)) {
+      notifyReadOnly();
+      return;
+    }
     setSelectedRubric(rubric);
     setDeleteOpen(true);
   };
 
   const submitCreate = () => {
     if (!activeCompetition) return;
+    if (rubricsReadOnly) {
+      notifyReadOnly();
+      return;
+    }
     createMutation.mutate(buildRubricPayload(createForm, activeCompetition.id));
   };
 
   const submitEdit = () => {
     if (!selectedRubric) return;
+    if (isRubricReadOnly(selectedRubric)) {
+      notifyReadOnly();
+      return;
+    }
     updateMutation.mutate({
       id: selectedRubric.id,
       payload: buildRubricUpdatePayload(editForm),
@@ -183,10 +220,18 @@ export function useRubricsView() {
 
   const submitDelete = () => {
     if (!selectedRubric) return;
+    if (isRubricReadOnly(selectedRubric)) {
+      notifyReadOnly();
+      return;
+    }
     deleteMutation.mutate(selectedRubric.id);
   };
 
   const submitCreateCriterion = (rubricId: string, form: CriterionFormState) => {
+    if (isRubricReadOnly(selectedRubric)) {
+      notifyReadOnly();
+      return;
+    }
     createCriterionMutation.mutate({
       rubricId,
       payload: buildCriterionPayload(form),
@@ -194,6 +239,10 @@ export function useRubricsView() {
   };
 
   const submitUpdateCriterion = (rubricId: string, criterionId: string, form: CriterionFormState) => {
+    if (isRubricReadOnly(selectedRubric)) {
+      notifyReadOnly();
+      return;
+    }
     updateCriterionMutation.mutate({
       rubricId,
       criterionId,
@@ -202,6 +251,10 @@ export function useRubricsView() {
   };
 
   const submitDeleteCriterion = (rubricId: string, criterionId: string) => {
+    if (isRubricReadOnly(selectedRubric)) {
+      notifyReadOnly();
+      return;
+    }
     deleteCriterionMutation.mutate({ rubricId, criterionId });
   };
 
@@ -231,6 +284,8 @@ export function useRubricsView() {
     rounds,
     rubrics,
     activeCompetition,
+    rubricsReadOnly,
+    isRubricReadOnly,
     createMutation,
     updateMutation,
     deleteMutation,
