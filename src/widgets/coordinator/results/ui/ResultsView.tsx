@@ -138,8 +138,9 @@ export function Results() {
               <Button
                 variant="outline"
                 onClick={() => view.selectFinalistsMutation.mutate()}
-                disabled={view.selectFinalistsMutation.isPending || view.rankings.length === 0 || view.isCustomSelectionMode}
+                disabled={view.resultsReadOnly || view.selectFinalistsMutation.isPending || view.rankings.length === 0 || view.isCustomSelectionMode}
                 className="w-full"
+                title={view.resultsReadOnly ? 'Finalist selection is view-only after the competition has been completed or archived.' : undefined}
               >
                 {view.selectFinalistsMutation.isPending
                   ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -271,6 +272,7 @@ export function Results() {
                 onChange={(competition) => view.setManualSelectionReason(competition.target.value)}
                 placeholder="Optional: e.g. Organizer manual review after tie-break discussion."
                 rows={2}
+                disabled={view.resultsReadOnly}
               />
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -279,7 +281,7 @@ export function Results() {
               </p>
               <Button
                 onClick={() => view.selectManualFinalistsMutation.mutate()}
-                disabled={view.selectManualFinalistsMutation.isPending || view.manualSelectedTeamIds.length === 0}
+                disabled={view.resultsReadOnly || view.selectManualFinalistsMutation.isPending || view.manualSelectedTeamIds.length === 0}
               >
                 {view.selectManualFinalistsMutation.isPending
                   ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -349,7 +351,7 @@ export function Results() {
                       <TableCell>
                         <Checkbox
                           checked={ranking.teamId ? view.manualSelectedTeamIds.includes(ranking.teamId) : false}
-                          disabled={!ranking.teamId || Boolean(ranking.publishedAt)}
+                          disabled={view.resultsReadOnly || !ranking.teamId || Boolean(ranking.publishedAt)}
                           onCheckedChange={(checked) => {
                             if (!ranking.teamId) return;
                             view.toggleManualTeamSelection(ranking.teamId, checked === true);

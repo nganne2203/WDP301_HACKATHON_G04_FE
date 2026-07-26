@@ -167,7 +167,7 @@ export function BoardDetailDialog({
               </div>
             )}
             {judgeAssignmentLocked ? (
-              <p className="mt-3 text-xs text-muted-foreground">Judge assignments are locked because this competition, board, or round is completed.</p>
+              <p className="mt-3 text-xs text-muted-foreground">Judge assignments are locked because this competition is completed or archived, or the board/round is completed.</p>
             ) : <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowJudgeEditor((value) => !value)}>
               {showJudgeEditor ? <ChevronUp className="mr-2 h-4 w-4" /> : <ChevronDown className="mr-2 h-4 w-4" />}
               {showJudgeEditor ? 'Hide judge assignment' : 'Assign or change judges'}

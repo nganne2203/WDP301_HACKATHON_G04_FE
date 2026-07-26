@@ -7,8 +7,7 @@ import { useStore } from '@/entities/session/model/store';
 import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { JudgingBoard, JudgingBoardRandomizationPreview, Round } from '@/shared/api/types';
-
-const readOnlyCompetitionStatuses = new Set(['COMPLETED', 'ARCHIVED']);
+import { isCompetitionReadOnly } from '@/shared/lib/competition-readonly';
 
 export function statusVariant(status: string) {
   if (status === 'SCORING') return 'default' as const;
@@ -33,7 +32,7 @@ export function useJudgingView() {
     () => competitions.find((competition) => competition.id === selectedCompetition?.id) || competitions[0] || null,
     [competitions, selectedCompetition?.id]
   );
-  const judgingReadOnly = readOnlyCompetitionStatuses.has(String(activeCompetition?.status || '').toUpperCase());
+  const judgingReadOnly = isCompetitionReadOnly(activeCompetition);
 
   const roundsQuery = useRoundsQuery({ competitionId: activeCompetition?.id, limit: 10 }, { enabled: Boolean(activeCompetition?.id) });
   const rounds: Round[] = roundsQuery.data || [];
