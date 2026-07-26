@@ -60,7 +60,7 @@ export function Judging() {
         <Button
           onClick={() => view.setShowRandomizeConfirm(true)}
           disabled={view.activeRounds.length === 0 || view.randomizePreviewMutation.isPending || view.judgingReadOnly}
-          title={view.judgingReadOnly ? 'Judging assignments are read-only after the competition is completed.' : undefined}
+          title={view.judgingReadOnly ? 'Judging assignments are read-only after the competition is completed or archived.' : undefined}
         >
           {view.randomizePreviewMutation.isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -214,7 +214,7 @@ export function Judging() {
             <AlertDialogTitle>Randomize Board Assignment</AlertDialogTitle>
             <AlertDialogDescription>
               {view.judgingReadOnly
-                ? 'This competition has been completed, so board assignments are available for viewing only.'
+                ? 'This competition has been completed or archived, so board assignments are available for viewing only.'
                 : <>Eligible teams from <strong>{view.activeCompetition?.title}</strong> will be distributed across all boards in
                   the selected judging stage. You can review the complete lineup before saving.</>}
             </AlertDialogDescription>
