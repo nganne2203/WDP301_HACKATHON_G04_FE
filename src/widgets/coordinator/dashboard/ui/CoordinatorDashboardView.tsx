@@ -241,7 +241,12 @@ export function CoordinatorDashboard() {
   const finalists = uniqueCount(
     rankings.filter((ranking) => ranking.isSelectedForFinal).map((ranking) => ranking.teamId)
   );
-  const maxTeams = activeCompetition?.maxTeams || totalTeams;
+  const boardCount = Number(activeCompetition?.competitionConfig?.boardCount || activeCompetition?.competitionConfig?.trackCount);
+  const maxTeamsPerBoard = Number(activeCompetition?.competitionConfig?.maxTeamsPerBoard);
+  const configuredTeamCapacity = boardCount > 0 && maxTeamsPerBoard > 0
+    ? boardCount * maxTeamsPerBoard
+    : 0;
+  const maxTeams = configuredTeamCapacity || activeCompetition?.maxTeams || totalTeams;
   const judgingProgress = percent(teamsEvaluated, totalTeams);
   const loadingValue = eventsQuery.isLoading || participantsQuery.isLoading || teamsQuery.isLoading;
   const lifecycleSteps = buildLifecycleSteps(timelines);

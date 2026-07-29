@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { GenerateRankingsRequest, GenerateRankingsResult, ListRankingsQuery, Ranking } from './types';
+import type { GenerateRankingsRequest, GenerateRankingsResult, ListRankingsQuery, Ranking, ResolveTieBreakRequest, ResolveTieBreakResult } from './types';
 
 export const rankingsApi = {
   list: (query?: ListRankingsQuery) =>
@@ -7,4 +7,7 @@ export const rankingsApi = {
 
   generate: (data: GenerateRankingsRequest) =>
     api.post<GenerateRankingsResult>('/rankings/generate', data),
+
+  resolveTieBreak: (data: ResolveTieBreakRequest) =>
+    api.post<ResolveTieBreakResult>('/rankings/tie-breaks/resolve', data),
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Award, CheckCircle2, Loader2, Medal, RefreshCcw, Send, Trophy, Upload, Users } from 'lucide-react';
 
 import { useResultsView } from '../model/useResultsView';
@@ -19,12 +19,20 @@ import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Checkbox } from '@/shared/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/ui/dialog';
+import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Separator } from '@/shared/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import { Textarea } from '@/shared/ui/textarea';
-import type { RepositoryAccessAction } from '@/shared/api/types';
+import type { Ranking, RepositoryAccessAction, TieBreakMethod } from '@/shared/api/types';
+
+type TieBreakDecisionForm = {
+  method: Exclude<TieBreakMethod, 'NONE'>;
+  score: string;
+  reason: string;
+};
 
 const PLACE_ICONS = [Trophy, Medal, Award];
 const PLACE_CLASSES = [
@@ -48,13 +56,53 @@ const REPO_ACCESS_OPTIONS: { value: RepositoryAccessAction; label: string; descr
 export function Results() {
   const view = useResultsView();
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [showTieBreakDialog, setShowTieBreakDialog] = useState(false);
+  const [selectedTieScore, setSelectedTieScore] = useState('');
+  const [tieBreakDecisions, setTieBreakDecisions] = useState<Record<string, TieBreakDecisionForm>>({});
 
   const top3Finalists = view.finalists.slice(0, 3);
   const top3Rankings = view.rankings.slice(0, 3);
   const podiumItems = top3Finalists.length ? top3Finalists : top3Rankings;
+  const tieBreakScoreMax = view.activeRound?.rubric?.criterionMaxScore ?? 10;
 
   const isPublished = view.rankings.some((r) => Boolean(r.publishedAt));
   const isPreliminaryRound = view.activeRound?.roundType === 'PRELIMINARY';
+  const unresolvedTieGroups = useMemo(() => {
+    const groups = new Map<string, Ranking[]>();
+    for (const ranking of view.rankings) {
+      const key = String(ranking.score);
+      groups.set(key, [...(groups.get(key) || []), ranking]);
+    }
+    return [...groups.entries()]
+      .filter(([, rankings]) => rankings.length > 1 && rankings.some((ranking) => ranking.tieBreakMethod === 'NONE' || !ranking.tieBreakResolvedAt))
+      .map(([score, rankings]) => ({ score, rankings }));
+  }, [view.rankings]);
+  const selectedTieGroup = unresolvedTieGroups.find((group) => group.score === selectedTieScore) || null;
+
+  const initialiseTieBreak = (group: { score: string; rankings: Ranking[] }) => {
+    setSelectedTieScore(group.score);
+    setTieBreakDecisions(Object.fromEntries(group.rankings.map((ranking) => [ranking.id, {
+      method: 'MINI_TEST',
+      score: '',
+      reason: '',
+    }])));
+  };
+
+  const openTieBreakDialog = () => {
+    const firstGroup = unresolvedTieGroups[0];
+    if (!firstGroup) return;
+    initialiseTieBreak(firstGroup);
+    setShowTieBreakDialog(true);
+  };
+
+  const canSubmitTieBreak = Boolean(selectedTieGroup) && selectedTieGroup.rankings.every((ranking) => {
+    const decision = tieBreakDecisions[ranking.id];
+    return decision &&
+      decision.reason.trim().length > 0 &&
+      /^\d+(\.\d{1,2})?$/.test(decision.score) &&
+      Number(decision.score) >= 0 &&
+      Number(decision.score) <= tieBreakScoreMax;
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -69,10 +117,27 @@ export function Results() {
           </p>
         </div>
         {!view.canManageResults ? (
-          <Button size="lg" variant="outline" disabled>
-            <Trophy className="w-4 h-4 mr-2" />
-            View Only
-          </Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end">
+            <div className="space-y-1">
+              <Label htmlFor="judge-results-round" className="text-xs text-muted-foreground">Round</Label>
+              {view.roundsQuery.isLoading ? (
+                <p className="h-10 px-3 text-sm leading-10 text-muted-foreground">Loading rounds…</p>
+              ) : (
+                <Select value={view.selectedRoundId || view.activeRoundId} onValueChange={view.setSelectedRoundId}>
+                  <SelectTrigger id="judge-results-round" className="w-full sm:w-72"><SelectValue placeholder="Select round" /></SelectTrigger>
+                  <SelectContent>
+                    {view.rounds.map((round) => (
+                      <SelectItem key={round.id} value={round.id}>{round.name} ({round.roundType})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <Button size="lg" variant="outline" disabled>
+              <Trophy className="w-4 h-4 mr-2" />
+              View Only
+            </Button>
+          </div>
         ) : view.canPublishResults && isPublished ? (
           <Button size="lg" variant="outline" disabled className="text-green-700 border-green-300 bg-green-50">
             <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
@@ -98,8 +163,8 @@ export function Results() {
         )}
       </div>
 
-      {/* Round selector */}
-      <Card>
+      {/* Result-management controls */}
+      {view.canManageResults && <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
@@ -153,15 +218,7 @@ export function Results() {
             )}
           </div>
         </CardContent>
-      </Card>
-
-      <Alert>
-        <Users className="h-4 w-4" />
-        <AlertTitle>Current advancement rule</AlertTitle>
-        <AlertDescription>
-          {describeAdvancementRule(view.activeCompetition)}
-        </AlertDescription>
-      </Alert>
+      </Card>}
 
       {/* Summary alert */}
       {view.rankingsQuery.isLoading ? (
@@ -179,27 +236,150 @@ export function Results() {
           </AlertDescription>
         </Alert>
       ) : (
-        <Alert className="sm:grid-cols-[1rem_auto_auto] sm:items-center sm:gap-x-8">
+        <Alert className="sm:grid-cols-[1rem_auto_auto] sm:items-center sm:gap-x-4">
           <Trophy className="h-4 w-4" />
           <AlertTitle className="sm:col-start-2 sm:row-start-1">
             {view.finalists.length
-              ? `${view.finalists.length} finalists selected from ${view.rankings.length} ranked teams`
+              ? `${view.finalists.length} teams advance from ${view.rankings.length} ranked teams`
               : `${view.rankings.length} teams ranked`}
           </AlertTitle>
           <AlertDescription className="sm:col-start-3 sm:row-start-1 sm:block">
-            <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
-              <div>
-                <span className="mr-2 text-xs text-muted-foreground">Round</span>
-                <strong>{view.activeRound?.name || '–'}</strong>
-              </div>
-              <div>
-                <span className="mr-2 text-xs text-muted-foreground">Type</span>
-                <strong>{view.activeRound?.roundType || '–'}</strong>
-              </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span>{describeAdvancementRule(view.activeCompetition)}</span>
+              {view.canResolveTieBreak && unresolvedTieGroups.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={openTieBreakDialog}
+                >
+                  Resolve {unresolvedTieGroups.length} tie{unresolvedTieGroups.length === 1 ? '' : 's'}
+                </Button>
+              )}
             </div>
           </AlertDescription>
         </Alert>
       )}
+
+      <Dialog open={showTieBreakDialog} onOpenChange={setShowTieBreakDialog}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Resolve tie-break</DialogTitle>
+            <DialogDescription>
+              Record a decision for every team with the same score. The tie-break score determines their order without changing the official score.
+            </DialogDescription>
+          </DialogHeader>
+
+          {unresolvedTieGroups.length > 1 && (
+            <div className="space-y-2">
+              <Label htmlFor="tie-break-group">Tied score group</Label>
+              <Select
+                value={selectedTieScore}
+                onValueChange={(score) => {
+                  const group = unresolvedTieGroups.find((item) => item.score === score);
+                  if (group) initialiseTieBreak(group);
+                }}
+              >
+                <SelectTrigger id="tie-break-group"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {unresolvedTieGroups.map((group) => (
+                    <SelectItem key={group.score} value={group.score}>
+                      Score {Number(group.score).toFixed(2)} — {group.rankings.length} teams
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {selectedTieGroup && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Official score: <strong>{Number(selectedTieGroup.score).toFixed(2)}</strong>
+              </p>
+              {selectedTieGroup.rankings.map((ranking) => {
+                const decision = tieBreakDecisions[ranking.id];
+                return (
+                  <div key={ranking.id} className="space-y-3 rounded-lg border p-4">
+                    <p className="font-medium">{ranking.team?.name || 'Unknown team'}</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Tie-break method</Label>
+                        <Select
+                          value={decision?.method || 'MINI_TEST'}
+                          onValueChange={(method: Exclude<TieBreakMethod, 'NONE'>) => setTieBreakDecisions((current) => ({
+                            ...current,
+                            [ranking.id]: { ...current[ranking.id], method },
+                          }))}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MINI_TEST">Mini test</SelectItem>
+                            <SelectItem value="PENALTY_EVALUATION">Penalty evaluation</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`tie-break-score-${ranking.id}`}>Tie-break score (0–{tieBreakScoreMax})</Label>
+                        <Input
+                          id={`tie-break-score-${ranking.id}`}
+                          type="number"
+                          min="0"
+                          max={tieBreakScoreMax}
+                          step="0.01"
+                          value={decision?.score || ''}
+                          onChange={(event) => setTieBreakDecisions((current) => ({
+                            ...current,
+                            [ranking.id]: { ...current[ranking.id], score: event.target.value },
+                          }))}
+                        />
+                        <p className="text-xs text-muted-foreground">Maximum two decimal places.</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`tie-break-reason-${ranking.id}`}>Decision reason</Label>
+                      <Textarea
+                        id={`tie-break-reason-${ranking.id}`}
+                        rows={2}
+                        value={decision?.reason || ''}
+                        onChange={(event) => setTieBreakDecisions((current) => ({
+                          ...current,
+                          [ranking.id]: { ...current[ranking.id], reason: event.target.value },
+                        }))}
+                        placeholder="Explain the tie-break decision."
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTieBreakDialog(false)}>Cancel</Button>
+            <Button
+              disabled={!canSubmitTieBreak || view.resolveTieBreakMutation.isPending}
+              onClick={() => {
+                if (!selectedTieGroup) return;
+                view.resolveTieBreakMutation.mutate(selectedTieGroup.rankings.map((ranking) => {
+                  const decision = tieBreakDecisions[ranking.id];
+                  return {
+                    teamId: ranking.teamId!,
+                    tieBreakMethod: decision.method,
+                    tieBreakScore: Number(decision.score),
+                    tieBreakReason: decision.reason.trim(),
+                  };
+                }), {
+                  onSuccess: () => setShowTieBreakDialog(false),
+                });
+              }}
+            >
+              {view.resolveTieBreakMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save tie-break
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {view.rankings.length > 0 && (
         <Card className={view.finalists.length > 0 ? 'border-green-200 bg-green-50/40' : undefined}>
@@ -339,7 +519,6 @@ export function Results() {
                   <TableHead>Team</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Track</TableHead>
-                  <TableHead>Board</TableHead>
                   <TableHead>{isPreliminaryRound ? 'Advances' : 'Finalist'}</TableHead>
                   <TableHead>Published</TableHead>
                 </TableRow>
@@ -383,13 +562,6 @@ export function Results() {
                         <Badge variant="outline">{ranking.track.name}</Badge>
                       ) : (
                         <span className="text-muted-foreground text-sm">–</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {ranking.team?.boardNumber ? (
-                        <Badge variant="outline">Board {ranking.team.boardNumber}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </TableCell>
                     <TableCell>

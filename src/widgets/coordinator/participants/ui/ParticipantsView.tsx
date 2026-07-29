@@ -290,16 +290,12 @@ export function Participants() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <DetailField label="Authentication Provider" value={detailsUser.authProvider} />
-                <DetailField label="Registration Source" value={detailsUser.registrationSource} />
-                <DetailField label="Must Change Password" value={detailsUser.mustChangePassword ? 'Yes' : 'No'} />
                 <DetailField label="GitHub Username" value={detailsUser.githubUsername || '-'} />
                 <DetailField label="Phone" value={detailsUser.phone || '-'} />
                 <DetailField label="Student Type" value={detailsUser.studentType || '-'} />
                 <DetailField label="Student ID" value={detailsUser.studentId || '-'} />
                 <DetailField label="School" value={detailsUser.schoolName || '-'} />
                 <DetailField label="Created At" value={formatDetailDate(detailsUser.createdAt)} />
-                <DetailField label="Updated At" value={formatDetailDate(detailsUser.updatedAt)} />
               </div>
 
               <div>

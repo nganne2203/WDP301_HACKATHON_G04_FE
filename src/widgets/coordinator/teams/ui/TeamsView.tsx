@@ -30,10 +30,10 @@ function statusBadgeVariant(status: string): BadgeVariant {
 }
 
 function getConfirmedMemberCount(team: Team) {
-  const activeParticipants = team.participants
-    ? team.participants.filter((participant) => participant.status === 'JOINED')
-    : [];
-  return activeParticipants.length || (team.members?.length || 0);
+  if (team.participants) {
+    return team.participants.filter((participant) => participant.status === 'JOINED').length;
+  }
+  return team.members?.length || 0;
 }
 
 function getTotalMemberCount(team: Team) {
@@ -95,7 +95,12 @@ export function Teams() {
   const teams = teamsQuery.data?.data || [];
   const pagination = teamsQuery.data?.pagination;
   const confirmedTeams = confirmedTeamsQuery.data?.pagination?.totalItems || 0;
-  const maxTeams = activeCompetition?.maxTeams || 30;
+  const boardCount = Number(activeCompetition?.competitionConfig?.boardCount || activeCompetition?.competitionConfig?.trackCount);
+  const maxTeamsPerBoard = Number(activeCompetition?.competitionConfig?.maxTeamsPerBoard);
+  const configuredTeamCapacity = boardCount > 0 && maxTeamsPerBoard > 0
+    ? boardCount * maxTeamsPerBoard
+    : 0;
+  const maxTeams = configuredTeamCapacity || activeCompetition?.maxTeams || 30;
   const capacityPercent = maxTeams > 0 ? Math.min(Math.round((confirmedTeams / maxTeams) * 100), 100) : 0;
 
   return (
