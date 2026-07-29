@@ -95,7 +95,12 @@ export function Teams() {
   const teams = teamsQuery.data?.data || [];
   const pagination = teamsQuery.data?.pagination;
   const confirmedTeams = confirmedTeamsQuery.data?.pagination?.totalItems || 0;
-  const maxTeams = activeCompetition?.maxTeams || 30;
+  const boardCount = Number(activeCompetition?.competitionConfig?.boardCount || activeCompetition?.competitionConfig?.trackCount);
+  const maxTeamsPerBoard = Number(activeCompetition?.competitionConfig?.maxTeamsPerBoard);
+  const configuredTeamCapacity = boardCount > 0 && maxTeamsPerBoard > 0
+    ? boardCount * maxTeamsPerBoard
+    : 0;
+  const maxTeams = configuredTeamCapacity || activeCompetition?.maxTeams || 30;
   const capacityPercent = maxTeams > 0 ? Math.min(Math.round((confirmedTeams / maxTeams) * 100), 100) : 0;
 
   return (
