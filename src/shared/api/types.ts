@@ -1461,7 +1461,7 @@ export interface Round {
   trackId: string | null;
   track: { id: string; code: string; name: string } | null;
   rubricId: string | null;
-  rubric: { id: string; title: string; totalScore: number | null } | null;
+  rubric: { id: string; title: string; totalScore: number | null; criterionMaxScore?: number | null } | null;
   name: string;
   roundType: RoundType;
   problemStatement?: string | null;
@@ -1894,6 +1894,8 @@ export interface Ranking {
   tieBreakScore: number;
   penaltyScore: number;
   miniTestScore: number;
+  tieBreakReason?: string | null;
+  tieBreakResolvedAt?: string | null;
   rank: number;
   calculationSource: string;
   calculationSummary: Record<string, unknown> | null;
@@ -1929,6 +1931,25 @@ export interface GenerateRankingsResult {
     generatedCount?: number;
     source?: string;
     tiedGroups?: unknown[];
+  };
+}
+
+export interface ResolveTieBreakRequest {
+  competitionId: string;
+  roundId: string;
+  decisions: Array<{
+    teamId: string;
+    tieBreakMethod: Exclude<TieBreakMethod, 'NONE'>;
+    tieBreakScore: number;
+    tieBreakReason: string;
+  }>;
+}
+
+export interface ResolveTieBreakResult {
+  rankings: Ranking[];
+  summary: {
+    resolvedCount: number;
+    teamIds: string[];
   };
 }
 

@@ -17,7 +17,7 @@ function formatDateTime(value?: string | null) {
 
 function formatGitHubAccessStatus(status?: string | null) {
   if (status === 'GRANTED') return 'Access granted';
-  if (status === 'REVOKED') return 'Access revoked';
+  if (status === 'REVOKED') return 'Access revoked successfully — repository access removed';
   return 'Access not granted yet';
 }
 
@@ -92,7 +92,13 @@ export function ParticipantDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {view.participant?.githubAccessStatus === 'GRANTED' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Circle className="w-5 h-5 text-gray-300" />}
+              {view.participant?.githubAccessStatus === 'GRANTED' ? (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              ) : view.participant?.githubAccessStatus === 'REVOKED' ? (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              ) : (
+                <Circle className="w-5 h-5 text-gray-300" />
+              )}
               <div className="flex-1">
                 <p className="font-medium">GitHub Access</p>
                 <p className="text-xs text-muted-foreground">
