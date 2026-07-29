@@ -1459,7 +1459,7 @@ export interface Round {
   competitionId: string;
   competition: { id: string; title: string; status: string } | null;
   trackId: string | null;
-  track: { id: string; code: string; name: string } | null;
+  track: { id: string; code: string; name: string; maxTeams?: number | null } | null;
   rubricId: string | null;
   rubric: { id: string; title: string; totalScore: number | null; criterionMaxScore?: number | null } | null;
   name: string;
@@ -1510,6 +1510,7 @@ export interface CreateRoundRequest {
   problemStatement?: string | null;
   examDriveUrl?: string | null;
   trackId?: string | null;
+  assignedTeamIds?: string[];
   promotedTeamIds?: string[];
   assignedJudgeIds?: string[];
   rubricId?: string | null;
@@ -1530,6 +1531,7 @@ export interface UpdateRoundRequest {
   roundType?: RoundType;
   status?: RoundStatus;
   trackId?: string | null;
+  assignedTeamIds?: string[];
   promotedTeamIds?: string[];
   assignedJudgeIds?: string[];
   rubricId?: string | null;

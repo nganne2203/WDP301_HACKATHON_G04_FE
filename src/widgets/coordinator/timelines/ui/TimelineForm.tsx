@@ -8,15 +8,19 @@ import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Textarea } from '@/shared/ui/textarea';
 
-import { formatTimelineType, timelineStatusOptions, timelineTypeOptions, type TimelineFormState } from '../model/timeline-form';
+import { formatTimelineType, getTimelineDateTimeMin, timelineStatusOptions, timelineTypeOptions, type TimelineFormState } from '../model/timeline-form';
 
 export function TimelineForm({
   form,
   onChange,
+  enforceFuture = true,
 }: {
   form: TimelineFormState;
   onChange: Dispatch<SetStateAction<TimelineFormState>>;
+  enforceFuture?: boolean;
 }) {
+  const minimumDateTime = enforceFuture ? getTimelineDateTimeMin() : undefined;
+  const endMinimumDateTime = form.startTime || minimumDateTime;
   return (
     <div className="grid gap-4 py-4">
       <div className="space-y-2">
@@ -75,6 +79,7 @@ export function TimelineForm({
             id="timeline-start"
             type="datetime-local"
             value={form.startTime}
+            min={minimumDateTime}
             onChange={(competition) => onChange((current) => ({ ...current, startTime: competition.target.value }))}
           />
         </div>
@@ -84,6 +89,7 @@ export function TimelineForm({
             id="timeline-end"
             type="datetime-local"
             value={form.endTime}
+            min={endMinimumDateTime}
             onChange={(competition) => onChange((current) => ({ ...current, endTime: competition.target.value }))}
           />
         </div>
