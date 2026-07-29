@@ -68,6 +68,7 @@ export function useRoundsView() {
     onSuccess: (response) => {
       toast.success('Round created', { description: `${response.data.name} has been added.` });
       queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.judging.all });
       setCreateOpen(false);
       setCreateForm(createEmptyRoundForm());
     },
@@ -84,6 +85,7 @@ export function useRoundsView() {
     onSuccess: (response) => {
       toast.success('Round updated', { description: `${response.data.name} has been updated.` });
       queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.judging.all });
       setEditOpen(false);
       setSelectedRound(response.data);
     },
@@ -100,6 +102,7 @@ export function useRoundsView() {
     onSuccess: () => {
       toast.success('Round deleted');
       queryClient.invalidateQueries({ queryKey: queryKeys.rounds.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.judging.all });
       setDeleteOpen(false);
       setSelectedRound(null);
     },

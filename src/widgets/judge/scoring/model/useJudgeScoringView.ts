@@ -101,6 +101,7 @@ export function useJudgeScoringView() {
   });
   const criteria: Criterion[] = rubricQuery.data?.data?.criteria || [];
   const maxScore = Number(rubricQuery.data?.data?.totalScore || 0);
+  const criterionIds = useMemo(() => criteria.map((criterion) => criterion.id).join('|'), [criteria]);
 
   const selectedTeam = assignedTeams.find((team) => team.id === selectedTeamId) || assignedTeams[0] || null;
   const submission = selectedTeam ? submissionByTeam[selectedTeam.id] : null;
@@ -157,10 +158,12 @@ export function useJudgeScoringView() {
       return;
     }
 
-    setScores({});
+    // No deliverable means the judge should still be able to record the
+    // required zero score for every criterion.
+    setScores(submission ? {} : Object.fromEntries(criteria.map((criterion) => [criterion.id, 0])));
     setComments({});
     setGeneralComment('');
-  }, [existingSheet?.id]);
+  }, [activeRound?.id, criterionIds, existingSheet?.id, selectedTeam?.id, submission?.id]);
 
   const criteriaById = useMemo(() => new Map(criteria.map((criterion) => [criterion.id, criterion])), [criteria]);
   const totalScore = useMemo(() => {
@@ -181,7 +184,7 @@ export function useJudgeScoringView() {
         roundId: activeRound!.id,
         boardId: myBoard!.id,
         teamId: selectedTeam!.id,
-        submissionId: submission!.id,
+        submissionId: submission?.id ?? null,
         rubricId: activeRound!.rubricId,
         generalComment,
         submit,
@@ -206,6 +209,7 @@ export function useJudgeScoringView() {
   const latestAiReview = repositoryAiQuery.data?.aiReviews?.[0] || null;
   const hasIncompleteCriteria = criteria.some((criterion) => scores[criterion.id] === undefined);
   const submissionReady = submission?.status === 'SUBMITTED' || submission?.status === 'ACCEPTED';
+  const canScoreTeam = !submission || submissionReady;
   const scoringOpen = activeRound?.status === 'SCORING' && myBoard?.status === 'SCORING';
   const scoringGateMessage = !activeRound
     ? 'Select a round to begin scoring.'
@@ -213,7 +217,7 @@ export function useJudgeScoringView() {
       ? 'This round is not in scoring status yet.'
       : myBoard && myBoard.status !== 'SCORING'
         ? 'Your judging board is not open for scoring yet.'
-        : submission && !submissionReady
+        : !canScoreTeam
           ? 'This team does not have a submitted artifact ready for scoring.'
           : '';
 
@@ -256,6 +260,7 @@ export function useJudgeScoringView() {
     hasIncompleteCriteria,
     scoringOpen,
     submissionReady,
+    canScoreTeam,
     scoringGateMessage,
   };
 }

@@ -9,12 +9,14 @@ import { useStore } from '@/entities/session/model/store';
 import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
 import type { RepositoryAccessAction, ResolveTieBreakRequest } from '@/shared/api/types';
+import { ApiError } from '@/shared/api/client';
 import {
   getCompetitionReadOnlyMessage,
   isCompetitionReadOnly,
 } from '@/shared/lib/competition-readonly';
 
 function getApiErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) return error.firstError;
   if (error instanceof Error) return error.message;
   return 'Unknown error';
 }
@@ -44,7 +46,7 @@ export function useResultsView() {
   const rounds = roundsQuery.data || [];
   const activeRound = rounds.find((r) => r.id === selectedRoundId) || rounds[0] || null;
   const activeRoundId = activeRound?.id || '';
-  const canGenerateRankingsForRound = canGenerateRankings && activeRound?.roundType === 'FINAL';
+  const canGenerateRankingsForRound = canGenerateRankings && Boolean(activeRound);
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(activeCompetitionId, activeRoundId),
