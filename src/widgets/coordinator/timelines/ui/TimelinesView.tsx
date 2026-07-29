@@ -143,9 +143,11 @@ export function Timelines() {
                     <div className="flex h-9 w-9 items-center justify-center rounded-md bg-amber-100 text-amber-700">
                       <Clock3 className="h-4 w-4" />
                     </div>
-                    <div>
-                      <p className="font-medium">{timeline.title}</p>
-                      <p className="text-xs text-muted-foreground">{timeline.description || 'No description'}</p>
+                    <div className="min-w-0 max-w-[30rem]">
+                      <p className="truncate font-medium" title={timeline.title}>{timeline.title}</p>
+                      <p className="truncate text-xs text-muted-foreground" title={timeline.description || 'No description'}>
+                        {timeline.description || 'No description'}
+                      </p>
                     </div>
                   </div>
                 </TableCell>
