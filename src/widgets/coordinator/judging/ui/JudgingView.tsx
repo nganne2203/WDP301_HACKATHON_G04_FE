@@ -262,7 +262,9 @@ export function Judging() {
                         <span className="font-medium">{index + 1}. {team.name}</span>
                         <span className="text-xs text-muted-foreground">Slot {team.placementSlot}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{team.chapterName || team.id}</p>
+                      {team.chapterName && (
+                        <p className="text-xs text-muted-foreground">{team.chapterName}</p>
+                      )}
                     </div>
                   ))}
                   {board.teams.length === 0 && (
