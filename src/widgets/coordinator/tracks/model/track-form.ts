@@ -1,3 +1,4 @@
+import { ApiError } from '@/shared/api/client';
 import type { CreateTrackRequest, Track, TrackStatus, TrackType, UpdateTrackRequest } from '@/shared/api/types';
 
 export const trackTypeOptions: TrackType[] = ['PRELIMINARY_GROUP', 'FINAL_POOL', 'GENERAL'];
@@ -32,6 +33,19 @@ function normalizeOptionalText(value: string) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function getMaxTeams(form: TrackFormState) {
+  const maxTeams = Number(form.maxTeams);
+  if (!Number.isInteger(maxTeams) || maxTeams < 2) {
+    throw new ApiError({
+      success: false,
+      code: 'VALIDATION_ERROR',
+      message: 'Max teams must be at least 2',
+      errors: ['A track needs capacity for at least 2 teams.'],
+    }, 400);
+  }
+  return maxTeams;
+}
+
 export function buildTrackPayload(form: TrackFormState, competitionId: string): CreateTrackRequest {
   return {
     competitionId,
@@ -41,7 +55,7 @@ export function buildTrackPayload(form: TrackFormState, competitionId: string): 
     topic: normalizeOptionalText(form.topic),
     problemStatement: normalizeOptionalText(form.problemStatement),
     type: form.type,
-    maxTeams: form.maxTeams ? Number(form.maxTeams) : undefined,
+    maxTeams: getMaxTeams(form),
     status: form.status,
   };
 }
@@ -54,7 +68,7 @@ export function buildTrackUpdatePayload(form: TrackFormState): UpdateTrackReques
     topic: normalizeOptionalText(form.topic),
     problemStatement: normalizeOptionalText(form.problemStatement),
     type: form.type,
-    maxTeams: form.maxTeams ? Number(form.maxTeams) : null,
+    maxTeams: getMaxTeams(form),
     status: form.status,
   };
 }

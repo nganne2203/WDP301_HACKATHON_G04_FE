@@ -112,7 +112,13 @@ export function useTimelinesView() {
       toast.error('Timeline title is required');
       return;
     }
-    createMutation.mutate(buildTimelinePayload(createForm, activeCompetition.id));
+    try {
+      createMutation.mutate(buildTimelinePayload(createForm, activeCompetition.id));
+    } catch (error) {
+      toast.error('Failed to create timeline', {
+        description: error instanceof ApiError ? error.firstError : 'Please check the schedule.',
+      });
+    }
   };
 
   const handleUpdate = () => {

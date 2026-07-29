@@ -119,7 +119,7 @@ export function Rounds() {
               <TableHead>Round</TableHead>
               <TableHead>Track</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Teams</TableHead>
+              <TableHead>Teams / Capacity</TableHead>
               <TableHead>Judges</TableHead>
               <TableHead>Window</TableHead>
               <TableHead className="w-12"></TableHead>
@@ -164,7 +164,11 @@ export function Rounds() {
                     {round.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{round.assignedTeamIds.length}</TableCell>
+                <TableCell>
+                  {round.track?.maxTeams
+                    ? `${round.assignedTeamIds.length} / ${round.track.maxTeams}`
+                    : `${round.assignedTeamIds.length} / —`}
+                </TableCell>
                 <TableCell>{round.assignedJudgeIds?.length || 0}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {formatDateTimeDisplay(round.startTime)}
