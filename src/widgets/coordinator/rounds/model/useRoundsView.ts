@@ -115,6 +115,12 @@ export function useRoundsView() {
       return;
     }
 
+    const name = createForm.name.trim().toLocaleLowerCase();
+    if (rounds.some((round) => round.name.trim().toLocaleLowerCase() === name)) {
+      toast.error('Round name already exists', { description: 'Use a different name for this competition.' });
+      return;
+    }
+
     try {
       createMutation.mutate(buildCreateRoundPayload(createForm, activeCompetition));
     } catch (error) {
@@ -126,6 +132,12 @@ export function useRoundsView() {
     if (!selectedRound) return;
     if (roundsReadOnly) {
       toast.error(getCompetitionReadOnlyMessage('Rounds'));
+      return;
+    }
+
+    const name = editForm.name.trim().toLocaleLowerCase();
+    if (rounds.some((round) => round.id !== selectedRound.id && round.name.trim().toLocaleLowerCase() === name)) {
+      toast.error('Round name already exists', { description: 'Use a different name for this competition.' });
       return;
     }
 

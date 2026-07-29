@@ -203,6 +203,11 @@ export function useRubricsView() {
       notifyReadOnly();
       return;
     }
+    const title = createForm.title.trim().toLocaleLowerCase();
+    if (rubrics.some((rubric) => rubric.title.trim().toLocaleLowerCase() === title)) {
+      toast.error('Rubric title already exists', { description: 'Use a different title for this competition.' });
+      return;
+    }
     createMutation.mutate(buildRubricPayload(createForm, activeCompetition.id));
   };
 
@@ -210,6 +215,11 @@ export function useRubricsView() {
     if (!selectedRubric) return;
     if (isRubricReadOnly(selectedRubric)) {
       notifyReadOnly();
+      return;
+    }
+    const title = editForm.title.trim().toLocaleLowerCase();
+    if (rubrics.some((rubric) => rubric.id !== selectedRubric.id && rubric.title.trim().toLocaleLowerCase() === title)) {
+      toast.error('Rubric title already exists', { description: 'Use a different title for this competition.' });
       return;
     }
     updateMutation.mutate({

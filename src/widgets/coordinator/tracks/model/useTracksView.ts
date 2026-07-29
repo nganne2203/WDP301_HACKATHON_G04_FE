@@ -122,8 +122,19 @@ export function useTracksView() {
       toast.error('Track name is required');
       return;
     }
+    const name = createForm.name.trim().toLocaleLowerCase();
+    if (tracks.some((track) => track.name.trim().toLocaleLowerCase() === name)) {
+      toast.error('Track name already exists', { description: 'Use a different name for this competition.' });
+      return;
+    }
 
-    createMutation.mutate(buildTrackPayload(createForm, activeCompetition.id));
+    try {
+      createMutation.mutate(buildTrackPayload(createForm, activeCompetition.id));
+    } catch (error) {
+      toast.error('Could not create track', {
+        description: error instanceof ApiError ? error.firstError : 'Please check the track details.',
+      });
+    }
   };
 
   const handleUpdate = () => {
@@ -133,11 +144,22 @@ export function useTracksView() {
       toast.error('Track name is required');
       return;
     }
+    const name = editForm.name.trim().toLocaleLowerCase();
+    if (tracks.some((track) => track.id !== selectedTrack.id && track.name.trim().toLocaleLowerCase() === name)) {
+      toast.error('Track name already exists', { description: 'Use a different name for this competition.' });
+      return;
+    }
 
-    updateMutation.mutate({
-      id: selectedTrack.id,
-      payload: buildTrackUpdatePayload(editForm),
-    });
+    try {
+      updateMutation.mutate({
+        id: selectedTrack.id,
+        payload: buildTrackUpdatePayload(editForm),
+      });
+    } catch (error) {
+      toast.error('Could not update track', {
+        description: error instanceof ApiError ? error.firstError : 'Please check the track details.',
+      });
+    }
   };
 
   const handleDelete = () => {
