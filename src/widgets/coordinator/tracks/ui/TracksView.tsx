@@ -151,9 +151,9 @@ export function Tracks() {
                     <div className="flex h-9 w-9 items-center justify-center rounded-md bg-blue-100 text-blue-700">
                       <GitBranch className="h-4 w-4" />
                     </div>
-                    <div>
-                      <p className="font-medium">{track.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0 max-w-[22rem]">
+                      <p className="truncate font-medium" title={track.name}>{track.name}</p>
+                      <p className="truncate text-xs text-muted-foreground" title={track.description || track.code || 'No code'}>
                         {track.code || 'No code'}{track.description ? ` · ${track.description}` : ''}
                       </p>
                     </div>
