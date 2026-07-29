@@ -48,7 +48,7 @@ export function SubmissionDialog({
   onSaveDraft: () => void;
   onSubmit: () => void;
 }) {
-  const locked = currentSubmission?.status === 'SUBMITTED' || currentSubmission?.status === 'ACCEPTED' || currentSubmission?.status === 'REJECTED';
+  const locked = currentSubmission?.status === 'ACCEPTED' || currentSubmission?.status === 'REJECTED';
   const editable = !locked && !gateMessage;
 
   return (
@@ -69,7 +69,7 @@ export function SubmissionDialog({
                 <Alert>
                   <AlertTitle>{locked ? 'Submission locked' : 'Submission window closed'}</AlertTitle>
                   <AlertDescription>
-                    {locked ? 'This submission is no longer editable from the participant side.' : gateMessage}
+                    {locked ? 'This submission has already been reviewed and can no longer be edited.' : gateMessage}
                   </AlertDescription>
                 </Alert>
               ) : (
@@ -78,7 +78,7 @@ export function SubmissionDialog({
                     Cancel
                   </Button>
                   <Button variant="outline" onClick={onSaveDraft} disabled={saveDraftPending}>
-                    {saveDraftPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Draft'}
+                    {saveDraftPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save changes'}
                   </Button>
                   <Button
                     onClick={() => onSubmitConfirmOpenChange(true)}
@@ -99,7 +99,7 @@ export function SubmissionDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Submit artifacts</AlertDialogTitle>
             <AlertDialogDescription>
-              Submit the artifacts for <strong>{selectedRound?.name}</strong>? After submission, the participant flow may no longer allow edits.
+              Submit the artifacts for <strong>{selectedRound?.name}</strong>? You can still update them until the submission deadline.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
