@@ -41,7 +41,6 @@ const Judging = lazy(async () => ({ default: (await import('@/pages/coordinator/
 const Results = lazy(async () => ({ default: (await import('@/pages/coordinator/Results')).Results }));
 const AdminMedia = lazy(async () => ({ default: (await import('@/pages/admin/Media')).AdminMedia }));
 const AdminAuditLogs = lazy(async () => ({ default: (await import('@/pages/admin/AuditLogs')).AdminAuditLogs }));
-const AdminOperations = lazy(async () => ({ default: (await import('@/pages/admin/Operations')).AdminOperations }));
 const AdminRbac = lazy(async () => ({ default: (await import('@/pages/admin/Rbac')).AdminRbac }));
 const JudgeDashboard = lazy(async () => ({ default: (await import('@/pages/judge/Dashboard')).JudgeDashboard }));
 const JudgeScoring = lazy(async () => ({ default: (await import('@/pages/judge/Scoring')).JudgeScoring }));
@@ -434,15 +433,6 @@ export function AppRouter() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/admin/operations"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminOperations />
-              </ProtectedRoute>
-            }
-          />
-
           <Route
             path="/mentor"
             element={

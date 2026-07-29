@@ -65,7 +65,12 @@ export function useWorkshopsView() {
     { enabled: Boolean(activeCompetition?.id) }
   );
 
-  const presenterUsersQuery = useUsersQuery({ page: 1, limit: 100 });
+  const presenterUsersQuery = useUsersQuery({
+    page: 1,
+    limit: 100,
+    status: 'ACTIVE',
+    roles: ['SPEAKER'],
+  });
 
   const workshops = workshopsQuery.data?.data || [];
   const pagination = workshopsQuery.data?.pagination;
@@ -199,7 +204,13 @@ export function useWorkshopsView() {
       toast.error('Start time and end time are required');
       return;
     }
-    createMutation.mutate(buildWorkshopPayload(createForm, activeCompetition.id));
+    try {
+      createMutation.mutate(buildWorkshopPayload(createForm, activeCompetition.id));
+    } catch (error) {
+      toast.error('Failed to create workshop', {
+        description: error instanceof ApiError ? error.firstError : 'Please check the workshop schedule.',
+      });
+    }
   };
 
   const handleUpdate = () => {

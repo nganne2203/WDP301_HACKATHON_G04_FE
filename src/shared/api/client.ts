@@ -59,7 +59,10 @@ export class ApiError extends Error {
 
   /** Returns the first error detail, or the message */
   get firstError(): string {
-    return this.errors[0] || this.message;
+    const candidate = this.errors[0] || this.message;
+    return /E11000|Mongo(Server)?Error|duplicate key|CastError|ValidationError|\bECONN\w+\b|stack trace/i.test(candidate)
+      ? 'We could not complete your request. Please review the information and try again.'
+      : candidate;
   }
 }
 

@@ -216,7 +216,7 @@ export function Timelines() {
           </DialogHeader>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6">
-          <TimelineForm form={view.editForm} onChange={view.setEditForm} />
+          <TimelineForm form={view.editForm} onChange={view.setEditForm} enforceFuture={false} />
           </div>
           <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
             <Button variant="outline" onClick={() => view.setEditOpen(false)}>

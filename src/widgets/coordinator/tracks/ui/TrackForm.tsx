@@ -76,11 +76,12 @@ export function TrackForm({
           <Input
             id="track-capacity"
             type="number"
-            min="1"
+            min="2"
             value={form.maxTeams}
             onChange={(competition) => onChange((current) => ({ ...current, maxTeams: competition.target.value }))}
             placeholder="12"
           />
+          <p className="text-xs text-muted-foreground">At least 2 teams are required for a competitive round.</p>
         </div>
       </div>
 
