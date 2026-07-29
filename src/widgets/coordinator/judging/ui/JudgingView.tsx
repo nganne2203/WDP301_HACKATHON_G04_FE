@@ -57,38 +57,37 @@ export function Judging() {
             Randomize eligible teams into boards, confirm lineups, and track judging progress.
           </p>
         </div>
-        <Button
-          onClick={() => view.setShowRandomizeConfirm(true)}
-          disabled={view.activeRounds.length === 0 || view.randomizePreviewMutation.isPending || view.judgingReadOnly}
-          title={view.judgingReadOnly ? 'Judging assignments are read-only after the competition is completed or archived.' : undefined}
-        >
-          {view.randomizePreviewMutation.isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Shuffle className="mr-2 h-4 w-4" />
-          )}
-          Randomize Boards
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <div className="w-full md:w-72">
-          <Select
-            value={view.activeRound?.id || ''}
-            onValueChange={view.setSelectedRoundId}
-            disabled={!view.activeCompetition || view.roundsQuery.isLoading}
+        <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
+          <div className="w-full md:w-72">
+            <Select
+              value={view.activeRound?.id || ''}
+              onValueChange={view.setSelectedRoundId}
+              disabled={!view.activeCompetition || view.roundsQuery.isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading rounds...' : 'Select judging stage'} />
+              </SelectTrigger>
+              <SelectContent>
+                {view.rounds.filter((round, index, all) => all.findIndex((item) => item.roundType === round.roundType) === index).map((round) => (
+                  <SelectItem key={round.id} value={round.id}>
+                    {round.roundType === 'PRELIMINARY' ? 'Preliminary round' : round.roundType === 'FINAL' ? 'Final round' : round.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            onClick={() => view.setShowRandomizeConfirm(true)}
+            disabled={view.activeRounds.length === 0 || view.randomizePreviewMutation.isPending || view.judgingReadOnly}
+            title={view.judgingReadOnly ? 'Judging assignments are read-only after the competition is completed or archived.' : undefined}
           >
-            <SelectTrigger>
-              <SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading rounds...' : 'Select judging stage'} />
-            </SelectTrigger>
-            <SelectContent>
-              {view.rounds.filter((round, index, all) => all.findIndex((item) => item.roundType === round.roundType) === index).map((round) => (
-                <SelectItem key={round.id} value={round.id}>
-                  {round.roundType === 'PRELIMINARY' ? 'Preliminary round' : round.roundType === 'FINAL' ? 'Final round' : round.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {view.randomizePreviewMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Shuffle className="mr-2 h-4 w-4" />
+            )}
+            Randomize Boards
+          </Button>
         </div>
       </div>
 

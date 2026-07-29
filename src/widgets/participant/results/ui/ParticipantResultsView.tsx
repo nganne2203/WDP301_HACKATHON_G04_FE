@@ -39,7 +39,7 @@ export function ParticipantResultsView() {
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(activeCompetitionId, activeRoundId),
-    enabled: Boolean(activeCompetitionId && activeRoundId && appRole && showFinalistIndicators),
+    enabled: Boolean(activeCompetitionId && activeRoundId && appRole),
     queryFn: async () => (await rankingsApi.list({ competitionId: activeCompetitionId, roundId: activeRoundId, limit: 50 })).data,
   });
   const rankings = rankingsQuery.data || [];

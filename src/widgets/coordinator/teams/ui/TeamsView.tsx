@@ -30,10 +30,10 @@ function statusBadgeVariant(status: string): BadgeVariant {
 }
 
 function getConfirmedMemberCount(team: Team) {
-  const activeParticipants = team.participants
-    ? team.participants.filter((participant) => participant.status === 'JOINED')
-    : [];
-  return activeParticipants.length || (team.members?.length || 0);
+  if (team.participants) {
+    return team.participants.filter((participant) => participant.status === 'JOINED').length;
+  }
+  return team.members?.length || 0;
 }
 
 function getTotalMemberCount(team: Team) {
