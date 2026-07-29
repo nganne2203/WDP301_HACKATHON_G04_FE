@@ -1,5 +1,6 @@
 import type { TimelineActivity, User, Workshop, WorkshopStatus } from '@/shared/api/types';
 import type { CreateWorkshopRequest, UpdateWorkshopRequest } from '@/shared/api/workshops';
+import { ApiError } from '@/shared/api/client';
 
 export const workshopStatusOptions: WorkshopStatus[] = ['SCHEDULED', 'LIVE', 'COMPLETED', 'CANCELLED'];
 const workshopPresenterRoles = new Set(['SPEAKER', 'MENTOR']);
@@ -43,6 +44,27 @@ export function createEmptyWorkshopForm(): WorkshopFormState {
 function normalizeOptionalText(value: string) {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+export function getWorkshopDateTimeMin() {
+  const nextMinute = new Date();
+  nextMinute.setSeconds(0, 0);
+  nextMinute.setMinutes(nextMinute.getMinutes() + 1);
+  const timezoneOffset = nextMinute.getTimezoneOffset() * 60000;
+  return new Date(nextMinute.getTime() - timezoneOffset).toISOString().slice(0, 16);
+}
+
+function validateNewWorkshopSchedule(form: WorkshopFormState) {
+  const start = new Date(form.startTime);
+  const end = new Date(form.endTime);
+  const now = new Date();
+
+  if (start < now || end < now) {
+    throw new ApiError({ success: false, code: 'VALIDATION_ERROR', message: 'Workshop time cannot be in the past', errors: ['Workshop start and end times cannot be in the past.'] }, 400);
+  }
+  if (end <= start) {
+    throw new ApiError({ success: false, code: 'VALIDATION_ERROR', message: 'End time must be after start time', errors: ['End time must be after start time.'] }, 400);
+  }
 }
 
 export function toDateTimeInputValue(value?: string | null) {
@@ -90,6 +112,7 @@ export function mapWorkshopToForm(workshop: Workshop): WorkshopFormState {
 }
 
 export function buildWorkshopPayload(form: WorkshopFormState, competitionId: string): CreateWorkshopRequest {
+  validateNewWorkshopSchedule(form);
   return {
     competitionId,
     timelineActivityId: form.timelineActivityId === 'none' ? undefined : form.timelineActivityId,

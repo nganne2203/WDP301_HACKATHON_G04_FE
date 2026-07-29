@@ -8,7 +8,7 @@ import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Textarea } from '@/shared/ui/textarea';
 
-import { workshopPresenterUserLabel, workshopStatusOptions, type WorkshopFormState } from '../model/workshop-form';
+import { getWorkshopDateTimeMin, toDateTimeInputValue, workshopPresenterUserLabel, workshopStatusOptions, type WorkshopFormState } from '../model/workshop-form';
 
 export function WorkshopForm({
   form,
@@ -16,13 +16,17 @@ export function WorkshopForm({
   presenters,
   presentersLoading,
   timelines,
+  enforceFuture = true,
 }: {
   form: WorkshopFormState;
   onChange: Dispatch<SetStateAction<WorkshopFormState>>;
   presenters: User[];
   presentersLoading?: boolean;
   timelines: TimelineActivity[];
+  enforceFuture?: boolean;
 }) {
+  const minimumDateTime = enforceFuture ? getWorkshopDateTimeMin() : undefined;
+  const endMinimumDateTime = form.startTime || minimumDateTime;
 
   return (
     <div className="grid gap-4 py-4">
@@ -40,7 +44,15 @@ export function WorkshopForm({
           <Label>Timeline Item</Label>
           <Select
             value={form.timelineActivityId}
-            onValueChange={(value) => onChange((current) => ({ ...current, timelineActivityId: value }))}
+            onValueChange={(value) => {
+              const timeline = timelines.find((item) => item.id === value);
+              onChange((current) => ({
+                ...current,
+                timelineActivityId: value,
+                startTime: timeline?.startTime ? toDateTimeInputValue(timeline.startTime) : current.startTime,
+                endTime: timeline?.endTime ? toDateTimeInputValue(timeline.endTime) : current.endTime,
+              }));
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Optional timeline reference" />
@@ -64,6 +76,7 @@ export function WorkshopForm({
             id="workshop-start"
             type="datetime-local"
             value={form.startTime}
+            min={minimumDateTime}
             onChange={(competition) => onChange((current) => ({ ...current, startTime: competition.target.value }))}
           />
         </div>
@@ -73,6 +86,7 @@ export function WorkshopForm({
             id="workshop-end"
             type="datetime-local"
             value={form.endTime}
+            min={endMinimumDateTime}
             onChange={(competition) => onChange((current) => ({ ...current, endTime: competition.target.value }))}
           />
         </div>

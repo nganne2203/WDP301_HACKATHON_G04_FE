@@ -265,6 +265,7 @@ export function Workshops() {
             presenters={view.presenterUsers}
             presentersLoading={view.presenterUsersQuery.isLoading}
             timelines={view.workshopTimelines}
+            enforceFuture={false}
           />
           </div>
           <div className="flex flex-shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
