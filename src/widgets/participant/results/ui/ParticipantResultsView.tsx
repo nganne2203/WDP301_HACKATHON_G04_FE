@@ -35,6 +35,7 @@ export function ParticipantResultsView() {
   const rounds = roundsQuery.data || [];
   const activeRound = rounds.find((round) => round.id === selectedRoundId) || rounds[0] || null;
   const activeRoundId = activeRound?.id || '';
+  const showFinalistIndicators = activeRound?.roundType !== 'FINAL';
 
   const rankingsQuery = useQuery({
     queryKey: queryKeys.rankings.list(activeCompetitionId, activeRoundId),
@@ -51,7 +52,7 @@ export function ParticipantResultsView() {
   const finalists = finalistsQuery.data || [];
 
   const myRanking = rankings.find((ranking) => ranking.teamId === team?.id) || null;
-  const isFinalist = finalists.some((ranking) => ranking.teamId === team?.id);
+  const isFinalist = showFinalistIndicators && finalists.some((ranking) => ranking.teamId === team?.id);
   const podium = rankings.slice(0, 3);
 
   return (
@@ -123,7 +124,7 @@ export function ParticipantResultsView() {
                         Score: {ranking.score.toFixed(2)}
                       </Badge>
                       <div className="mt-2 flex items-center justify-center gap-2">
-                        {ranking.isSelectedForFinal && <Badge>Finalist</Badge>}
+                        {showFinalistIndicators && ranking.isSelectedForFinal && <Badge>Finalist</Badge>}
                         {mine && <Badge variant="secondary">Your team</Badge>}
                       </div>
                     </CardContent>
@@ -145,7 +146,7 @@ export function ParticipantResultsView() {
                     <TableHead>Team</TableHead>
                     <TableHead>Score</TableHead>
                     <TableHead>Track</TableHead>
-                    <TableHead>Finalist</TableHead>
+                    {showFinalistIndicators && <TableHead>Finalist</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -166,16 +167,18 @@ export function ParticipantResultsView() {
                         </TableCell>
                         <TableCell>{ranking.score.toFixed(2)}</TableCell>
                         <TableCell>{ranking.track?.name || '—'}</TableCell>
-                        <TableCell>
-                          {ranking.isSelectedForFinal ? (
+                        {showFinalistIndicators && (
+                          <TableCell>
+                            {ranking.isSelectedForFinal ? (
                             <Badge>
                               <CheckCircle2 className="mr-1 h-3 w-3" />
                               Finalist
                             </Badge>
                           ) : (
                             <Badge variant="outline">—</Badge>
-                          )}
-                        </TableCell>
+                            )}
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })}

@@ -8,7 +8,7 @@ import { resultsApi } from '@/entities/result/api';
 import { useStore } from '@/entities/session/model/store';
 import { useCompetitionsQuery, useRoundsQuery } from '@/hooks/queries/useCommonQueries';
 import { queryKeys } from '@/lib/queryKeys';
-import type { RepositoryAccessAction } from '@/shared/api/types';
+import type { RepositoryAccessAction, ResolveTieBreakRequest } from '@/shared/api/types';
 import {
   getCompetitionReadOnlyMessage,
   isCompetitionReadOnly,
@@ -38,6 +38,7 @@ export function useResultsView() {
   const activeCompetition = competitions.find((e) => e.id === selectedCompetition?.id) || competitions[0] || null;
   const activeCompetitionId = activeCompetition?.id || '';
   const resultsReadOnly = isCompetitionReadOnly(activeCompetition);
+  const canResolveTieBreak = canGenerateRankings && (!resultsReadOnly || import.meta.env.DEV);
 
   const roundsQuery = useRoundsQuery({ competitionId: activeCompetitionId, limit: 10 }, { enabled: Boolean(activeCompetitionId) });
   const rounds = roundsQuery.data || [];
@@ -90,6 +91,22 @@ export function useResultsView() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.rankings.list(activeCompetitionId, activeRoundId) });
     },
     onError: (error) => toast.error('Could not select finalists', { description: getApiErrorMessage(error) }),
+  });
+
+  const resolveTieBreakMutation = useMutation({
+    mutationFn: async (decisions: ResolveTieBreakRequest['decisions']) => {
+      if (!activeCompetitionId || !activeRoundId) throw new Error('Please select a competition and round.');
+      return (await rankingsApi.resolveTieBreak({
+        competitionId: activeCompetitionId,
+        roundId: activeRoundId,
+        decisions,
+      })).data;
+    },
+    onSuccess: async (result) => {
+      toast.success(`Tie-break resolved for ${result.summary.resolvedCount} teams`);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.rankings.list(activeCompetitionId, activeRoundId) });
+    },
+    onError: (error) => toast.error('Could not resolve tie-break', { description: getApiErrorMessage(error) }),
   });
 
   const publishResultsMutation = useMutation({
@@ -161,6 +178,7 @@ export function useResultsView() {
     canGenerateRankingsForRound,
     canSelectFinalists,
     canPublishResults,
+    canResolveTieBreak,
     resultsReadOnly,
     isCustomSelectionMode,
     manualSelectedTeamIds,
@@ -173,6 +191,7 @@ export function useResultsView() {
 
     generateRankingsMutation,
     selectFinalistsMutation,
+    resolveTieBreakMutation,
     selectManualFinalistsMutation,
     publishResultsMutation,
   };
