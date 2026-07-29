@@ -41,9 +41,8 @@ export function useJudgingView() {
     [rounds, selectedRoundId]
   );
 
-  // A judging stage may contain several rounds (for example the three
-  // preliminary boards). Keep the stage selector, but load every round in
-  // that stage so coordinators can see and operate on the complete lineup.
+  // The selector chooses a stage. Preliminary rounds are the boards within
+  // that stage and are filled together by one randomization.
   const activeRounds = useMemo(
     () => (activeRound ? rounds.filter((round) => round.roundType === activeRound.roundType) : []),
     [activeRound, rounds]
@@ -88,7 +87,7 @@ export function useJudgingView() {
       return judgingBoardsApi.confirmRandomization({
         competitionId: activeCompetition.id,
         roundId: activeRound!.id,
-        boards: randomizationPreview.boards.map((board) => ({ boardNumber: board.boardNumber, name: board.name, teamIds: board.teamIds }))
+        boards: randomizationPreview.boards.map((board) => ({ roundId: board.roundId, boardNumber: board.boardNumber, name: board.name, teamIds: board.teamIds })),
       });
     },
     onSuccess: (response) => {

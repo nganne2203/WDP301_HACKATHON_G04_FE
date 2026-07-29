@@ -79,7 +79,7 @@ export function ParticipantSubmissions() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {view.rounds.map((round) => {
             const submission = view.submissionMap.get(round.id) || null;
-            const locked = submission?.status === 'SUBMITTED' || submission?.status === 'ACCEPTED' || submission?.status === 'REJECTED';
+            const locked = submission?.status === 'ACCEPTED' || submission?.status === 'REJECTED';
             const accepting = isRoundAcceptingSubmissions(round);
             const gateMessage = getRoundSubmissionGateMessage(round);
             const canEdit = Boolean(!locked && accepting);
@@ -134,7 +134,7 @@ export function ParticipantSubmissions() {
                     {submission ? (
                       <>
                         <FileText className="mr-2 h-4 w-4" />
-                        {canEdit ? 'Edit draft' : 'View submission'}
+                        {canEdit ? 'Edit submission' : 'View submission'}
                       </>
                     ) : (
                       <>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, ExternalLink, FileText, Loader2, Trophy } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { CalendarClock, ExternalLink, FileText, Loader2, Send, Trophy } from 'lucide-react';
 
 import { useCompetitionsQuery, useMyTeamQuery, useRoundsQuery, selectDefaultCompetition } from '@/hooks/queries/useCommonQueries';
 import { useStore } from '@/entities/session/model/store';
@@ -44,7 +45,14 @@ function getRoundState(round: Round, now: number) {
   return round.status;
 }
 
+function isSubmissionOpen(round: Round, now: number) {
+  if (round.status !== 'OPEN') return false;
+  const deadline = round.submissionDeadline ? new Date(round.submissionDeadline).getTime() : null;
+  return !deadline || Number.isNaN(deadline) || deadline >= now;
+}
+
 export function ParticipantRoundsView() {
+  const navigate = useNavigate();
   const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
   const [now, setNow] = useState(Date.now());
 
@@ -100,6 +108,7 @@ export function ParticipantRoundsView() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {rounds.map((round) => {
           const promoted = Boolean(team?.id && round.promotedTeamIds?.includes(team.id));
+          const canSubmit = isSubmissionOpen(round, now);
           return (
             <Card key={round.id}>
               <CardHeader>
@@ -145,6 +154,12 @@ export function ParticipantRoundsView() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                  {canSubmit && (
+                    <Button onClick={() => navigate(`/participant/submissions?roundId=${round.id}`)}>
+                      <Send className="mr-2 h-4 w-4" />
+                      Submit deliverables
+                    </Button>
+                  )}
                   {round.examDriveUrl ? (
                     <Button asChild variant="outline">
                       <a href={round.examDriveUrl} target="_blank" rel="noreferrer">

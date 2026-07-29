@@ -1822,7 +1822,7 @@ export interface ScoreSheet {
   board: { id: string; name: string; boardNumber: number } | null;
   teamId: string;
   team: { id: string; name: string; projectName: string | null } | null;
-  submissionId: string;
+  submissionId: string | null;
   submission: { id: string; demoUrl: string | null; reportUrl: string | null; presentationUrl: string | null } | null;
   judgeId: string;
   judge: UserSummary | null;
@@ -1846,7 +1846,7 @@ export interface SubmitScoreSheetRequest {
   roundId: string;
   boardId: string;
   teamId: string;
-  submissionId: string;
+  submissionId?: string | null;
   rubricId?: string | null;
   generalComment?: string | null;
   submit?: boolean;

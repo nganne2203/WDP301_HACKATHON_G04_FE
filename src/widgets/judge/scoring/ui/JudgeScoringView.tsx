@@ -102,12 +102,11 @@ export function JudgeScoring() {
                   submitDisabled={
                     view.saveMutation.isPending ||
                     !view.scoringOpen ||
-                    !view.submissionReady ||
-                    !view.submission ||
+                    !view.canScoreTeam ||
                     !view.myBoard ||
                     view.hasIncompleteCriteria
                   }
-                  saveDisabled={!view.scoringOpen || !view.submissionReady || !view.submission || !view.myBoard}
+                  saveDisabled={!view.scoringOpen || !view.canScoreTeam || !view.myBoard}
                   savePending={view.saveMutation.isPending}
                   onSaveDraft={() => view.saveMutation.mutate(false)}
                   onSubmit={() => view.setSubmitConfirm(true)}

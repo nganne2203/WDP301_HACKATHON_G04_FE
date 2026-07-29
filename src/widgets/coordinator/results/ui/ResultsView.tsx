@@ -190,7 +190,6 @@ export function Results() {
                 onClick={() => view.generateRankingsMutation.mutate()}
                 disabled={!view.canGenerateRankingsForRound || view.generateRankingsMutation.isPending || !view.activeCompetitionId || !view.activeRoundId}
                 className="w-full"
-                title={view.activeRound?.roundType === 'PRELIMINARY' ? 'Rankings are generated only for the final round.' : undefined}
               >
                 {view.generateRankingsMutation.isPending
                   ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />

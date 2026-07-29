@@ -65,12 +65,12 @@ export function Judging() {
               disabled={!view.activeCompetition || view.roundsQuery.isLoading}
             >
               <SelectTrigger>
-                <SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading rounds...' : 'Select judging stage'} />
+              <SelectValue placeholder={view.roundsQuery.isLoading ? 'Loading rounds...' : 'Select judging stage'} />
               </SelectTrigger>
               <SelectContent>
                 {view.rounds.filter((round, index, all) => all.findIndex((item) => item.roundType === round.roundType) === index).map((round) => (
                   <SelectItem key={round.id} value={round.id}>
-                    {round.roundType === 'PRELIMINARY' ? 'Preliminary round' : round.roundType === 'FINAL' ? 'Final round' : round.name}
+                    {round.roundType}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -126,7 +126,7 @@ export function Judging() {
                 <div>
                   <CardTitle>{board.name}</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {board.teams.length} / {board.maxTeams} teams · {board.round?.name || 'Round'}
+                    {board.teams.length} / {board.maxTeams} teams
                   </p>
                 </div>
                 <Badge variant={statusVariant(board.status)}>{board.status.replace('_', ' ')}</Badge>

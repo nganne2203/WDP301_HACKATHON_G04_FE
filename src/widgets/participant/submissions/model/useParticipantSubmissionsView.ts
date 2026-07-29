@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
 import { submissionsApi } from '@/entities/submission/api';
@@ -34,6 +35,7 @@ export function getRoundSubmissionGateMessage(round?: Round | null) {
 
 export function useParticipantSubmissionsView() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = useStore((state) => state.user);
   const storeSelectedCompetition = useStore((state) => state.selectedCompetition);
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
@@ -77,6 +79,25 @@ export function useParticipantSubmissionsView() {
     return map;
   }, [submissions]);
 
+  // The Round page can deep-link here so the participant lands directly in
+  // the submission form for the selected round.
+  useEffect(() => {
+    const requestedRoundId = searchParams.get('roundId');
+    if (!requestedRoundId || formOpen) return;
+
+    const requestedRound = rounds.find((round) => round.id === requestedRoundId);
+    if (!requestedRound) return;
+
+    const currentSubmission = submissionMap.get(requestedRound.id) || null;
+    setSelectedRound(requestedRound);
+    setForm(currentSubmission ? mapSubmissionToForm(currentSubmission) : createSubmissionForm());
+    setFormOpen(true);
+    setSearchParams((current) => {
+      current.delete('roundId');
+      return current;
+    }, { replace: true });
+  }, [formOpen, rounds, searchParams, setSearchParams, submissionMap]);
+
   const saveDraftMutation = useMutation({
     mutationFn: async ({ round, currentSubmission }: { round: Round; currentSubmission: Submission | null }) => {
       const payload = {
@@ -101,7 +122,7 @@ export function useParticipantSubmissionsView() {
       ).data;
     },
     onSuccess: async () => {
-      toast.success('Submission draft saved');
+      toast.success('Submission changes saved');
       setFormOpen(false);
       setSelectedRound(null);
       await queryClient.invalidateQueries({ queryKey: queryKeys.submissions.lists() });
