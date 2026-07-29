@@ -66,7 +66,7 @@ export function useTracksView() {
       setCreateForm(createEmptyTrackForm());
     },
     onError: (error: unknown) => {
-      toast.error('Failed to create track', {
+      toast.error('Could not create track', {
         description: error instanceof ApiError ? error.firstError : 'Unknown error',
       });
     },
